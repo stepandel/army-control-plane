@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "workers/router" },
+    { "path": "workers/control-plane" }
+  ]
+}
