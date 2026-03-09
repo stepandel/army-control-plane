@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ControlPlaneEnv, TenantRoute } from "@vera/shared";
+import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 
 const provision = new Hono<{ Bindings: ControlPlaneEnv }>();
@@ -23,7 +23,7 @@ provision.post("/:tenantId", async (c) => {
 
   // TODO: Call Fly.io Machines API to create machine
   // For now, stub the response
-  const flyAppName = `vera-${tenantId.toLowerCase()}`;
+  const flyAppName = `army-${tenantId.toLowerCase()}`;
   const instanceUrl = `https://${flyAppName}.fly.dev`;
   const internalSecret = crypto.randomUUID();
 

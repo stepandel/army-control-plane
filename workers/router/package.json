@@ -1,5 +1,5 @@
 {
-  "name": "@vera/router",
+  "name": "@army/router",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vera/shared": "workspace:*"
+    "@army/shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250228.0"

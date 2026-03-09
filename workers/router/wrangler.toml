@@ -1,9 +1,9 @@
-name = "vera-router"
+name = "army-router"
 main = "src/index.ts"
 compatibility_date = "2026-02-17"
 compatibility_flags = ["nodejs_compat"]
 
-# routes = [{ pattern = "router.vera.ai", custom_domain = true }]
+# routes = [{ pattern = "router.army.ai", custom_domain = true }]
 
 [[kv_namespaces]]
 binding = "ROUTING_TABLE"

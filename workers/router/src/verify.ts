@@ -1,4 +1,4 @@
-import type { WebhookSource } from "@vera/shared";
+import type { WebhookSource } from "@army/shared";
 
 const encoder = new TextEncoder();
 

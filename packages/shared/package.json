@@ -1,5 +1,5 @@
 {
-  "name": "@vera/shared",
+  "name": "@army/shared",
   "private": true,
   "main": "src/index.ts",
   "types": "src/index.ts",

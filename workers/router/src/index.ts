@@ -1,4 +1,4 @@
-import type { RouterEnv, WebhookSource } from "@vera/shared";
+import type { RouterEnv, WebhookSource } from "@army/shared";
 import { verifyWebhook } from "./verify";
 import { extractTeamId, resolveRoute, forwardToInstance } from "./forward";
 

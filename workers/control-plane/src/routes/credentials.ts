@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ControlPlaneEnv } from "@vera/shared";
+import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 
 const credentials = new Hono<{ Bindings: ControlPlaneEnv }>();
