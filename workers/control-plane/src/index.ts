@@ -4,6 +4,7 @@ import oauth from "./routes/oauth";
 import provision from "./routes/provision";
 import credentials from "./routes/credentials";
 import admin from "./routes/admin";
+import internal from "./routes/internal";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -15,5 +16,6 @@ app.route("/oauth", oauth);
 app.route("/provision", provision);
 app.route("/credentials", credentials);
 app.route("/admin", admin);
+app.route("/internal", internal);
 
 export default app;
