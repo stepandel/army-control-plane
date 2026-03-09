@@ -31,6 +31,7 @@ export interface ControlPlaneEnv {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   FLY_API_TOKEN: string;
+  FLY_ORG: string;
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
 }
