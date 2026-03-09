@@ -1,19 +1,18 @@
 {
   "name": "army-control-pane",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "workers/*"
-  ],
   "scripts": {
-    "dev:router": "npm run dev -w workers/router",
-    "dev:control-plane": "npm run dev -w workers/control-plane",
-    "deploy:router": "npm run deploy -w workers/router",
-    "deploy:control-plane": "npm run deploy -w workers/control-plane",
+    "dev:router": "pnpm --filter @vera/router dev",
+    "dev:control-plane": "pnpm --filter @vera/control-plane dev",
+    "deploy:router": "pnpm --filter @vera/router deploy",
+    "deploy:control-plane": "pnpm --filter @vera/control-plane deploy",
     "typecheck": "tsc -b"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
     "wrangler": "^4.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "workerd"]
   }
 }

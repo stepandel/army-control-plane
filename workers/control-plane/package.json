@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vera/shared": "*",
+    "@vera/shared": "workspace:*",
     "hono": "^4.7.0",
     "postgres": "^3.4.0"
   },
