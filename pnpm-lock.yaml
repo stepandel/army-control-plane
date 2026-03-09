@@ -23,7 +23,7 @@ importers:
 
   workers/control-plane:
     dependencies:
-      '@vera/shared':
+      '@army/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       hono:
@@ -39,7 +39,7 @@ importers:
 
   workers/router:
     dependencies:
-      '@vera/shared':
+      '@army/shared':
         specifier: workspace:*
         version: link:../../packages/shared
     devDependencies:

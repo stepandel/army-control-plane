@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ControlPlaneEnv } from "@vera/shared";
+import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
 import provision from "./routes/provision";
 import credentials from "./routes/credentials";

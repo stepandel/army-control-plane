@@ -1,4 +1,4 @@
--- Vera Control Plane — Neon Postgres schema
+-- Army Control Plane — Neon Postgres schema
 
 CREATE TABLE IF NOT EXISTS tenants (
   id            TEXT PRIMARY KEY,           -- e.g. Slack team_id "T012345"

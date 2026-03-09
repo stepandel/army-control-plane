@@ -1,5 +1,5 @@
 {
-  "name": "@vera/control-plane",
+  "name": "@army/control-plane",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vera/shared": "workspace:*",
+    "@army/shared": "workspace:*",
     "hono": "^4.7.0",
     "postgres": "^3.4.0"
   },

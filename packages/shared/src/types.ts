@@ -1,6 +1,6 @@
 // ── KV routing record stored per tenant ──────────────────────────
 export interface TenantRoute {
-  /** Fly machine URL, e.g. "https://vera-t012345.fly.dev" */
+  /** Fly machine URL, e.g. "https://army-t012345.fly.dev" */
   instance_url: string;
   /** Shared secret for Worker ↔ Fly HMAC verification */
   internal_secret: string;

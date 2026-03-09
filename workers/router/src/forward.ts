@@ -1,4 +1,4 @@
-import type { TenantRoute, WebhookSource, RouterEnv } from "@vera/shared";
+import type { TenantRoute, WebhookSource, RouterEnv } from "@army/shared";
 
 /**
  * Extract the team/org identifier from the webhook payload.
@@ -44,8 +44,8 @@ export function forwardToInstance(
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-vera-source": source,
-      "x-vera-signature": route.internal_secret,
+      "x-army-source": source,
+      "x-army-signature": route.internal_secret,
       ...Object.fromEntries(
         [...incomingHeaders.entries()].filter(([k]) =>
           k.startsWith("x-") || k === "content-type",

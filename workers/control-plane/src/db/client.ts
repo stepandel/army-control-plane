@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import type { ControlPlaneEnv } from "@vera/shared";
+import type { ControlPlaneEnv } from "@army/shared";
 
 /**
  * Create a Postgres client that goes through Hyperdrive.
