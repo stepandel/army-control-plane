@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
+import { FlyClient } from "../lib/fly";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -46,12 +47,23 @@ admin.get("/tenants/:team_id", async (c) => {
 admin.delete("/tenants/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
-  // TODO: Call Fly.io Machines API to destroy the machine
-  // if (tenant.fly_machine_id) { ... }
+  // Destroy Fly machine + app
+  if (tenant.fly_app_name) {
+    try {
+      if (tenant.fly_machine_id) {
+        await fly.destroyMachine(tenant.fly_app_name, tenant.fly_machine_id);
+      }
+      await fly.deleteApp(tenant.fly_app_name);
+    } catch (err) {
+      console.error(`Fly cleanup failed for ${teamId}:`, err);
+      // Continue with DB/KV cleanup even if Fly fails
+    }
+  }
 
   // Mark any running deployment as stopped
   await sql`
@@ -78,13 +90,23 @@ admin.delete("/tenants/:team_id", async (c) => {
 admin.post("/tenants/:team_id/reprovision", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // TODO: Call Fly.io Machines API to destroy the old machine
-  // if (tenant.fly_machine_id) { ... }
+  // Destroy old Fly machine + app
+  if (tenant.fly_app_name) {
+    try {
+      if (tenant.fly_machine_id) {
+        await fly.destroyMachine(tenant.fly_app_name, tenant.fly_machine_id);
+      }
+      await fly.deleteApp(tenant.fly_app_name);
+    } catch (err) {
+      console.error(`Fly cleanup failed for ${teamId}:`, err);
+    }
+  }
 
   // Mark old deployment as stopped
   await sql`
