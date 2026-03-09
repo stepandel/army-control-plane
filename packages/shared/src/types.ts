@@ -21,12 +21,15 @@ export interface RouterEnv {
 export interface ControlPlaneEnv {
   ROUTING_TABLE: KVNamespace;
   DB: Hyperdrive;
+  BASE_URL: string;
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
+  SLACK_SCOPES: string;
   LINEAR_CLIENT_ID: string;
   LINEAR_CLIENT_SECRET: string;
-  GITHUB_APP_ID: string;
-  GITHUB_PRIVATE_KEY: string;
+  GITHUB_APP_SLUG: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
   FLY_API_TOKEN: string;
-  INTERNAL_SECRET_KEY: string;
+  STATE_SECRET: string;
 }
