@@ -1,70 +1,49 @@
 /**
- * Stateless HMAC-signed OAuth state tokens.
- * Format: base64url(payload).base64url(signature)
+ * KV-backed single-use OAuth state tokens.
+ * Stored with a 10-minute TTL and deleted on verification (one-time use).
  */
 
-const encoder = new TextEncoder();
-
-interface StatePayload {
-  /** Random nonce for uniqueness */
-  n: string;
-  /** Unix timestamp (seconds) */
-  ts: number;
+interface StateData {
   /** Optional tenant ID (for Linear/GitHub secondary installs) */
-  tid?: string;
+  tenantId?: string;
 }
 
-async function sign(payload: string, secret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  return btoa(String.fromCharCode(...new Uint8Array(sig)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+const STATE_TTL_SECONDS = 600; // 10 minutes
+const KEY_PREFIX = "oauth_state:";
+
+/** Create a random state token, store it in KV with a 10-minute TTL. */
+export async function createState(
+  kv: KVNamespace,
+  tenantId?: string,
+): Promise<string> {
+  const token = crypto.randomUUID();
+  const data: StateData = { ...(tenantId && { tenantId }) };
+
+  await kv.put(`${KEY_PREFIX}${token}`, JSON.stringify(data), {
+    expirationTtl: STATE_TTL_SECONDS,
+  });
+
+  return token;
 }
 
-function toBase64Url(str: string): string {
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function fromBase64Url(str: string): string {
-  const padded = str.replace(/-/g, "+").replace(/_/g, "/");
-  return atob(padded);
-}
-
-/** Create a signed state token, optionally embedding a tenant ID. */
-export async function createState(secret: string, tenantId?: string): Promise<string> {
-  const payload: StatePayload = {
-    n: crypto.randomUUID(),
-    ts: Math.floor(Date.now() / 1000),
-    ...(tenantId && { tid: tenantId }),
-  };
-  const encoded = toBase64Url(JSON.stringify(payload));
-  const signature = await sign(encoded, secret);
-  return `${encoded}.${signature}`;
-}
-
-/** Verify a state token and return its payload. Returns null if invalid or expired (>10 min). */
+/**
+ * Verify and consume a state token. Returns payload if valid, null otherwise.
+ * The token is deleted from KV on read — it cannot be reused.
+ */
 export async function verifyState(
-  state: string,
-  secret: string,
+  kv: KVNamespace,
+  token: string,
 ): Promise<{ tenantId?: string } | null> {
-  const [encoded, sig] = state.split(".");
-  if (!encoded || !sig) return null;
+  const key = `${KEY_PREFIX}${token}`;
+  const raw = await kv.get(key);
+  if (!raw) return null;
 
-  const expectedSig = await sign(encoded, secret);
-  if (sig !== expectedSig) return null;
+  // Delete immediately — single use
+  await kv.delete(key);
 
   try {
-    const payload: StatePayload = JSON.parse(fromBase64Url(encoded));
-    if (Math.abs(Date.now() / 1000 - payload.ts) > 600) return null;
-    return { tenantId: payload.tid };
+    const data: StateData = JSON.parse(raw);
+    return { tenantId: data.tenantId };
   } catch {
     return null;
   }

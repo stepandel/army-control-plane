@@ -9,7 +9,7 @@ const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
 /** Redirect to Slack OAuth consent screen. This is the primary install flow. */
 oauth.get("/slack/install", async (c) => {
-  const state = await createState(c.env.STATE_SECRET);
+  const state = await createState(c.env.ROUTING_TABLE);
   const params = new URLSearchParams({
     client_id: c.env.SLACK_CLIENT_ID,
     scope: c.env.SLACK_SCOPES,
@@ -25,7 +25,7 @@ oauth.get("/slack/callback", async (c) => {
   const state = c.req.query("state");
   if (!code || !state) return c.text("Missing code or state", 400);
 
-  const statePayload = await verifyState(state, c.env.STATE_SECRET);
+  const statePayload = await verifyState(c.env.ROUTING_TABLE, state);
   if (!statePayload) return c.text("Invalid or expired state", 403);
 
   // Exchange code for token
@@ -78,7 +78,7 @@ oauth.get("/linear/install", async (c) => {
   const tenantId = c.req.query("tenant_id");
   if (!tenantId) return c.text("Missing tenant_id", 400);
 
-  const state = await createState(c.env.STATE_SECRET, tenantId);
+  const state = await createState(c.env.ROUTING_TABLE, tenantId);
   const params = new URLSearchParams({
     client_id: c.env.LINEAR_CLIENT_ID,
     redirect_uri: `${c.env.BASE_URL}/oauth/linear/callback`,
@@ -97,7 +97,7 @@ oauth.get("/linear/callback", async (c) => {
   const state = c.req.query("state");
   if (!code || !state) return c.text("Missing code or state", 400);
 
-  const statePayload = await verifyState(state, c.env.STATE_SECRET);
+  const statePayload = await verifyState(c.env.ROUTING_TABLE, state);
   if (!statePayload?.tenantId) return c.text("Invalid or expired state", 403);
   const tenantId = statePayload.tenantId;
 
@@ -154,7 +154,7 @@ oauth.get("/github/install", async (c) => {
   const tenantId = c.req.query("tenant_id");
   if (!tenantId) return c.text("Missing tenant_id", 400);
 
-  const state = await createState(c.env.STATE_SECRET, tenantId);
+  const state = await createState(c.env.ROUTING_TABLE, tenantId);
   return c.redirect(
     `https://github.com/apps/${c.env.GITHUB_APP_SLUG}/installations/new?state=${state}`,
   );
@@ -167,7 +167,7 @@ oauth.get("/github/callback", async (c) => {
   const state = c.req.query("state");
   if (!installationId || !state) return c.text("Missing installation_id or state", 400);
 
-  const statePayload = await verifyState(state, c.env.STATE_SECRET);
+  const statePayload = await verifyState(c.env.ROUTING_TABLE, state);
   if (!statePayload?.tenantId) return c.text("Invalid or expired state", 403);
   const tenantId = statePayload.tenantId;
 
