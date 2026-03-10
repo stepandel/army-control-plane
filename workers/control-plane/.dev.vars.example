@@ -3,7 +3,6 @@ DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
 BASE_URL=http://localhost:8787
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
-SLACK_SCOPES=chat:write,commands,app_mentions:read
 LINEAR_CLIENT_ID=
 LINEAR_CLIENT_SECRET=
 GITHUB_APP_SLUG=
