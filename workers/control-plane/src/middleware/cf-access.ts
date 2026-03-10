@@ -107,6 +107,13 @@ export const cfAccessGuard = createMiddleware<{
   Variables: { accessEmail: string };
 }>(
   async (c, next) => {
+    // Skip auth in local dev when CF Access is not configured
+    if (!c.env.CF_ACCESS_TEAM_DOMAIN || !c.env.CF_ACCESS_AUD) {
+      c.set("accessEmail", "local-dev");
+      await next();
+      return;
+    }
+
     const token =
       c.req.header("cf-access-jwt-assertion") ??
       getCookie(c.req.raw, "CF_Authorization");
