@@ -5,7 +5,28 @@ on:
     branches: [main]
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      control-plane: ${{ steps.filter.outputs.control-plane }}
+      router: ${{ steps.filter.outputs.router }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared:
+              - 'packages/shared/**'
+            control-plane:
+              - 'workers/control-plane/**'
+            router:
+              - 'workers/router/**'
+
   typecheck:
+    needs: changes
+    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.control-plane == 'true' || needs.changes.outputs.router == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +41,8 @@ jobs:
       - run: pnpm typecheck
 
   deploy-control-plane:
-    needs: typecheck
+    needs: [changes, typecheck]
+    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.control-plane == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +59,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   deploy-router:
-    needs: typecheck
+    needs: [changes, typecheck]
+    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.router == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
