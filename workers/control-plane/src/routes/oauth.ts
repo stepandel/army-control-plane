@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ControlPlaneEnv } from "@army/shared";
+import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { createState, verifyState } from "../lib/oauth-state";
 import { provisionTenant } from "../lib/provision";
@@ -194,10 +194,12 @@ oauth.get("/linear/callback", async (c) => {
   `;
 
   // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks
-  const existingRoute = await c.env.ROUTING_TABLE.get(`slack:${tenantId}`, "json");
-  if (existingRoute) {
-    await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(existingRoute));
-  }
+  // internal_secret is temporary; pushCredentials() below regenerates it for all KV entries
+  const route: TenantRoute = {
+    instance_url: tenant.instance_url,
+    internal_secret: crypto.randomUUID(),
+  };
+  await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(route));
 
   // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
@@ -251,10 +253,12 @@ oauth.get("/github/callback", async (c) => {
   `;
 
   // Write KV route for github:<installationId> — the router extracts installation.id from webhooks
-  const existingRoute = await c.env.ROUTING_TABLE.get(`slack:${tenantId}`, "json");
-  if (existingRoute) {
-    await c.env.ROUTING_TABLE.put(`github:${installationId}`, JSON.stringify(existingRoute));
-  }
+  // internal_secret is temporary; pushCredentials() below regenerates it for all KV entries
+  const route: TenantRoute = {
+    instance_url: tenant.instance_url,
+    internal_secret: crypto.randomUUID(),
+  };
+  await c.env.ROUTING_TABLE.put(`github:${installationId}`, JSON.stringify(route));
 
   // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
