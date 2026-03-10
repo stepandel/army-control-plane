@@ -7,13 +7,13 @@ const provision = new Hono<{ Bindings: ControlPlaneEnv }>();
 
 /**
  * POST /provision/:tenantId
- * Provisions a new Fly app + machine for a tenant and updates KV routing table.
- * Called internally after OAuth completes.
+ * Provisions a new Fly machine for a tenant and updates KV routing table.
+ * All machines live under a single shared Fly app (FLY_APP).
  */
 provision.post("/:tenantId", async (c) => {
   const tenantId = c.req.param("tenantId");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   // Fetch tenant
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${tenantId}`;
@@ -23,14 +23,11 @@ provision.post("/:tenantId", async (c) => {
   // Mark as provisioning
   await sql`UPDATE tenants SET status = 'provisioning', updated_at = now() WHERE id = ${tenantId}`;
 
-  const flyAppName = `army-${tenantId.toLowerCase()}`;
+  const machineName = `army-${tenantId.toLowerCase()}`;
   const internalSecret = crypto.randomUUID();
 
   try {
-    // 1. Create Fly app
-    await fly.createApp(flyAppName, c.env.FLY_ORG);
-
-    // 2. Gather credentials to inject as env vars
+    // Gather credentials to inject as env vars
     const tokens = await sql`
       SELECT platform, token_type, access_token
       FROM integration_tokens WHERE tenant_id = ${tenantId}
@@ -47,15 +44,15 @@ provision.post("/:tenantId", async (c) => {
       machineEnv[key] = t.access_token;
     }
 
-    // 3. Create and start machine
-    const machine = await fly.createMachine(flyAppName, `${flyAppName}-web`, machineEnv);
+    // Create and start machine
+    const machine = await fly.createMachine(machineName, machineEnv);
 
-    const instanceUrl = `https://${flyAppName}.fly.dev`;
+    const instanceUrl = `https://${c.env.FLY_APP}.fly.dev`;
 
-    // 4. Update tenant record
+    // Update tenant record
     await sql`
       UPDATE tenants
-      SET fly_app_name = ${flyAppName},
+      SET fly_app_name = ${c.env.FLY_APP},
           fly_machine_id = ${machine.id},
           instance_url = ${instanceUrl},
           status = 'active',
@@ -63,13 +60,13 @@ provision.post("/:tenantId", async (c) => {
       WHERE id = ${tenantId}
     `;
 
-    // 5. Record deployment
+    // Record deployment
     await sql`
       INSERT INTO deployments (tenant_id, fly_machine_id, image_ref, status)
-      VALUES (${tenantId}, ${machine.id}, ${`registry.fly.io/pi-agent-images:latest`}, 'running')
+      VALUES (${tenantId}, ${machine.id}, ${"registry.fly.io/pi-agent-images:latest"}, 'running')
     `;
 
-    // 6. Write KV routing entries
+    // Write KV routing entries
     const platforms = await sql`SELECT DISTINCT platform FROM integration_tokens WHERE tenant_id = ${tenantId}`;
     const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret };
 
@@ -79,8 +76,8 @@ provision.post("/:tenantId", async (c) => {
 
     return c.json({
       tenantId,
-      flyAppName,
       machineId: machine.id,
+      machineName,
       instanceUrl,
       status: "active",
     });

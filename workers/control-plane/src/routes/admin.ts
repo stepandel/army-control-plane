@@ -47,18 +47,15 @@ admin.get("/tenants/:team_id", async (c) => {
 admin.delete("/tenants/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
-  // Destroy Fly machine + app
-  if (tenant.fly_app_name) {
+  // Destroy Fly machine
+  if (tenant.fly_machine_id) {
     try {
-      if (tenant.fly_machine_id) {
-        await fly.destroyMachine(tenant.fly_app_name, tenant.fly_machine_id);
-      }
-      await fly.deleteApp(tenant.fly_app_name);
+      await fly.destroyMachine(tenant.fly_machine_id);
     } catch (err) {
       console.error(`Fly cleanup failed for ${teamId}:`, err);
       // Continue with DB/KV cleanup even if Fly fails
@@ -90,19 +87,16 @@ admin.delete("/tenants/:team_id", async (c) => {
 admin.post("/tenants/:team_id/reprovision", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // Destroy old Fly machine + app
-  if (tenant.fly_app_name) {
+  // Destroy old Fly machine
+  if (tenant.fly_machine_id) {
     try {
-      if (tenant.fly_machine_id) {
-        await fly.destroyMachine(tenant.fly_app_name, tenant.fly_machine_id);
-      }
-      await fly.deleteApp(tenant.fly_app_name);
+      await fly.destroyMachine(tenant.fly_machine_id);
     } catch (err) {
       console.error(`Fly cleanup failed for ${teamId}:`, err);
     }

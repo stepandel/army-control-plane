@@ -13,3 +13,6 @@ preview_id = "<KV_PREVIEW_NAMESPACE_ID>"
 [[hyperdrive]]
 binding = "DB"
 id = "<HYPERDRIVE_CONFIG_ID>"
+
+[vars]
+FLY_APP = "pi-agent-images"

@@ -13,12 +13,12 @@ const credentials = new Hono<{ Bindings: ControlPlaneEnv }>();
 credentials.post("/:tenantId/push", async (c) => {
   const tenantId = c.req.param("tenantId");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${tenantId}`;
   if (!tenant) return c.json({ error: "Tenant not found" }, 404);
   if (tenant.status !== "active") return c.json({ error: "Tenant not active" }, 400);
-  if (!tenant.fly_app_name || !tenant.fly_machine_id) {
+  if (!tenant.fly_machine_id) {
     return c.json({ error: "Tenant has no Fly machine" }, 400);
   }
 
@@ -43,7 +43,7 @@ credentials.post("/:tenantId/push", async (c) => {
   }
 
   // Update machine — this reboots it with the new env
-  await fly.updateMachine(tenant.fly_app_name, tenant.fly_machine_id, machineEnv);
+  await fly.updateMachine(tenant.fly_machine_id, machineEnv);
 
   return c.json({
     tenantId,

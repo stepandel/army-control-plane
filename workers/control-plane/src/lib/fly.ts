@@ -1,5 +1,6 @@
 /**
  * Fly.io Machines API client.
+ * All machines live under a single shared Fly app (e.g. "army-agents").
  * Docs: https://fly.io/docs/machines/api/
  */
 
@@ -37,7 +38,7 @@ interface CreateMachineRequest {
   config: MachineConfig;
 }
 
-interface MachineResponse {
+export interface MachineResponse {
   id: string;
   name: string;
   state: string;
@@ -47,18 +48,13 @@ interface MachineResponse {
   config: MachineConfig;
 }
 
-interface FlyAppResponse {
-  id: string;
-  name: string;
-  status: string;
-  organization: { slug: string };
-}
-
 export class FlyClient {
   private token: string;
+  private appName: string;
 
-  constructor(token: string) {
+  constructor(token: string, appName: string) {
     this.token = token;
+    this.appName = appName;
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -71,7 +67,7 @@ export class FlyClient {
     };
     if (body) init.body = JSON.stringify(body);
 
-    const resp = await fetch(`${FLY_API_BASE}${path}`, init);
+    const resp = await fetch(`${FLY_API_BASE}/apps/${this.appName}${path}`, init);
 
     if (!resp.ok) {
       const text = await resp.text();
@@ -82,17 +78,8 @@ export class FlyClient {
     return resp.json() as Promise<T>;
   }
 
-  /** Create a new Fly app to host the machine. */
-  async createApp(appName: string, orgSlug: string): Promise<FlyAppResponse> {
-    return this.request<FlyAppResponse>("POST", "/apps", {
-      app_name: appName,
-      org_slug: orgSlug,
-    });
-  }
-
-  /** Create and start a machine inside an existing app. */
+  /** Create and start a machine inside the app. */
   async createMachine(
-    appName: string,
     machineName: string,
     env: Record<string, string>,
     region = DEFAULT_REGION,
@@ -126,16 +113,15 @@ export class FlyClient {
       },
     };
 
-    return this.request<MachineResponse>("POST", `/apps/${appName}/machines`, body);
+    return this.request<MachineResponse>("POST", "/machines", body);
   }
 
   /** Update a machine's config (env vars, image, etc.). Reboots if running. */
   async updateMachine(
-    appName: string,
     machineId: string,
     env: Record<string, string>,
   ): Promise<MachineResponse> {
-    return this.request<MachineResponse>("POST", `/apps/${appName}/machines/${machineId}`, {
+    return this.request<MachineResponse>("POST", `/machines/${machineId}`, {
       config: {
         image: MACHINE_IMAGE,
         env,
@@ -164,17 +150,12 @@ export class FlyClient {
   }
 
   /** Stop a running machine. */
-  async stopMachine(appName: string, machineId: string): Promise<void> {
-    await this.request<void>("POST", `/apps/${appName}/machines/${machineId}/stop`);
+  async stopMachine(machineId: string): Promise<void> {
+    await this.request<void>("POST", `/machines/${machineId}/stop`);
   }
 
   /** Destroy a machine permanently. */
-  async destroyMachine(appName: string, machineId: string): Promise<void> {
-    await this.request<void>("DELETE", `/apps/${appName}/machines/${machineId}?force=true`);
-  }
-
-  /** Delete an entire Fly app and all its machines. */
-  async deleteApp(appName: string): Promise<void> {
-    await this.request<void>("DELETE", `/apps/${appName}`);
+  async destroyMachine(machineId: string): Promise<void> {
+    await this.request<void>("DELETE", `/machines/${machineId}?force=true`);
   }
 }
