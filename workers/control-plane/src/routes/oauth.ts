@@ -130,8 +130,9 @@ oauth.get("/linear/install", async (c) => {
     client_id: c.env.LINEAR_CLIENT_ID,
     redirect_uri: `${c.env.BASE_URL}/oauth/linear/callback`,
     response_type: "code",
-    scope: "read,write,issues:create,comments:create",
+    scope: "read,write,issues:create,comments:create,app:assignable,app:mentionable,customer:read,initiative:read",
     state,
+    actor: "app",
     prompt: "consent",
   });
   return c.redirect(`https://linear.app/oauth/authorize?${params}`);
