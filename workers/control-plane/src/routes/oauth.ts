@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { createState, verifyState } from "../lib/oauth-state";
+import { provisionTenant } from "../lib/provision";
+import { pushCredentials } from "../lib/credentials";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -19,7 +21,7 @@ oauth.get("/slack/install", async (c) => {
   return c.redirect(`https://slack.com/oauth/v2/authorize?${params}`);
 });
 
-/** Exchange Slack code, upsert tenant, store token, trigger provisioning. */
+/** Exchange Slack code, upsert tenant, store token, provision machine. */
 oauth.get("/slack/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
@@ -63,9 +65,11 @@ oauth.get("/slack/callback", async (c) => {
     VALUES (${teamId}, 'slack', 'bot', ${botToken}, ${scopes})
   `;
 
-  // Trigger provisioning (fire-and-forget to our own /provision endpoint)
+  // Provision machine (fire-and-forget)
   c.executionCtx.waitUntil(
-    fetch(`${c.env.BASE_URL}/provision/${teamId}`, { method: "POST" }),
+    provisionTenant(c.env, teamId).catch((err) =>
+      console.error(`Provisioning failed for ${teamId}:`, err),
+    ),
   );
 
   return c.text(`Slack workspace "${teamName}" connected. Provisioning started.`);
@@ -139,9 +143,11 @@ oauth.get("/linear/callback", async (c) => {
     await c.env.ROUTING_TABLE.put(`linear:${tenantId}`, JSON.stringify(existingRoute));
   }
 
-  // Push credentials to the running instance
+  // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
-    fetch(`${c.env.BASE_URL}/credentials/${tenantId}/push`, { method: "POST" }),
+    pushCredentials(c.env, tenantId).catch((err) =>
+      console.error(`Credential push failed for ${tenantId}:`, err),
+    ),
   );
 
   return c.text("Linear connected. Credentials are being pushed to your instance.");
@@ -194,9 +200,11 @@ oauth.get("/github/callback", async (c) => {
     await c.env.ROUTING_TABLE.put(`github:${tenantId}`, JSON.stringify(existingRoute));
   }
 
-  // Push credentials to the running instance
+  // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
-    fetch(`${c.env.BASE_URL}/credentials/${tenantId}/push`, { method: "POST" }),
+    pushCredentials(c.env, tenantId).catch((err) =>
+      console.error(`Credential push failed for ${tenantId}:`, err),
+    ),
   );
 
   return c.text("GitHub App installed. Credentials are being pushed to your instance.");
