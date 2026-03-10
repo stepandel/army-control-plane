@@ -35,7 +35,7 @@ Always run `pnpm typecheck` after making changes. The project uses TypeScript pr
 - **Router Worker** is intentionally vanilla (no Hono, no framework). Keep it minimal — it must respond within 3 seconds.
 - **Control Plane Worker** uses Hono. Routes are organized in `src/routes/` and mounted in `src/index.ts`.
 - **Database access** uses `postgres` (postgresjs) via Hyperdrive. Always call `getDb(c.env)` per-request — connection pooling is handled by Hyperdrive. Always use `prepare: false`.
-- **KV namespaces**: `ROUTING_TABLE` for routing (`{platform}:{team_id}` keys), `OAUTH_STATE` for ephemeral OAuth CSRF tokens (UUID keys, 10-min TTL). Router Worker only binds `ROUTING_TABLE`.
+- **KV namespaces**: `ROUTING_TABLE` for routing (`{platform}:{externalId}` keys, e.g. `linear:{orgId}`, `github:{installationId}` — Slack has no KV entry, it uses Socket Mode), `OAUTH_STATE` for ephemeral OAuth CSRF tokens (UUID keys, 10-min TTL). Router Worker only binds `ROUTING_TABLE`.
 - **Async work** uses `ctx.waitUntil()` (router) or `c.executionCtx.waitUntil()` (control plane) for fire-and-forget operations.
 
 ## Adding a new route
@@ -54,13 +54,16 @@ Always run `pnpm typecheck` after making changes. The project uses TypeScript pr
 
 ## Adding a new platform integration
 
+For webhook-based platforms (like Linear, GitHub):
 1. Add the platform to the `WebhookSource` union type in `packages/shared/src/types.ts`
 2. Add HMAC verification in `workers/router/src/verify.ts`
-3. Add team ID extraction in `workers/router/src/forward.ts`
+3. Add external ID extraction in `workers/router/src/forward.ts`
 4. Add OAuth install/callback routes in `workers/control-plane/src/routes/oauth.ts`
 5. Add the webhook signing secret to `RouterEnv`
 6. Add OAuth credentials to `ControlPlaneEnv`
 7. Update `docs/security.md`
+
+Note: Slack is a non-webhook platform (Socket Mode). If adding another non-webhook platform, skip steps 2-3 and 5.
 
 ## Key implementation files
 

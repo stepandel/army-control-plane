@@ -6,7 +6,7 @@ This document covers authentication, authorization, and request verification acr
 
 | Route group | Worker | Auth mechanism | Who calls it |
 |---|---|---|---|
-| `POST /slack\|linear\|github` | Router | Webhook HMAC signature | Slack, Linear, GitHub |
+| `POST /webhooks/{linear,github}` | Router | Webhook HMAC signature | Linear, GitHub (Slack uses Socket Mode, not webhooks) |
 | `GET /oauth/*/install` | Control Plane | None (public) | End users via browser |
 | `GET /oauth/*/callback` | Control Plane | KV-backed single-use state token | OAuth provider redirect |
 | `GET /health` | Control Plane | None (public) | Monitoring / load balancers |
@@ -16,15 +16,9 @@ This document covers authentication, authorization, and request verification acr
 
 ## 1. Webhook HMAC Verification (Router Worker)
 
-Every inbound webhook is verified before processing. The Router Worker rejects any request with an invalid or missing signature with `401`.
+Every inbound webhook is verified before processing. The Router Worker rejects any request with an invalid or missing signature with `401`. Only Linear and GitHub use webhooks — Slack connects via Socket Mode (outbound WebSocket from each tenant's Fly machine) and does not pass through the router.
 
 ### Per-platform verification
-
-**Slack** — `x-slack-signature` header
-- Base string: `v0:<x-slack-request-timestamp>:<raw body>`
-- HMAC-SHA256 with `SLACK_SIGNING_SECRET`
-- Timestamp must be within 5 minutes (replay protection)
-- Signature format: `v0=<hex>`
 
 **Linear** — `linear-signature` header
 - HMAC-SHA256 of raw body with `LINEAR_WEBHOOK_SECRET`
@@ -151,7 +145,6 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 
 | Secret | Purpose |
 |---|---|
-| `SLACK_SIGNING_SECRET` | Verify inbound Slack webhooks |
 | `LINEAR_WEBHOOK_SECRET` | Verify inbound Linear webhooks |
 | `GITHUB_WEBHOOK_SECRET` | Verify inbound GitHub webhooks |
 
@@ -161,11 +154,14 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 |---|---|
 | `SLACK_CLIENT_ID` | Slack OAuth app credentials |
 | `SLACK_CLIENT_SECRET` | Slack OAuth app credentials |
+| `SLACK_APP_TOKEN` | Slack app-level token (pushed to tenant machines for Socket Mode) |
 | `LINEAR_CLIENT_ID` | Linear OAuth app credentials |
 | `LINEAR_CLIENT_SECRET` | Linear OAuth app credentials |
+| `GITHUB_APP_SLUG` | GitHub App slug (used for install URLs) |
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 
@@ -174,7 +170,6 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 ```sh
 # Router
 cd workers/router
-wrangler secret put SLACK_SIGNING_SECRET
 wrangler secret put LINEAR_WEBHOOK_SECRET
 wrangler secret put GITHUB_WEBHOOK_SECRET
 

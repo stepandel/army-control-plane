@@ -4,7 +4,7 @@ This file provides context for AI assistants working on the Army control plane c
 
 ## Project overview
 
-Army is a multi-tenant control plane that routes webhooks from Slack, Linear, and GitHub to isolated per-tenant Fly.io machines. The infrastructure layer runs on Cloudflare (Workers, KV, Hyperdrive) with Neon Postgres for persistence.
+Army is a multi-tenant control plane that connects Slack, Linear, and GitHub to isolated per-tenant Fly.io machines. Linear and GitHub deliver events via webhooks routed through the Router Worker; Slack uses Socket Mode (outbound WebSocket connections from each tenant's Fly machine). The infrastructure layer runs on Cloudflare (Workers, KV, Hyperdrive) with Neon Postgres for persistence.
 
 ## Repository structure
 
@@ -41,9 +41,9 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 
 ## Architecture quick reference
 
-- **Router Worker** receives webhooks, verifies HMAC, ACKs immediately, then forwards async to the correct Fly machine via KV lookup. It must stay fast and stateless.
+- **Router Worker** receives Linear and GitHub webhooks, verifies HMAC, ACKs immediately, then forwards async to the correct Fly machine via KV lookup. Slack does not use the router — it connects via Socket Mode directly from each tenant's Fly machine. The router must stay fast and stateless.
 - **Control Plane Worker** manages tenant lifecycle: OAuth flows, machine provisioning (via Fly Machines API), credential management, and admin operations. Admin routes are protected by Cloudflare Access JWT; internal routes by per-tenant `INTERNAL_SECRET`.
-- **KV namespaces**: `ROUTING_TABLE` holds routing entries (`{platform}:{teamId}`), shared by both workers. `OAUTH_STATE` holds ephemeral OAuth CSRF tokens, control-plane only.
+- **KV namespaces**: `ROUTING_TABLE` holds routing entries keyed by `{platform}:{externalId}` (e.g., `linear:{orgId}`, `github:{installationId}`), shared by both workers. Slack has no KV routing entry. `OAUTH_STATE` holds ephemeral OAuth CSRF tokens, control-plane only.
 - **Slack is the primary install** — it creates the tenant and triggers Fly provisioning. Linear and GitHub are secondary integrations attached to an existing tenant.
 
 ## Conventions
@@ -70,6 +70,7 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 | `workers/control-plane/src/lib/fly.ts` | Fly Machines API client |
 | `workers/control-plane/src/lib/provision.ts` | provisionTenant() — creates machine, updates DB + KV |
 | `workers/control-plane/src/lib/credentials.ts` | pushCredentials() — updates machine env vars |
+| `workers/control-plane/src/db/client.ts` | Database client factory (Hyperdrive) |
 | `workers/control-plane/src/db/schema.sql` | Postgres schema |
 | `docs/security.md` | Route protection model and secrets inventory |
 | `docs/architecture.md` | System architecture and data flows |
