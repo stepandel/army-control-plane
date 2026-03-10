@@ -1,26 +1,14 @@
 import type { RouterEnv, WebhookSource } from "@army/shared";
 import { verifyWebhook } from "./verify";
-import type { SlackSubRoute } from "./forward";
 import { extractTeamId, resolveRoute, forwardToInstance } from "./forward";
 
-interface ParsedRoute {
-  source: WebhookSource;
-  slackSubRoute?: SlackSubRoute;
-}
-
-/** Map exact URL path → webhook source + optional Slack sub-route */
-function parseRoute(pathname: string): ParsedRoute | null {
+/** Map exact URL path → webhook source (Slack uses Socket Mode, not webhooks) */
+function parseRoute(pathname: string): WebhookSource | null {
   switch (pathname) {
-    case "/webhooks/slack/events":
-      return { source: "slack", slackSubRoute: "events" };
-    case "/webhooks/slack/interactions":
-      return { source: "slack", slackSubRoute: "interactions" };
-    case "/webhooks/slack/commands":
-      return { source: "slack", slackSubRoute: "commands" };
     case "/webhooks/linear":
-      return { source: "linear" };
+      return "linear";
     case "/webhooks/github":
-      return { source: "github" };
+      return "github";
     default:
       return null;
   }
@@ -33,17 +21,15 @@ export default {
     }
 
     const url = new URL(request.url);
-    const route = parseRoute(url.pathname);
-    if (!route) {
+    const source = parseRoute(url.pathname);
+    if (!source) {
       return new Response("Not found", { status: 404 });
     }
 
-    const { source, slackSubRoute } = route;
     const rawBody = await request.text();
 
     // ── 1. Verify HMAC ──────────────────────────────────────────
     const valid = await verifyWebhook(source, rawBody, request.headers, {
-      slack: env.SLACK_SIGNING_SECRET,
       linear: env.LINEAR_WEBHOOK_SECRET,
       github: env.GITHUB_WEBHOOK_SECRET,
     });
@@ -51,33 +37,19 @@ export default {
       return new Response("Invalid signature", { status: 401 });
     }
 
-    // ── 2. Slack challenge handshake (events endpoint only) ─────
-    if (source === "slack" && slackSubRoute === "events") {
-      try {
-        const payload = JSON.parse(rawBody);
-        if (payload.type === "url_verification") {
-          return new Response(JSON.stringify({ challenge: payload.challenge }), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-      } catch {
-        // Not valid JSON — fall through to team_id extraction which will return 400
-      }
-    }
-
-    // ── 3. Extract team identifier ──────────────────────────────
-    const teamId = extractTeamId(source, rawBody, slackSubRoute);
+    // ── 2. Extract team identifier ──────────────────────────────
+    const teamId = extractTeamId(source, rawBody);
     if (!teamId) {
       return new Response("Missing team identifier", { status: 400 });
     }
 
-    // ── 4. KV lookup ────────────────────────────────────────────
+    // ── 3. KV lookup ────────────────────────────────────────────
     const tenantRoute = await resolveRoute(env, source, teamId);
     if (!tenantRoute) {
       return new Response("Tenant not found", { status: 404 });
     }
 
-    // ── 5. ACK + async forward ──────────────────────────────────
+    // ── 4. ACK + async forward ──────────────────────────────────
     forwardToInstance(ctx, tenantRoute, source, rawBody, request.headers);
     return new Response("OK", { status: 200 });
   },
