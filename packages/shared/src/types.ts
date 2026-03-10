@@ -20,6 +20,7 @@ export interface RouterEnv {
 // ── Control Plane Worker environment bindings ────────────────────
 export interface ControlPlaneEnv {
   ROUTING_TABLE: KVNamespace;
+  OAUTH_STATE: KVNamespace;
   DB: Hyperdrive;
   BASE_URL: string;
   SLACK_CLIENT_ID: string;

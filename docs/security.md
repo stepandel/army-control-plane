@@ -42,7 +42,7 @@ Every inbound webhook is verified before processing. The Router Worker rejects a
 
 ## 2. OAuth State Tokens (CSRF Protection)
 
-The OAuth install/callback flow uses **KV-backed single-use state tokens** to prevent CSRF and replay attacks.
+The OAuth install/callback flow uses **KV-backed single-use state tokens** to prevent CSRF and replay attacks. These live in a dedicated `OAUTH_STATE` KV namespace, separate from the routing table.
 
 ### Flow
 
