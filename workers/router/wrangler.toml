@@ -10,3 +10,19 @@ compatibility_flags = ["nodejs_compat"]
 binding = "ROUTING_TABLE"
 id = "aa0a6fbff64147bc95814a4491cb1725"
 preview_id = "b89b8349fe6646689993a8044be48966"
+
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
