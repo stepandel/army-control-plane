@@ -31,6 +31,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       TEAM_ID: tenantId,
       CONTROL_PLANE_URL: env.BASE_URL,
       INTERNAL_SECRET: internalSecret,
+      SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
     };
 
     for (const t of tokens) {

@@ -25,6 +25,7 @@ export interface ControlPlaneEnv {
   BASE_URL: string;
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
+  SLACK_APP_TOKEN: string;
   LINEAR_CLIENT_ID: string;
   LINEAR_CLIENT_SECRET: string;
   GITHUB_APP_SLUG: string;
