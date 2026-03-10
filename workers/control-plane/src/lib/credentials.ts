@@ -40,15 +40,16 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   // Update KV routing entries with the new internal secret
   const internalSecret = machineEnv.INTERNAL_SECRET;
-  const platforms = await sql`
-    SELECT DISTINCT platform FROM integration_tokens
-    WHERE tenant_id = ${tenantId} AND platform != 'slack'
+  const platformKeys = await sql`
+    SELECT DISTINCT platform, external_id FROM integration_tokens
+    WHERE tenant_id = ${tenantId} AND platform != 'slack' AND external_id IS NOT NULL
   `;
-  for (const { platform } of platforms) {
-    const existing = await env.ROUTING_TABLE.get<TenantRoute>(`${platform}:${tenantId}`, "json");
+  for (const { platform, external_id } of platformKeys) {
+    const key = `${platform}:${external_id}`;
+    const existing = await env.ROUTING_TABLE.get<TenantRoute>(key, "json");
     if (existing) {
       const updated: TenantRoute = { ...existing, internal_secret: internalSecret };
-      await env.ROUTING_TABLE.put(`${platform}:${tenantId}`, JSON.stringify(updated));
+      await env.ROUTING_TABLE.put(key, JSON.stringify(updated));
     }
   }
 
