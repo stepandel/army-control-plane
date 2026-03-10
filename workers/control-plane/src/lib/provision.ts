@@ -1,26 +1,20 @@
-import { Hono } from "hono";
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
-import { FlyClient } from "../lib/fly";
-
-const provision = new Hono<{ Bindings: ControlPlaneEnv }>();
+import { FlyClient } from "./fly";
 
 /**
- * POST /provision/:tenantId
- * Provisions a new Fly machine for a tenant and updates KV routing table.
- * All machines live under a single shared Fly app (FLY_APP).
+ * Provision a new Fly machine for a tenant.
+ * Creates the machine, updates DB + KV, records deployment.
+ * Throws on failure after rolling back tenant status.
  */
-provision.post("/:tenantId", async (c) => {
-  const tenantId = c.req.param("tenantId");
-  const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
+export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
+  const sql = getDb(env);
+  const fly = new FlyClient(env.FLY_API_TOKEN, env.FLY_APP);
 
-  // Fetch tenant
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${tenantId}`;
-  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
-  if (tenant.status === "active") return c.json({ error: "Already provisioned" }, 409);
+  if (!tenant) throw new Error(`Tenant ${tenantId} not found`);
+  if (tenant.status === "active") throw new Error(`Tenant ${tenantId} already provisioned`);
 
-  // Mark as provisioning
   await sql`UPDATE tenants SET status = 'provisioning', updated_at = now() WHERE id = ${tenantId}`;
 
   const machineName = `army-${tenantId.toLowerCase()}`;
@@ -35,7 +29,7 @@ provision.post("/:tenantId", async (c) => {
 
     const machineEnv: Record<string, string> = {
       TEAM_ID: tenantId,
-      CONTROL_PLANE_URL: c.env.BASE_URL,
+      CONTROL_PLANE_URL: env.BASE_URL,
       INTERNAL_SECRET: internalSecret,
     };
 
@@ -46,13 +40,12 @@ provision.post("/:tenantId", async (c) => {
 
     // Create and start machine
     const machine = await fly.createMachine(machineName, machineEnv);
-
-    const instanceUrl = `https://${c.env.FLY_APP}.fly.dev`;
+    const instanceUrl = `https://${env.FLY_APP}.fly.dev`;
 
     // Update tenant record
     await sql`
       UPDATE tenants
-      SET fly_app_name = ${c.env.FLY_APP},
+      SET fly_app_name = ${env.FLY_APP},
           fly_machine_id = ${machine.id},
           instance_url = ${instanceUrl},
           status = 'active',
@@ -71,25 +64,12 @@ provision.post("/:tenantId", async (c) => {
     const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret };
 
     for (const { platform } of platforms) {
-      await c.env.ROUTING_TABLE.put(`${platform}:${tenantId}`, JSON.stringify(route));
+      await env.ROUTING_TABLE.put(`${platform}:${tenantId}`, JSON.stringify(route));
     }
 
-    return c.json({
-      tenantId,
-      machineId: machine.id,
-      machineName,
-      instanceUrl,
-      status: "active",
-    });
+    return { tenantId, machineId: machine.id, machineName, instanceUrl };
   } catch (err) {
-    // Roll back status on failure
     await sql`UPDATE tenants SET status = 'pending', updated_at = now() WHERE id = ${tenantId}`;
-    console.error(`Provisioning failed for ${tenantId}:`, err);
-    return c.json(
-      { error: "Provisioning failed", detail: err instanceof Error ? err.message : String(err) },
-      500,
-    );
+    throw err;
   }
-});
-
-export default provision;
+}

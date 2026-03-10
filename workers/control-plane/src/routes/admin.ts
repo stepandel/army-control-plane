@@ -1,7 +1,8 @@
 import { Hono } from "hono";
-import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
+import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "../lib/fly";
+import { provisionTenant } from "../lib/provision";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -120,9 +121,11 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
     await c.env.ROUTING_TABLE.delete(`${p}:${teamId}`);
   }
 
-  // Trigger provisioning
+  // Trigger provisioning (fire-and-forget)
   c.executionCtx.waitUntil(
-    fetch(`${c.env.BASE_URL}/provision/${teamId}`, { method: "POST" }),
+    provisionTenant(c.env, teamId).catch((err) =>
+      console.error(`Reprovisioning failed for ${teamId}:`, err),
+    ),
   );
 
   return c.json({ team_id: teamId, status: "reprovisioning" });
