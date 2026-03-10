@@ -1,5 +1,5 @@
 # Copy to .dev.vars and fill in real values
-DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB=postgresql://user:pass@host/dbname?sslmode=require
 BASE_URL=http://localhost:8787
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
