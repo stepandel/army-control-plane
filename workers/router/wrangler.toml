@@ -7,5 +7,5 @@ compatibility_flags = ["nodejs_compat"]
 
 [[kv_namespaces]]
 binding = "ROUTING_TABLE"
-id = "<KV_NAMESPACE_ID>"
-preview_id = "<KV_PREVIEW_NAMESPACE_ID>"
+id = "aa0a6fbff64147bc95814a4491cb1725"
+preview_id = "b89b8349fe6646689993a8044be48966"

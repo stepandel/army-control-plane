@@ -7,17 +7,17 @@ compatibility_flags = ["nodejs_compat"]
 
 [[kv_namespaces]]
 binding = "ROUTING_TABLE"
-id = "<KV_NAMESPACE_ID>"
-preview_id = "<KV_PREVIEW_NAMESPACE_ID>"
+id = "aa0a6fbff64147bc95814a4491cb1725"
+preview_id = "b89b8349fe6646689993a8044be48966"
 
 [[kv_namespaces]]
 binding = "OAUTH_STATE"
-id = "<OAUTH_STATE_KV_NAMESPACE_ID>"
-preview_id = "<OAUTH_STATE_KV_PREVIEW_NAMESPACE_ID>"
+id = "bb010975d56049d28fb61a1b3d627950"
+preview_id = "1dea428553cf47e181da9ac16ce1351f"
 
 [[hyperdrive]]
 binding = "DB"
-id = "<HYPERDRIVE_CONFIG_ID>"
+id = "3ef1724bda9a4da1b96d080e65d8b0b2"
 
 [vars]
 FLY_APP = "pi-agent-images"

@@ -4,8 +4,8 @@
   "scripts": {
     "dev:router": "pnpm --filter @army/router dev",
     "dev:control-plane": "pnpm --filter @army/control-plane dev",
-    "deploy:router": "pnpm --filter @army/router deploy",
-    "deploy:control-plane": "pnpm --filter @army/control-plane deploy",
+    "deploy:router": "pnpm -F @army/router run deploy",
+    "deploy:control-plane": "pnpm -F @army/control-plane run deploy",
     "typecheck": "tsc -b"
   },
   "devDependencies": {
