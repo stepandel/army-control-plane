@@ -27,6 +27,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
     TEAM_ID: tenantId,
     CONTROL_PLANE_URL: env.BASE_URL,
     INTERNAL_SECRET: crypto.randomUUID(),
+    SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
   };
 
   for (const t of tokens) {
