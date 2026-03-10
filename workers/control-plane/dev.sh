@@ -8,6 +8,11 @@ if [ -f .dev.vars ]; then
     [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
     # Trim whitespace from key
     key=$(echo "$key" | xargs)
+    # Strip surrounding quotes from value
+    value="${value#\"}"
+    value="${value%\"}"
+    value="${value#\'}"
+    value="${value%\'}"
     export "$key=$value"
   done < .dev.vars
 fi
