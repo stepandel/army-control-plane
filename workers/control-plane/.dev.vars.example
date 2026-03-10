@@ -1,5 +1,8 @@
 # Copy to .dev.vars and fill in real values
+
+# Wrangler uses this to emulate Hyperdrive locally (must be a shell env var, not just a worker secret)
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB=postgresql://user:pass@host/dbname?sslmode=require
+
 BASE_URL=http://localhost:8787
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
