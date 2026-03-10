@@ -2,11 +2,13 @@ import postgres from "postgres";
 import type { ControlPlaneEnv } from "@army/shared";
 
 /**
- * Create a Postgres client that goes through Hyperdrive.
- * Call this per-request — the underlying connection is pooled by Hyperdrive.
+ * Create a Postgres client.
+ * In production, uses Hyperdrive for connection pooling.
+ * In local dev, falls back to DATABASE_URL from .dev.vars.
  */
 export function getDb(env: ControlPlaneEnv) {
-  return postgres(env.DB.connectionString, {
+  const connectionString = env.DATABASE_URL ?? env.DB.connectionString;
+  return postgres(connectionString, {
     prepare: false, // required for Hyperdrive
   });
 }

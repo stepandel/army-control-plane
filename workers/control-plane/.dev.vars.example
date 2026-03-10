@@ -1,0 +1,14 @@
+# Copy to .dev.vars and fill in real values
+DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+BASE_URL=http://localhost:8787
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+SLACK_SCOPES=chat:write,commands,app_mentions:read
+LINEAR_CLIENT_ID=
+LINEAR_CLIENT_SECRET=
+GITHUB_APP_SLUG=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+FLY_API_TOKEN=
+CF_ACCESS_TEAM_DOMAIN=
+CF_ACCESS_AUD=
