@@ -102,10 +102,12 @@ oauth.get("/slack/callback", async (c) => {
     ON CONFLICT (id) DO UPDATE SET name = ${teamName}, updated_at = now()
   `;
 
-  // Store bot token
+  // Upsert bot token
   await sql`
     INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes)
     VALUES (${teamId}, 'slack', 'bot', ${botToken}, ${scopes})
+    ON CONFLICT (tenant_id, platform) DO UPDATE
+      SET access_token = ${botToken}, scopes = ${scopes}
   `;
 
   // Provision machine (fire-and-forget)
@@ -187,10 +189,12 @@ oauth.get("/linear/callback", async (c) => {
   const linearOrgId = orgData.data?.organization?.id;
   if (!linearOrgId) return c.json({ error: "Failed to fetch Linear organization ID" }, 500);
 
-  // Store token with Linear org ID for KV routing
+  // Upsert token with Linear org ID for KV routing
   await sql`
     INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
     VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${scopes}, ${linearOrgId})
+    ON CONFLICT (tenant_id, platform) DO UPDATE
+      SET access_token = ${accessToken}, scopes = ${scopes}, external_id = ${linearOrgId}
   `;
 
   // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks
@@ -246,10 +250,12 @@ oauth.get("/github/callback", async (c) => {
   if (!tenant) return c.text("Tenant not found", 404);
   if (tenant.status !== "active") return c.text("Tenant not yet provisioned", 400);
 
-  // Store the installation ID — access tokens are generated on-demand from the app's private key
+  // Upsert installation ID — access tokens are generated on-demand from the app's private key
   await sql`
     INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
     VALUES (${tenantId}, 'github', 'installation', ${installationId}, ${setupAction ?? "install"}, ${installationId})
+    ON CONFLICT (tenant_id, platform) DO UPDATE
+      SET access_token = ${installationId}, scopes = ${setupAction ?? "install"}, external_id = ${installationId}
   `;
 
   // Write KV route for github:<installationId> — the router extracts installation.id from webhooks

@@ -35,5 +35,6 @@ CREATE TABLE IF NOT EXISTS deployments (
   finished_at TIMESTAMPTZ
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tokens_tenant_platform ON integration_tokens(tenant_id, platform);
 CREATE INDEX IF NOT EXISTS idx_tokens_tenant ON integration_tokens(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_deployments_tenant ON deployments(tenant_id);

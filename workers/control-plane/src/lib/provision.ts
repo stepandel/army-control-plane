@@ -65,13 +65,13 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     // Write KV routing entries for webhook-based platforms only.
     // Slack uses Socket Mode (outbound WebSocket from the machine), so no routing entry needed.
     const webhookPlatforms = await sql`
-      SELECT DISTINCT platform FROM integration_tokens
-      WHERE tenant_id = ${tenantId} AND platform != 'slack'
+      SELECT DISTINCT platform, external_id FROM integration_tokens
+      WHERE tenant_id = ${tenantId} AND platform != 'slack' AND external_id IS NOT NULL
     `;
     const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret };
 
-    for (const { platform } of webhookPlatforms) {
-      await env.ROUTING_TABLE.put(`${platform}:${tenantId}`, JSON.stringify(route));
+    for (const { platform, external_id } of webhookPlatforms) {
+      await env.ROUTING_TABLE.put(`${platform}:${external_id}`, JSON.stringify(route));
     }
 
     return { tenantId, machineId: machine.id, machineName, instanceUrl };
