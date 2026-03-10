@@ -174,16 +174,29 @@ oauth.get("/linear/callback", async (c) => {
   const accessToken = data.access_token as string;
   const scopes = (data.scope as string) ?? "";
 
-  // Store token
+  // Fetch the Linear organization ID — webhooks use this, not our tenant ID
+  const orgResp = await fetch("https://api.linear.app/graphql", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ query: "{ organization { id } }" }),
+  });
+  const orgData = (await orgResp.json()) as { data?: { organization?: { id?: string } } };
+  const linearOrgId = orgData.data?.organization?.id;
+  if (!linearOrgId) return c.json({ error: "Failed to fetch Linear organization ID" }, 500);
+
+  // Store token with Linear org ID for KV routing
   await sql`
-    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes)
-    VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${scopes})
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
+    VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${scopes}, ${linearOrgId})
   `;
 
-  // Write KV route for linear:<tenantId>
+  // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks
   const existingRoute = await c.env.ROUTING_TABLE.get(`slack:${tenantId}`, "json");
   if (existingRoute) {
-    await c.env.ROUTING_TABLE.put(`linear:${tenantId}`, JSON.stringify(existingRoute));
+    await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(existingRoute));
   }
 
   // Push credentials to the running instance (fire-and-forget)
@@ -233,14 +246,14 @@ oauth.get("/github/callback", async (c) => {
 
   // Store the installation ID — access tokens are generated on-demand from the app's private key
   await sql`
-    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes)
-    VALUES (${tenantId}, 'github', 'installation', ${installationId}, ${setupAction ?? "install"})
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
+    VALUES (${tenantId}, 'github', 'installation', ${installationId}, ${setupAction ?? "install"}, ${installationId})
   `;
 
-  // Write KV route for github:<tenantId>
+  // Write KV route for github:<installationId> — the router extracts installation.id from webhooks
   const existingRoute = await c.env.ROUTING_TABLE.get(`slack:${tenantId}`, "json");
   if (existingRoute) {
-    await c.env.ROUTING_TABLE.put(`github:${tenantId}`, JSON.stringify(existingRoute));
+    await c.env.ROUTING_TABLE.put(`github:${installationId}`, JSON.stringify(existingRoute));
   }
 
   // Push credentials to the running instance (fire-and-forget)

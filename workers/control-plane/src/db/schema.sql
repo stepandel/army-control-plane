@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS integration_tokens (
   access_token TEXT NOT NULL,
   refresh_token TEXT,
   scopes      TEXT,
+  external_id TEXT,                       -- platform-specific ID used for KV routing keys (e.g. Linear orgId, GitHub installationId)
   expires_at  TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
