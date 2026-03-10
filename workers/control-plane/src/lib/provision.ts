@@ -54,9 +54,10 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     `;
 
     // Record deployment
+    const imageRef = `registry.fly.io/${env.FLY_APP}:latest`;
     await sql`
       INSERT INTO deployments (tenant_id, fly_machine_id, image_ref, status)
-      VALUES (${tenantId}, ${machine.id}, ${"registry.fly.io/pi-agent-images:latest"}, 'running')
+      VALUES (${tenantId}, ${machine.id}, ${imageRef}, 'running')
     `;
 
     // Write KV routing entries

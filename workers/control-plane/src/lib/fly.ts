@@ -6,7 +6,6 @@
 
 const FLY_API_BASE = "https://api.machines.dev/v1";
 const DEFAULT_REGION = "ord";
-const MACHINE_IMAGE = "registry.fly.io/pi-agent-images:latest";
 
 interface MachineConfig {
   image: string;
@@ -51,10 +50,12 @@ export interface MachineResponse {
 export class FlyClient {
   private token: string;
   private appName: string;
+  private image: string;
 
   constructor(token: string, appName: string) {
     this.token = token;
     this.appName = appName;
+    this.image = `registry.fly.io/${appName}:latest`;
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -88,7 +89,7 @@ export class FlyClient {
       name: machineName,
       region,
       config: {
-        image: MACHINE_IMAGE,
+        image: this.image,
         env,
         guest: {
           cpu_kind: "shared",
@@ -123,7 +124,7 @@ export class FlyClient {
   ): Promise<MachineResponse> {
     return this.request<MachineResponse>("POST", `/machines/${machineId}`, {
       config: {
-        image: MACHINE_IMAGE,
+        image: this.image,
         env,
         guest: {
           cpu_kind: "shared",
