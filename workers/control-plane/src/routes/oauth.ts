@@ -132,7 +132,6 @@ oauth.get("/linear/install", async (c) => {
     response_type: "code",
     scope: "read,write,issues:create,comments:create",
     state,
-    actor: "application",
     prompt: "consent",
   });
   return c.redirect(`https://linear.app/oauth/authorize?${params}`);
