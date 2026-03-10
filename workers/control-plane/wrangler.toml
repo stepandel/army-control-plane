@@ -10,6 +10,11 @@ binding = "ROUTING_TABLE"
 id = "<KV_NAMESPACE_ID>"
 preview_id = "<KV_PREVIEW_NAMESPACE_ID>"
 
+[[kv_namespaces]]
+binding = "OAUTH_STATE"
+id = "<OAUTH_STATE_KV_NAMESPACE_ID>"
+preview_id = "<OAUTH_STATE_KV_PREVIEW_NAMESPACE_ID>"
+
 [[hyperdrive]]
 binding = "DB"
 id = "<HYPERDRIVE_CONFIG_ID>"

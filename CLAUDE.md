@@ -43,7 +43,7 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 
 - **Router Worker** receives webhooks, verifies HMAC, ACKs immediately, then forwards async to the correct Fly machine via KV lookup. It must stay fast and stateless.
 - **Control Plane Worker** manages tenant lifecycle: OAuth flows, machine provisioning (via Fly Machines API), credential management, and admin operations. Admin routes are protected by Cloudflare Access JWT; internal routes by per-tenant `INTERNAL_SECRET`.
-- **KV keys** are namespaced as `{platform}:{teamId}` (e.g., `slack:T012345`). OAuth state tokens use the `oauth_state:` prefix.
+- **KV namespaces**: `ROUTING_TABLE` holds routing entries (`{platform}:{teamId}`), shared by both workers. `OAUTH_STATE` holds ephemeral OAuth CSRF tokens, control-plane only.
 - **Slack is the primary install** — it creates the tenant and triggers Fly provisioning. Linear and GitHub are secondary integrations attached to an existing tenant.
 
 ## Conventions

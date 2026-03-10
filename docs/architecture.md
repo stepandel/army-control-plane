@@ -20,8 +20,8 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 │           │                                │                │
 │  ┌────────▼────────────────────────────────▼─────────────┐  │
 │  │                   Cloudflare KV                       │  │
-│  │  Routing:     {platform}:{team_id} → TenantRoute      │  │
-│  │  OAuth state: oauth_state:{uuid} → StateData          │  │
+│  │  ROUTING_TABLE: {platform}:{team_id} → TenantRoute     │  │
+│  │  OAUTH_STATE:   {uuid} → StateData  (CP only)         │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                │                            │
 │  ┌─────────────────────────────▼─────────────────────────┐  │
@@ -95,9 +95,9 @@ The Control Plane manages the full tenant lifecycle. Built with Hono.
 
 ### Cloudflare KV
 
-A single KV namespace (`ROUTING_TABLE`) shared by both workers, used for two purposes:
+Two separate KV namespaces:
 
-**1. Routing table** — maps platform + team ID to Fly instance URL
+**1. `ROUTING_TABLE`** — maps platform + team ID to Fly instance URL (shared by both workers)
 ```
 Key:   slack:T012345
 Value: { "instance_url": "https://${FLY_APP}.fly.dev", "internal_secret": "uuid" }
@@ -105,12 +105,14 @@ Value: { "instance_url": "https://${FLY_APP}.fly.dev", "internal_secret": "uuid"
 
 A tenant with all three integrations has three KV entries (`slack:T012345`, `linear:T012345`, `github:T012345`), all pointing to the same instance. The `internal_secret` is also used to authenticate machine-to-control-plane calls.
 
-**2. OAuth state tokens** — CSRF protection for OAuth flows
+**2. `OAUTH_STATE`** — ephemeral CSRF tokens for OAuth flows (control plane only)
 ```
-Key:   oauth_state:550e8400-e29b-41d4-a716-446655440000
+Key:   550e8400-e29b-41d4-a716-446655440000
 Value: { "tenantId": "T012345" }
 TTL:   600 seconds
 ```
+
+Separated from the routing table so the Router Worker never has access to OAuth state.
 
 ### Neon Postgres (via Hyperdrive)
 
@@ -243,7 +245,7 @@ pending ──▶ provisioning ──▶ active ──▶ destroyed
 | Decision | Rationale |
 |---|---|
 | Router has no DB access | KV-only keeps it under Slack's 3s timeout; no cold-start penalty from DB connections |
-| Single KV namespace for routing + state | Simplifies binding config; prefixed keys prevent collisions |
+| Separate KV namespaces for routing vs state | Router Worker only binds routing table; OAuth state is isolated to control plane |
 | Slack is the primary install | Tenant identity is the Slack team_id; other integrations attach to it |
 | OAuth state in KV (not signed tokens) | Single-use guarantees prevent replay; KV TTL handles expiry |
 | Hono for control plane, vanilla for router | Control plane needs routing/middleware; router needs raw speed |

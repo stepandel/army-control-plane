@@ -9,7 +9,6 @@ interface StateData {
 }
 
 const STATE_TTL_SECONDS = 600; // 10 minutes
-const KEY_PREFIX = "oauth_state:";
 
 /** Create a random state token, store it in KV with a 10-minute TTL. */
 export async function createState(
@@ -19,7 +18,7 @@ export async function createState(
   const token = crypto.randomUUID();
   const data: StateData = { ...(tenantId && { tenantId }) };
 
-  await kv.put(`${KEY_PREFIX}${token}`, JSON.stringify(data), {
+  await kv.put(token, JSON.stringify(data), {
     expirationTtl: STATE_TTL_SECONDS,
   });
 
@@ -34,12 +33,11 @@ export async function verifyState(
   kv: KVNamespace,
   token: string,
 ): Promise<{ tenantId?: string } | null> {
-  const key = `${KEY_PREFIX}${token}`;
-  const raw = await kv.get(key);
+  const raw = await kv.get(token);
   if (!raw) return null;
 
   // Delete immediately — single use
-  await kv.delete(key);
+  await kv.delete(token);
 
   try {
     const data: StateData = JSON.parse(raw);

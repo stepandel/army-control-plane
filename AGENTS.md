@@ -35,7 +35,7 @@ Always run `pnpm typecheck` after making changes. The project uses TypeScript pr
 - **Router Worker** is intentionally vanilla (no Hono, no framework). Keep it minimal — it must respond within 3 seconds.
 - **Control Plane Worker** uses Hono. Routes are organized in `src/routes/` and mounted in `src/index.ts`.
 - **Database access** uses `postgres` (postgresjs) via Hyperdrive. Always call `getDb(c.env)` per-request — connection pooling is handled by Hyperdrive. Always use `prepare: false`.
-- **KV keys** follow the format `{platform}:{team_id}` for routing entries and `oauth_state:{uuid}` for state tokens.
+- **KV namespaces**: `ROUTING_TABLE` for routing (`{platform}:{team_id}` keys), `OAUTH_STATE` for ephemeral OAuth CSRF tokens (UUID keys, 10-min TTL). Router Worker only binds `ROUTING_TABLE`.
 - **Async work** uses `ctx.waitUntil()` (router) or `c.executionCtx.waitUntil()` (control plane) for fire-and-forget operations.
 
 ## Adding a new route
