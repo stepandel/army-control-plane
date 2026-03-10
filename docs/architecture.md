@@ -2,7 +2,7 @@
 
 ## System overview
 
-Army is a multi-tenant webhook routing and orchestration platform. It connects Slack, Linear, and GitHub to isolated per-tenant compute instances running on Fly.io, with Cloudflare handling all ingress, routing, and tenant management.
+Army is a multi-tenant orchestration platform. It connects Slack, Linear, and GitHub to isolated per-tenant compute instances running on Fly.io, with Cloudflare handling ingress, routing, and tenant management. Linear and GitHub deliver events via webhooks routed through the Router Worker; Slack uses Socket Mode (outbound WebSocket connections initiated by each tenant's Fly machine), so Slack traffic never passes through the router.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -11,7 +11,7 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 │  ┌──────────────────┐         ┌──────────────────────────┐  │
 │  │  Router Worker   │         │  Control Plane Worker    │  │
 │  │  router.army.ai  │         │  api.army.ai             │  │
-│  │                  │         │                          │  │
+│  │  (Linear/GitHub) │         │                          │  │
 │  │  1. Verify HMAC  │         │  /oauth/*    (public)    │  │
 │  │  2. Return 200   │         │  /admin/*    (CF Access) │  │
 │  │  3. KV lookup    │         │  /internal/* (secret)    │  │
@@ -20,7 +20,7 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 │           │                                │                │
 │  ┌────────▼────────────────────────────────▼─────────────┐  │
 │  │                   Cloudflare KV                       │  │
-│  │  ROUTING_TABLE: {platform}:{team_id} → TenantRoute     │  │
+│  │  ROUTING_TABLE: {platform}:{externalId} → TenantRoute  │  │
 │  │  OAUTH_STATE:   {uuid} → StateData  (CP only)         │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                │                            │
@@ -46,30 +46,28 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 
 ### Router Worker (`workers/router/`)
 
-The Router Worker is the single ingress point for all webhooks. It is intentionally minimal — no framework, no database access, no heavy dependencies.
+The Router Worker is the ingress point for Linear and GitHub webhooks. Slack does not use the router — it connects via Socket Mode (outbound WebSocket from tenant machines). The router is intentionally minimal — no framework, no database access, no heavy dependencies.
 
 **Request lifecycle:**
 
 ```
-Slack/Linear/GitHub
+Linear/GitHub
         │
         ▼
-  POST /{slack|linear|github}
+  POST /webhooks/{linear|github}
         │
         ├─ 1. Identify source from URL path
         ├─ 2. Read body once (used for both verify + forward)
         ├─ 3. Verify HMAC signature (per-platform, timing-safe)
         │     └─ 401 if invalid
-        ├─ 4. Handle Slack url_verification challenge
-        ├─ 5. Return 200 OK immediately (ACK)
-        ├─ 6. Extract team ID from payload
-        ├─ 7. KV lookup: {platform}:{team_id} → TenantRoute
-        └─ 8. Forward body to instance_url via waitUntil (fire-and-forget)
+        ├─ 4. Return 200 OK immediately (ACK)
+        ├─ 5. Extract platform-specific ID from payload (Linear orgId, GitHub installationId)
+        ├─ 6. KV lookup: {platform}:{externalId} → TenantRoute
+        └─ 7. Forward body to instance_url via waitUntil (fire-and-forget)
 ```
 
 **Design constraints:**
 - No database calls — only KV reads at request time
-- Must respond within Slack's 3-second timeout
 - `waitUntil` for async forwarding so the response is not delayed
 - Stateless — all routing state lives in KV
 
@@ -97,13 +95,13 @@ The Control Plane manages the full tenant lifecycle. Built with Hono.
 
 Two separate KV namespaces:
 
-**1. `ROUTING_TABLE`** — maps platform + team ID to Fly instance URL (shared by both workers)
+**1. `ROUTING_TABLE`** — maps platform + external ID to Fly instance URL (shared by both workers)
 ```
-Key:   slack:T012345
-Value: { "instance_url": "https://${FLY_APP}.fly.dev", "internal_secret": "uuid" }
+Key:   linear:{linearOrgId}          or   github:{installationId}
+Value: { "instance_url": "https://${FLY_APP}.fly.dev", "internal_secret": "uuid", "fly_machine_id": "..." }
 ```
 
-A tenant with all three integrations has three KV entries (`slack:T012345`, `linear:T012345`, `github:T012345`), all pointing to the same instance. The `internal_secret` is also used to authenticate machine-to-control-plane calls.
+Only webhook-based platforms (Linear, GitHub) have KV routing entries — Slack uses Socket Mode and has no entry. The key is the platform-specific external ID (`external_id` from `integration_tokens`), not the tenant ID. A tenant with Linear and GitHub integrations has two KV entries, both pointing to the same instance. The `internal_secret` is also used to authenticate machine-to-control-plane calls.
 
 **2. `OAUTH_STATE`** — ephemeral CSRF tokens for OAuth flows (control plane only)
 ```
@@ -126,6 +124,7 @@ Three tables, accessed only by the Control Plane Worker:
 **`integration_tokens`** — OAuth tokens for each connected platform
 - Links to tenant via `tenant_id`
 - Stores `access_token`, `refresh_token`, `scopes`, `expires_at`
+- `external_id` stores the platform-specific ID used for KV routing keys (Linear orgId, GitHub installationId); Slack has no `external_id`
 - GitHub stores the `installation_id` as `access_token` with `token_type: 'installation'`
 
 **`deployments`** — deployment history per tenant
@@ -161,7 +160,7 @@ provisionTenant()
   ├─ Fly Machines API: create machine in FLY_APP
   ├─ Update tenant with fly_machine_id + instance_url
   ├─ Record deployment in deployments table
-  ├─ Write KV route: slack:{team_id} → TenantRoute
+  ├─ Write KV routes for webhook platforms: {platform}:{externalId} → TenantRoute (Slack excluded — uses Socket Mode)
   └─ Mark tenant as active (rollback to pending on failure)
         │
         ▼
@@ -187,22 +186,22 @@ GET /oauth/linear/callback?code=...&state=...
   ├─ Confirm tenant exists and is active
   ├─ Exchange code for access token
   ├─ Store token in integration_tokens
-  ├─ Copy KV route: slack:{team_id} → linear:{team_id}
+  ├─ Write KV route: linear:{orgId} or github:{installationId} → TenantRoute
   └─ waitUntil → pushCredentials(env, tenantId)
         └─ Fly Machines API: update machine env vars (triggers reboot)
 ```
 
-### 3. Webhook delivery (steady state)
+### 3. Webhook delivery — Linear/GitHub (steady state)
 
 ```
-Slack/Linear/GitHub sends POST to router.army.ai
+Linear/GitHub sends POST to router.army.ai/webhooks/{platform}
   │
   ▼
 Router Worker
   ├─ Verify HMAC → 401 if bad
   ├─ Return 200 to webhook source
-  ├─ Extract team_id from payload
-  ├─ KV.get("{platform}:{team_id}") → TenantRoute
+  ├─ Extract external ID from payload (Linear orgId or GitHub installationId)
+  ├─ KV.get("{platform}:{externalId}") → TenantRoute
   └─ waitUntil → POST {instance_url}/webhooks/{platform}
         │
         ▼
@@ -215,7 +214,7 @@ Fly machine processes event
 DELETE /admin/tenants/{team_id}   (requires Cloudflare Access)
   ├─ Fly Machines API: destroy machine
   ├─ Stop all running deployments in DB
-  ├─ Delete all KV routes (slack:, linear:, github:)
+  ├─ Delete KV routes for webhook platforms (linear:, github:)
   └─ Mark tenant as destroyed
 ```
 
@@ -225,7 +224,7 @@ DELETE /admin/tenants/{team_id}   (requires Cloudflare Access)
 POST /admin/tenants/{team_id}/reprovision   (requires Cloudflare Access)
   ├─ Fly Machines API: destroy old machine
   ├─ Stop old deployments in DB
-  ├─ Delete all KV routes
+  ├─ Delete KV routes for webhook platforms
   ├─ Reset tenant status to pending
   └─ waitUntil → provisionTenant(env, teamId)
 ```
