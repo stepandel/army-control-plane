@@ -40,7 +40,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   // Write KV routing entries for all webhook-based platforms
   const internalSecret = machineEnv.INTERNAL_SECRET;
-  const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret };
+  const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret, fly_machine_id: tenant.fly_machine_id };
   const platformKeys = await sql`
     SELECT DISTINCT platform, external_id FROM integration_tokens
     WHERE tenant_id = ${tenantId} AND platform != 'slack' AND external_id IS NOT NULL

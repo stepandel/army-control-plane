@@ -68,7 +68,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       SELECT DISTINCT platform, external_id FROM integration_tokens
       WHERE tenant_id = ${tenantId} AND platform != 'slack' AND external_id IS NOT NULL
     `;
-    const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret };
+    const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret, fly_machine_id: machine.id };
 
     for (const { platform, external_id } of webhookPlatforms) {
       await env.ROUTING_TABLE.put(`${platform}:${external_id}`, JSON.stringify(route));

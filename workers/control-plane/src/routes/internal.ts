@@ -70,6 +70,7 @@ internal.post("/register", async (c) => {
   const route: TenantRoute = {
     instance_url: body.instance_url,
     internal_secret: internalSecret,
+    fly_machine_id: body.machine_id,
   };
 
   // Update KV routing table for all connected platforms
