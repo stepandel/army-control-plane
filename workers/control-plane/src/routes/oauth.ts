@@ -7,7 +7,47 @@ import { pushCredentials } from "../lib/credentials";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
-const SLACK_SCOPES = "chat:write,commands,app_mentions:read";
+const SLACK_BOT_SCOPES = [
+  "chat:write",
+  "chat:write.customize",
+  "channels:history",
+  "channels:read",
+  "groups:history",
+  "groups:read",
+  "groups:write",
+  "im:history",
+  "im:read",
+  "im:write",
+  "mpim:history",
+  "mpim:read",
+  "mpim:write",
+  "users:read",
+  "app_mentions:read",
+  "reactions:read",
+  "reactions:write",
+  "pins:read",
+  "pins:write",
+  "emoji:read",
+  "commands",
+  "files:read",
+  "files:write",
+].join(",");
+
+const SLACK_USER_SCOPES = [
+  "channels:history",
+  "channels:read",
+  "groups:history",
+  "groups:read",
+  "im:history",
+  "im:read",
+  "mpim:history",
+  "mpim:read",
+  "users:read",
+  "reactions:read",
+  "pins:read",
+  "emoji:read",
+  "search:read",
+].join(",");
 
 // ─── Slack ───────────────────────────────────────────────────────
 
@@ -16,7 +56,8 @@ oauth.get("/slack/install", async (c) => {
   const state = await createState(c.env.OAUTH_STATE);
   const params = new URLSearchParams({
     client_id: c.env.SLACK_CLIENT_ID,
-    scope: SLACK_SCOPES,
+    scope: SLACK_BOT_SCOPES,
+    user_scope: SLACK_USER_SCOPES,
     redirect_uri: `${c.env.BASE_URL}/oauth/slack/callback`,
     state,
   });
