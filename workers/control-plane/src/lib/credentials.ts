@@ -1,4 +1,4 @@
-import type { ControlPlaneEnv } from "@army/shared";
+import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "./fly";
 
@@ -37,6 +37,20 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
   }
 
   await fly.updateMachine(tenant.fly_machine_id, machineEnv);
+
+  // Update KV routing entries with the new internal secret
+  const internalSecret = machineEnv.INTERNAL_SECRET;
+  const platforms = await sql`
+    SELECT DISTINCT platform FROM integration_tokens
+    WHERE tenant_id = ${tenantId} AND platform != 'slack'
+  `;
+  for (const { platform } of platforms) {
+    const existing = await env.ROUTING_TABLE.get<TenantRoute>(`${platform}:${tenantId}`, "json");
+    if (existing) {
+      const updated: TenantRoute = { ...existing, internal_secret: internalSecret };
+      await env.ROUTING_TABLE.put(`${platform}:${tenantId}`, JSON.stringify(updated));
+    }
+  }
 
   return {
     tenantId,
