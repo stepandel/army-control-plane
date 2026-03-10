@@ -35,4 +35,5 @@ export interface ControlPlaneEnv {
   FLY_APP: string;
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
+  ANTHROPIC_API_KEY: string;
 }

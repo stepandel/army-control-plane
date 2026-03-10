@@ -32,6 +32,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       CONTROL_PLANE_URL: env.BASE_URL,
       INTERNAL_SECRET: internalSecret,
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
+      ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
     };
 
     for (const t of tokens) {
