@@ -199,11 +199,12 @@ oauth.get("/linear/callback", async (c) => {
 
   // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks
   // internal_secret is temporary; pushCredentials() below regenerates it for all KV entries
-  const route: TenantRoute = {
+  const linearRoute: TenantRoute = {
     instance_url: tenant.instance_url,
     internal_secret: crypto.randomUUID(),
+    fly_machine_id: tenant.fly_machine_id,
   };
-  await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(route));
+  await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(linearRoute));
 
   // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
@@ -260,11 +261,12 @@ oauth.get("/github/callback", async (c) => {
 
   // Write KV route for github:<installationId> — the router extracts installation.id from webhooks
   // internal_secret is temporary; pushCredentials() below regenerates it for all KV entries
-  const route: TenantRoute = {
+  const githubRoute: TenantRoute = {
     instance_url: tenant.instance_url,
     internal_secret: crypto.randomUUID(),
+    fly_machine_id: tenant.fly_machine_id,
   };
-  await c.env.ROUTING_TABLE.put(`github:${installationId}`, JSON.stringify(route));
+  await c.env.ROUTING_TABLE.put(`github:${installationId}`, JSON.stringify(githubRoute));
 
   // Push credentials to the running instance (fire-and-forget)
   c.executionCtx.waitUntil(
