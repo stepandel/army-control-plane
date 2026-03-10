@@ -10,10 +10,8 @@ This document covers authentication, authorization, and request verification acr
 | `GET /oauth/*/install` | Control Plane | None (public) | End users via browser |
 | `GET /oauth/*/callback` | Control Plane | KV-backed single-use state token | OAuth provider redirect |
 | `GET /health` | Control Plane | None (public) | Monitoring / load balancers |
-| `POST /provision/:tenantId` | Control Plane | Internal only (see below) | Control plane self-call |
-| `POST /credentials/:tenantId/push` | Control Plane | Internal only (see below) | Control plane self-call |
-| `POST /internal/register` | Control Plane | Internal only (see below) | Fly machines on boot |
-| `GET /internal/credentials/:team_id` | Control Plane | Internal only (see below) | Fly machines on boot |
+| `POST /internal/register` | Control Plane | Per-tenant `INTERNAL_SECRET` via Bearer token | Fly machines on boot |
+| `GET /internal/credentials/:team_id` | Control Plane | Per-tenant `INTERNAL_SECRET` via Bearer token | Fly machines on boot |
 | `/admin/*` | Control Plane | Cloudflare Access JWT | Human operators |
 
 ## 1. Webhook HMAC Verification (Router Worker)
@@ -120,23 +118,30 @@ The Worker independently verifies the JWT to defend against bypass scenarios (e.
 
 ## 4. Internal Routes
 
-Routes under `/internal/*` and `/provision/*` are called by:
-- The control plane itself (e.g., OAuth callback fires provisioning via `waitUntil`)
-- Fly machines on boot (registering their URL, fetching credentials)
+Routes under `/internal/*` are called by Fly machines on boot.
 
-### Current state
+**Provisioning and credential push are not HTTP routes** — they are internal functions (`lib/provision.ts`, `lib/credentials.ts`) called directly via `waitUntil` from OAuth callbacks and admin routes. They never touch the network.
 
-These routes are **not yet authenticated**. They are functional but open.
+### Per-tenant INTERNAL_SECRET
 
-### Planned protection
+Each Fly machine receives an `INTERNAL_SECRET` env var during provisioning. The same secret is stored in the KV `TenantRoute` record. When a machine calls `/internal/*`:
 
-These should be secured before production with one or more of:
+1. Machine sends `Authorization: Bearer <INTERNAL_SECRET>` header
+2. Worker extracts the `team_id` from the request (body or URL param)
+3. Worker looks up the tenant's KV route (`{platform}:{team_id}`)
+4. Compares `route.internal_secret` against the bearer token
+5. Returns 401 if missing, mismatched, or no KV route exists
 
-- **Shared secret header** — Fly machines and self-calls include a `Authorization: Bearer <INTERNAL_API_KEY>` checked by middleware
-- **Cloudflare Access Service Token** — a non-interactive service token scoped to `/internal/*` and `/provision/*`
-- **Network-level restriction** — if Fly machines connect via Cloudflare Tunnel, Access policies can restrict to the tunnel identity
+### Properties
 
-> **TODO:** Implement internal route authentication before deploying to production.
+| Property | How it's enforced |
+|---|---|
+| Per-tenant isolation | Each tenant gets a unique `INTERNAL_SECRET` (UUID) |
+| No shared secrets | There is no global internal API key — compromise of one tenant's secret doesn't affect others |
+| Stored in KV | Lookup is fast and doesn't require a database call |
+| Rotated on reprovision | A new `INTERNAL_SECRET` is generated each time a machine is provisioned |
+
+- Source: `workers/control-plane/src/routes/internal.ts`
 
 ## 5. Secrets Management
 
@@ -160,7 +165,7 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `LINEAR_CLIENT_SECRET` | Linear OAuth app credentials |
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
-| `FLY_API_TOKEN` | Provisioning Fly machines |
+| `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 

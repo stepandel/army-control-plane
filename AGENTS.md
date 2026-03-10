@@ -62,14 +62,21 @@ Always run `pnpm typecheck` after making changes. The project uses TypeScript pr
 6. Add OAuth credentials to `ControlPlaneEnv`
 7. Update `docs/security.md`
 
+## Key implementation files
+
+| File | Purpose |
+|---|---|
+| `workers/control-plane/src/lib/fly.ts` | `FlyClient` — Fly Machines API (create, update, stop, destroy) |
+| `workers/control-plane/src/lib/provision.ts` | `provisionTenant()` — creates Fly machine, writes KV routes, records deployment |
+| `workers/control-plane/src/lib/credentials.ts` | `pushCredentials()` — updates machine env vars via Fly API (triggers reboot) |
+| `workers/control-plane/src/lib/oauth-state.ts` | KV-backed single-use OAuth state tokens |
+| `workers/control-plane/src/middleware/cf-access.ts` | Cloudflare Access JWT validation middleware |
+
+**Important:** `provisionTenant()` and `pushCredentials()` are internal functions called directly via `waitUntil` — they are NOT HTTP routes. Don't add route wrappers around them.
+
 ## What's stubbed / not yet done
 
-These are marked with `TODO` comments in the code:
-
-- **Fly.io Machines API** — `provision.ts`, `admin.ts` (destroy/reprovision), `credentials.ts` (push)
-- **Internal route auth** — `/internal/*` and `/provision/*` are currently unprotected
-- **Token refresh** — Linear tokens can expire
-- **Deployment tracking** — `deployments` table not populated yet
+- **Token refresh** — Linear tokens can expire; refresh flow not yet built
 
 ## Common mistakes to avoid
 

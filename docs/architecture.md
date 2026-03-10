@@ -14,8 +14,8 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 │  │                  │         │                          │  │
 │  │  1. Verify HMAC  │         │  /oauth/*    (public)    │  │
 │  │  2. Return 200   │         │  /admin/*    (CF Access) │  │
-│  │  3. KV lookup    │         │  /provision  (internal)  │  │
-│  │  4. Forward async│         │  /internal   (internal)  │  │
+│  │  3. KV lookup    │         │  /internal/* (secret)    │  │
+│  │  4. Forward async│         │  /health     (public)    │  │
 │  └────────┬─────────┘         └────────────┬─────────────┘  │
 │           │                                │                │
 │  ┌────────▼────────────────────────────────▼─────────────┐  │
@@ -31,14 +31,15 @@ Army is a multi-tenant webhook routing and orchestration platform. It connects S
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
-            ┌─────────────────┐
-            │     Fly.io      │
-            │                 │
-            │  army-t012345   │
-            │  army-t067890   │
-            │  army-t099911   │
-            │      ...        │
-            └─────────────────┘
+            ┌──────────────────────┐
+            │  Fly.io              │
+            │  App: ${FLY_APP}     │
+            │                      │
+            │  army-t012345  (m/c) │
+            │  army-t067890  (m/c) │
+            │  army-t099911  (m/c) │
+            │      ...             │
+            └──────────────────────┘
 ```
 
 ## Components
@@ -78,14 +79,19 @@ The Control Plane manages the full tenant lifecycle. Built with Hono.
 
 **Route groups:**
 
-| Group | Path | Purpose |
+| Group | Path | Auth | Purpose |
+|---|---|---|---|
+| OAuth | `/oauth/{slack,linear,github}/{install,callback}` | Public (CSRF via state tokens) | OAuth consent + token exchange |
+| Internal | `/internal/register`, `/internal/credentials/:team_id` | Per-tenant `INTERNAL_SECRET` | Machine self-registration + credential fetch |
+| Admin | `/admin/tenants`, `/admin/tenants/:team_id`, etc. | Cloudflare Access JWT | Tenant CRUD |
+| Health | `/health` | Public | Liveness check |
+
+**Internal functions** (not routes — called directly via `waitUntil`):
+
+| Function | Source | Called by |
 |---|---|---|
-| OAuth | `/oauth/{slack,linear,github}/{install,callback}` | OAuth consent + token exchange |
-| Provision | `/provision/:tenantId` | Fly machine creation + KV route setup |
-| Credentials | `/credentials/:tenantId/push` | Push tokens to Fly instance |
-| Internal | `/internal/register`, `/internal/credentials/:team_id` | Machine self-registration + credential fetch |
-| Admin | `/admin/tenants`, `/admin/tenants/:team_id`, etc. | Tenant CRUD (CF Access protected) |
-| Health | `/health` | Liveness check |
+| `provisionTenant(env, tenantId)` | `lib/provision.ts` | Slack OAuth callback, admin reprovision |
+| `pushCredentials(env, tenantId)` | `lib/credentials.ts` | Linear/GitHub OAuth callbacks |
 
 ### Cloudflare KV
 
@@ -94,10 +100,10 @@ A single KV namespace (`ROUTING_TABLE`) shared by both workers, used for two pur
 **1. Routing table** — maps platform + team ID to Fly instance URL
 ```
 Key:   slack:T012345
-Value: { "instance_url": "https://army-t012345.fly.dev", "internal_secret": "uuid" }
+Value: { "instance_url": "https://${FLY_APP}.fly.dev", "internal_secret": "uuid" }
 ```
 
-A tenant with all three integrations has three KV entries (`slack:T012345`, `linear:T012345`, `github:T012345`), all pointing to the same instance.
+A tenant with all three integrations has three KV entries (`slack:T012345`, `linear:T012345`, `github:T012345`), all pointing to the same instance. The `internal_secret` is also used to authenticate machine-to-control-plane calls.
 
 **2. OAuth state tokens** — CSRF protection for OAuth flows
 ```
@@ -144,21 +150,25 @@ GET /oauth/slack/callback?code=...&state=...
   ├─ Exchange code for bot token via Slack API
   ├─ Upsert tenant record in Postgres (status: pending)
   ├─ Store bot token in integration_tokens
-  └─ waitUntil → POST /provision/{team_id}
+  └─ waitUntil → provisionTenant(env, teamId)
         │
         ▼
-POST /provision/{team_id}
+provisionTenant()
   ├─ Mark tenant as provisioning
-  ├─ Create Fly machine (TODO: Fly API)
-  ├─ Update tenant with instance_url + fly_app_name
+  ├─ Gather tokens → build machine env vars
+  ├─ Fly Machines API: create machine in FLY_APP
+  ├─ Update tenant with fly_machine_id + instance_url
+  ├─ Record deployment in deployments table
   ├─ Write KV route: slack:{team_id} → TenantRoute
-  └─ Mark tenant as active
+  └─ Mark tenant as active (rollback to pending on failure)
         │
         ▼
-Fly machine boots
+Fly machine boots (with INTERNAL_SECRET env var)
   ├─ POST /internal/register { team_id, instance_url, machine_id }
+  │     Auth: Bearer <INTERNAL_SECRET>
   │     └─ Updates tenant record + refreshes all KV routes
   └─ GET /internal/credentials/{team_id}
+        Auth: Bearer <INTERNAL_SECRET>
         └─ Returns all tokens grouped by platform
 ```
 
@@ -176,7 +186,8 @@ GET /oauth/linear/callback?code=...&state=...
   ├─ Exchange code for access token
   ├─ Store token in integration_tokens
   ├─ Copy KV route: slack:{team_id} → linear:{team_id}
-  └─ waitUntil → POST /credentials/{team_id}/push
+  └─ waitUntil → pushCredentials(env, tenantId)
+        └─ Fly Machines API: update machine env vars (triggers reboot)
 ```
 
 ### 3. Webhook delivery (steady state)
@@ -199,8 +210,8 @@ Fly machine processes event
 ### 4. Tenant destruction
 
 ```
-DELETE /admin/tenants/{team_id}
-  ├─ Destroy Fly machine (TODO: Fly API)
+DELETE /admin/tenants/{team_id}   (requires Cloudflare Access)
+  ├─ Fly Machines API: destroy machine
   ├─ Stop all running deployments in DB
   ├─ Delete all KV routes (slack:, linear:, github:)
   └─ Mark tenant as destroyed
@@ -209,12 +220,12 @@ DELETE /admin/tenants/{team_id}
 ### 5. Reprovisioning
 
 ```
-POST /admin/tenants/{team_id}/reprovision
-  ├─ Destroy old Fly machine (TODO: Fly API)
+POST /admin/tenants/{team_id}/reprovision   (requires Cloudflare Access)
+  ├─ Fly Machines API: destroy old machine
   ├─ Stop old deployments in DB
   ├─ Delete all KV routes
   ├─ Reset tenant status to pending
-  └─ waitUntil → POST /provision/{team_id} (creates new machine)
+  └─ waitUntil → provisionTenant(env, teamId)
 ```
 
 ## Tenant lifecycle states
@@ -238,10 +249,10 @@ pending ──▶ provisioning ──▶ active ──▶ destroyed
 | Hono for control plane, vanilla for router | Control plane needs routing/middleware; router needs raw speed |
 | `waitUntil` for forwarding + provisioning | Non-blocking — webhook sources get their 200 immediately |
 | One Fly machine per tenant | Isolation — tenant data and credentials never co-mingle |
+| Single Fly app, many machines | All tenant machines live in one Fly app (`FLY_APP` config) — no per-tenant app overhead |
+| Provision/credentials are functions, not routes | No self-calling through the external API — eliminates auth and latency overhead |
+| Per-tenant INTERNAL_SECRET | Each machine gets a unique secret; compromise of one doesn't affect others |
 
 ## Not yet implemented
 
-- **Fly.io Machines API** — provisioning, destruction, and secret pushing are stubbed with TODOs
-- **Internal route authentication** — `/internal/*` and `/provision/*` are currently open (see `docs/security.md`)
 - **Token refresh** — Linear tokens may expire; refresh flow not yet built
-- **Deployment tracking** — `deployments` table exists but is not populated during provisioning
