@@ -2,7 +2,7 @@
   "name": "@army/control-plane",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "export $(grep -v '^#' .dev.vars | xargs) && wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"
   },
