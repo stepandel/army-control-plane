@@ -32,25 +32,6 @@ function hexToBuffer(hex: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-// ── Slack ────────────────────────────────────────────────────────
-async function verifySlack(
-  body: string,
-  headers: Headers,
-  secret: string,
-): Promise<boolean> {
-  const timestamp = headers.get("x-slack-request-timestamp");
-  const signature = headers.get("x-slack-signature");
-  if (!timestamp || !signature) return false;
-
-  // Reject requests older than 5 minutes
-  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
-
-  const baseString = `v0:${timestamp}:${body}`;
-  const computed = await hmacSha256(secret, baseString);
-  const expected = hexToBuffer(signature.replace("v0=", ""));
-  return timingSafeEqual(computed, expected);
-}
-
 // ── Linear ───────────────────────────────────────────────────────
 async function verifyLinear(
   body: string,
@@ -83,14 +64,14 @@ export async function verifyWebhook(
   source: WebhookSource,
   body: string,
   headers: Headers,
-  secrets: { slack: string; linear: string; github: string },
+  secrets: { linear: string; github: string },
 ): Promise<boolean> {
   switch (source) {
-    case "slack":
-      return verifySlack(body, headers, secrets.slack);
     case "linear":
       return verifyLinear(body, headers, secrets.linear);
     case "github":
       return verifyGitHub(body, headers, secrets.github);
+    default:
+      return false;
   }
 }

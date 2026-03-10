@@ -10,9 +10,9 @@ export interface TenantRoute {
 export type WebhookSource = "slack" | "linear" | "github";
 
 // ── Router Worker environment bindings ───────────────────────────
+// Slack uses Socket Mode (WebSocket from tenant machines), not webhooks.
 export interface RouterEnv {
   ROUTING_TABLE: KVNamespace;
-  SLACK_SIGNING_SECRET: string;
   LINEAR_WEBHOOK_SECRET: string;
   GITHUB_WEBHOOK_SECRET: string;
 }
