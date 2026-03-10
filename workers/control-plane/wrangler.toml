@@ -21,3 +21,4 @@ id = "3ef1724bda9a4da1b96d080e65d8b0b2"
 
 [vars]
 FLY_APP = "pi-agent-images"
+BASE_URL = "https://army-control-plane.stepandel.workers.dev"
