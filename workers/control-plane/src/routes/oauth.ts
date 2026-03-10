@@ -7,6 +7,8 @@ import { pushCredentials } from "../lib/credentials";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
+const SLACK_SCOPES = "chat:write,commands,app_mentions:read";
+
 // ─── Slack ───────────────────────────────────────────────────────
 
 /** Redirect to Slack OAuth consent screen. This is the primary install flow. */
@@ -14,7 +16,7 @@ oauth.get("/slack/install", async (c) => {
   const state = await createState(c.env.OAUTH_STATE);
   const params = new URLSearchParams({
     client_id: c.env.SLACK_CLIENT_ID,
-    scope: c.env.SLACK_SCOPES,
+    scope: SLACK_SCOPES,
     redirect_uri: `${c.env.BASE_URL}/oauth/slack/callback`,
     state,
   });
