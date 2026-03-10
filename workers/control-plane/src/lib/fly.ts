@@ -99,7 +99,7 @@ export class FlyClient {
         services: [
           {
             protocol: "tcp",
-            internal_port: 8080,
+            internal_port: 3000,
             ports: [
               { port: 80, handlers: ["http"], force_https: true },
               { port: 443, handlers: ["tls", "http"] },
@@ -134,7 +134,7 @@ export class FlyClient {
         services: [
           {
             protocol: "tcp",
-            internal_port: 8080,
+            internal_port: 3000,
             ports: [
               { port: 80, handlers: ["http"], force_https: true },
               { port: 443, handlers: ["tls", "http"] },
