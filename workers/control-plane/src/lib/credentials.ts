@@ -29,6 +29,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
     INTERNAL_SECRET: crypto.randomUUID(),
     SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
     ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+    BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
   };
