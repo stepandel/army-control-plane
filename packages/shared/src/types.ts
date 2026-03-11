@@ -31,8 +31,10 @@ export interface ControlPlaneEnv {
   LINEAR_CLIENT_ID: string;
   LINEAR_CLIENT_SECRET: string;
   GITHUB_APP_SLUG: string;
+  GITHUB_APP_ID: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  GITHUB_PRIVATE_KEY: string;
   FLY_API_TOKEN: string;
   FLY_APP: string;
   CF_ACCESS_TEAM_DOMAIN: string;
