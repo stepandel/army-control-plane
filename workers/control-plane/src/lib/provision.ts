@@ -36,7 +36,9 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     };
 
     for (const t of tokens) {
-      const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_TOKEN`;
+      // GitHub stores the installation ID (not a token) — name the env var accordingly
+      const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
+      const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
       machineEnv[key] = t.access_token;
     }
 
