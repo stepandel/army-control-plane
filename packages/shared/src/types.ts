@@ -40,4 +40,5 @@ export interface ControlPlaneEnv {
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
   ANTHROPIC_API_KEY: string;
+  BRAVE_API_KEY: string;
 }
