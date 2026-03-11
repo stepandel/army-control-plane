@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "../lib/fly";
+import { pushCredentials } from "../lib/credentials";
 import { provisionTenant } from "../lib/provision";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
@@ -129,6 +130,44 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   );
 
   return c.json({ team_id: teamId, status: "reprovisioning" });
+});
+
+/** POST /admin/tenants/push-credentials — push credentials to all active tenants */
+admin.post("/tenants/push-credentials", async (c) => {
+  const sql = getDb(c.env);
+  const tenants = await sql`
+    SELECT id FROM tenants WHERE status = 'active' AND fly_machine_id IS NOT NULL
+  `;
+
+  const results: { tenant_id: string; status: "ok" | "error"; error?: string }[] = [];
+
+  for (const tenant of tenants) {
+    try {
+      await pushCredentials(c.env, tenant.id);
+      results.push({ tenant_id: tenant.id, status: "ok" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`pushCredentials failed for ${tenant.id}:`, message);
+      results.push({ tenant_id: tenant.id, status: "error", error: message });
+    }
+  }
+
+  const succeeded = results.filter((r) => r.status === "ok").length;
+  const failed = results.filter((r) => r.status === "error").length;
+
+  return c.json({ total: results.length, succeeded, failed, results });
+});
+
+/** POST /admin/tenants/:team_id/push-credentials — push credentials to a single tenant */
+admin.post("/tenants/:team_id/push-credentials", async (c) => {
+  const teamId = c.req.param("team_id");
+  try {
+    const result = await pushCredentials(c.env, teamId);
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ error: message }, 400);
+  }
 });
 
 export default admin;
