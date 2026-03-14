@@ -29,6 +29,9 @@ GITHUB_APP_SLUG = "agent-vera"
 GITHUB_CLIENT_ID = "Iv23liNbB1TLvul88Ikx"
 GITHUB_APP_ID="3061325"
 
+[triggers]
+crons = ["*/30 * * * *"]  # Every 30 minutes — refresh Linear tokens expiring within 1 hour
+
 [observability]
 enabled = false
 head_sampling_rate = 1

@@ -174,6 +174,9 @@ oauth.get("/linear/callback", async (c) => {
   if (!data.access_token) return c.json({ error: "Linear OAuth failed", detail: data }, 400);
 
   const accessToken = data.access_token as string;
+  const refreshToken = (data.refresh_token as string) ?? null;
+  const expiresIn = data.expires_in as number | undefined;
+  const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
   const scopes = (data.scope as string) ?? "";
 
   // Fetch the Linear organization ID — webhooks use this, not our tenant ID
@@ -191,10 +194,10 @@ oauth.get("/linear/callback", async (c) => {
 
   // Upsert token with Linear org ID for KV routing
   await sql`
-    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
-    VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${scopes}, ${linearOrgId})
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, refresh_token, scopes, external_id, expires_at)
+    VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${refreshToken}, ${scopes}, ${linearOrgId}, ${expiresAt}::timestamptz)
     ON CONFLICT (tenant_id, platform) DO UPDATE
-      SET access_token = ${accessToken}, scopes = ${scopes}, external_id = ${linearOrgId}
+      SET access_token = ${accessToken}, refresh_token = ${refreshToken}, scopes = ${scopes}, external_id = ${linearOrgId}, expires_at = ${expiresAt}::timestamptz
   `;
 
   // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks

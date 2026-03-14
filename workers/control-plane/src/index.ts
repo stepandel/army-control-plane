@@ -4,6 +4,7 @@ import oauth from "./routes/oauth";
 import admin from "./routes/admin";
 import internal from "./routes/internal";
 import { cfAccessGuard } from "./middleware/cf-access";
+import { refreshExpiringTokens } from "./lib/token-refresh";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -18,4 +19,9 @@ app.route("/internal", internal);
 app.use("/admin/*", cfAccessGuard);
 app.route("/admin", admin);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledEvent, env: ControlPlaneEnv, _ctx: ExecutionContext) {
+    await refreshExpiringTokens(env);
+  },
+};
