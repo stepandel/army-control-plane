@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
+import { refreshLinearToken } from "../lib/token-refresh";
+import { pushCredentials } from "../lib/credentials";
 
 const internal = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -118,6 +120,42 @@ internal.get("/credentials/:team_id", async (c) => {
   }
 
   return c.json({ team_id: teamId, credentials });
+});
+
+/**
+ * POST /internal/refresh-token/:team_id
+ * Called by a Fly instance when it gets a 401 from Linear.
+ * Refreshes the Linear token and pushes updated credentials.
+ * Auth: Bearer <INTERNAL_SECRET>
+ */
+internal.post("/refresh-token/:team_id", async (c) => {
+  const teamId = c.req.param("team_id");
+
+  const authorized = await verifyInternalSecret(c.env, teamId, c.req.header("authorization"));
+  if (!authorized) return c.json({ error: "Unauthorized" }, 401);
+
+  const refreshed = await refreshLinearToken(c.env, teamId);
+  if (!refreshed) return c.json({ error: "Token refresh failed" }, 502);
+
+  // Push updated credentials to the machine
+  c.executionCtx.waitUntil(
+    pushCredentials(c.env, teamId).catch((err) =>
+      console.error(`Credential push after refresh failed for ${teamId}:`, err),
+    ),
+  );
+
+  // Return the new token immediately so the agent can retry without waiting for the push
+  const sql = getDb(c.env);
+  const [token] = await sql`
+    SELECT access_token, expires_at FROM integration_tokens
+    WHERE tenant_id = ${teamId} AND platform = 'linear'
+  `;
+
+  return c.json({
+    refreshed: true,
+    linear_access_token: token.access_token,
+    expires_at: token.expires_at,
+  });
 });
 
 export default internal;
