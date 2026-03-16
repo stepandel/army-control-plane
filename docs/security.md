@@ -161,9 +161,18 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
-| `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
+
+### Per-tenant secrets (database-stored)
+
+Some secrets are stored **per-tenant** in the `integration_tokens` database table rather than as global Worker secrets. This allows each customer to have their own credentials.
+
+| Platform | Token type | Env var pushed to machine | Set via |
+|---|---|---|---|
+| `anthropic` | `api_key` | `ANTHROPIC_API_KEY` | `PUT /admin/tenants/:team_id/api-keys/anthropic` |
+
+These are automatically included when provisioning a new machine or pushing credentials to an existing one.
 
 ### Setting secrets
 

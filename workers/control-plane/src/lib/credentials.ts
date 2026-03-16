@@ -28,13 +28,17 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
     CONTROL_PLANE_URL: env.BASE_URL,
     INTERNAL_SECRET: crypto.randomUUID(),
     SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-    ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
     BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
   };
 
   for (const t of tokens) {
+    if (t.platform === "anthropic") {
+      // Anthropic API key — stored per-tenant, preserve the expected env var name
+      machineEnv.ANTHROPIC_API_KEY = t.access_token;
+      continue;
+    }
     // GitHub stores the installation ID (not a token) — name the env var accordingly
     const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
     const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;

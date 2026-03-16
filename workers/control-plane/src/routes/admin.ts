@@ -158,6 +158,39 @@ admin.post("/tenants/push-credentials", async (c) => {
   return c.json({ total: results.length, succeeded, failed, results });
 });
 
+/** PUT /admin/tenants/:team_id/api-keys/anthropic — set the per-tenant Anthropic API key */
+admin.put("/tenants/:team_id/api-keys/anthropic", async (c) => {
+  const teamId = c.req.param("team_id");
+  const body = await c.req.json<{ api_key: string }>();
+
+  if (!body.api_key) return c.json({ error: "Missing api_key in request body" }, 400);
+
+  const sql = getDb(c.env);
+
+  // Verify tenant exists
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  // Upsert the Anthropic API key as an integration token
+  await sql`
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token)
+    VALUES (${teamId}, 'anthropic', 'api_key', ${body.api_key})
+    ON CONFLICT (tenant_id, platform) DO UPDATE
+      SET access_token = ${body.api_key}
+  `;
+
+  // If the tenant is active with a running machine, push credentials
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`Credential push after Anthropic key update failed for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ team_id: teamId, platform: "anthropic", updated: true });
+});
+
 /** POST /admin/tenants/:team_id/push-credentials — push credentials to a single tenant */
 admin.post("/tenants/:team_id/push-credentials", async (c) => {
   const teamId = c.req.param("team_id");

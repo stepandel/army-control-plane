@@ -32,12 +32,16 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       CONTROL_PLANE_URL: env.BASE_URL,
       INTERNAL_SECRET: internalSecret,
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-      ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
       ANTON_CONFIG_DIR: "/opt/anton/.anton",
       ANTON_STATE_DIR: "/workspace/.anton",
     };
 
     for (const t of tokens) {
+      if (t.platform === "anthropic") {
+        // Anthropic API key — stored per-tenant, preserve the expected env var name
+        machineEnv.ANTHROPIC_API_KEY = t.access_token;
+        continue;
+      }
       // GitHub stores the installation ID (not a token) — name the env var accordingly
       const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
       const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
