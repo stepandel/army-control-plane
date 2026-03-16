@@ -33,6 +33,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       INTERNAL_SECRET: internalSecret,
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
       ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+      ANTON_CONFIG_DIR: "/opt/anton/.anton",
       ANTON_STATE_DIR: "/data",
     };
 
