@@ -15,6 +15,10 @@ interface MachineConfig {
     cpus: number;
     memory_mb: number;
   };
+  mounts?: Array<{
+    volume: string;
+    path: string;
+  }>;
   services?: Array<{
     protocol: string;
     internal_port: number;
@@ -29,6 +33,14 @@ interface MachineConfig {
       hard_limit: number;
     };
   }>;
+}
+
+interface VolumeResponse {
+  id: string;
+  name: string;
+  region: string;
+  size_gb: number;
+  state: string;
 }
 
 interface CreateMachineRequest {
@@ -79,10 +91,24 @@ export class FlyClient {
     return resp.json() as Promise<T>;
   }
 
+  /** Create a persistent volume. */
+  async createVolume(
+    name: string,
+    sizeGb: number,
+    region = DEFAULT_REGION,
+  ): Promise<VolumeResponse> {
+    return this.request<VolumeResponse>("POST", "/volumes", {
+      name,
+      size_gb: sizeGb,
+      region,
+    });
+  }
+
   /** Create and start a machine inside the app. */
   async createMachine(
     machineName: string,
     env: Record<string, string>,
+    volumeId?: string,
     region = DEFAULT_REGION,
   ): Promise<MachineResponse> {
     const body: CreateMachineRequest = {
@@ -96,6 +122,9 @@ export class FlyClient {
           cpus: 1,
           memory_mb: 512,
         },
+        ...(volumeId
+          ? { mounts: [{ volume: volumeId, path: "/data" }] }
+          : {}),
         services: [
           {
             protocol: "tcp",

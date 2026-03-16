@@ -33,6 +33,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       INTERNAL_SECRET: internalSecret,
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
       ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+      ANTON_STATE_DIR: "/data",
     };
 
     for (const t of tokens) {
@@ -42,8 +43,12 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       machineEnv[key] = t.access_token;
     }
 
-    // Create and start machine
-    const machine = await fly.createMachine(machineName, machineEnv);
+    // Create persistent volume for agent state
+    const volumeName = `state_${tenantId.toLowerCase()}`;
+    const volume = await fly.createVolume(volumeName, 1);
+
+    // Create and start machine with volume attached
+    const machine = await fly.createMachine(machineName, machineEnv, volume.id);
     const instanceUrl = `https://${env.FLY_APP}.fly.dev`;
 
     // Update tenant record
