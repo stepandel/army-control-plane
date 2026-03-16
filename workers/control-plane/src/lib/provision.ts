@@ -44,12 +44,9 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       machineEnv[key] = t.access_token;
     }
 
-    // Create persistent volume for agent state
+    // Create volume + machine together (retries across regions on capacity errors)
     const volumeName = `state_${tenantId.toLowerCase()}`;
-    const volume = await fly.createVolume(volumeName, 1);
-
-    // Create and start machine with volume attached
-    const machine = await fly.createMachine(machineName, machineEnv, volume.id);
+    const { machine } = await fly.createMachineWithVolume(machineName, machineEnv, volumeName, 1);
     const instanceUrl = `https://${env.FLY_APP}.fly.dev`;
 
     // Update tenant record
