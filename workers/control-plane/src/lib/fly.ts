@@ -5,7 +5,8 @@
  */
 
 const FLY_API_BASE = "https://api.machines.dev/v1";
-const DEFAULT_REGION = "ord";
+const REGIONS = ["ewr", "ord", "iad"];
+const DEFAULT_REGION = REGIONS[0];
 
 interface MachineConfig {
   image: string;
@@ -177,6 +178,44 @@ export class FlyClient {
         ],
       },
     });
+  }
+
+  /** Delete a volume. */
+  async deleteVolume(volumeId: string): Promise<void> {
+    await this.request<void>("DELETE", `/volumes/${volumeId}`);
+  }
+
+  /**
+   * Create a volume + machine together, retrying across regions on capacity errors.
+   * Cleans up the volume if machine creation fails in a region before trying the next.
+   */
+  async createMachineWithVolume(
+    machineName: string,
+    env: Record<string, string>,
+    volumeName: string,
+    volumeSizeGb: number,
+  ): Promise<{ machine: MachineResponse; volume: VolumeResponse }> {
+    const errors: string[] = [];
+
+    for (const region of REGIONS) {
+      let volume: VolumeResponse | undefined;
+      try {
+        volume = await this.createVolume(volumeName, volumeSizeGb, region);
+        const machine = await this.createMachine(machineName, env, volume.id, region);
+        return { machine, volume };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`${region}: ${msg}`);
+        // Clean up orphaned volume before trying next region
+        if (volume) {
+          try { await this.deleteVolume(volume.id); } catch { /* best effort */ }
+        }
+        // Only retry on capacity errors (409)
+        if (!msg.includes("(409)")) throw err;
+      }
+    }
+
+    throw new Error(`Machine creation failed in all regions:\n${errors.join("\n")}`);
   }
 
   /** Stop a running machine. */
