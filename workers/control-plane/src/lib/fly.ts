@@ -124,7 +124,7 @@ export class FlyClient {
           memory_mb: 512,
         },
         ...(volumeId
-          ? { mounts: [{ volume: volumeId, path: "/data" }] }
+          ? { mounts: [{ volume: volumeId, path: "/workspace" }] }
           : {}),
         services: [
           {

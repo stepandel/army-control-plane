@@ -34,7 +34,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
       ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
       ANTON_CONFIG_DIR: "/opt/anton/.anton",
-      ANTON_STATE_DIR: "/data",
+      ANTON_STATE_DIR: "/workspace/.anton",
     };
 
     for (const t of tokens) {
