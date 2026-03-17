@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   platform      TEXT NOT NULL,              -- "slack" | "linear" | "github"
   fly_app_name  TEXT,
   fly_machine_id TEXT,
+  fly_volume_id TEXT,
   instance_url  TEXT,
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

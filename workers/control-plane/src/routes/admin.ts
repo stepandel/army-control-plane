@@ -55,13 +55,19 @@ admin.delete("/tenants/:team_id", async (c) => {
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
-  // Destroy Fly machine
+  // Destroy Fly machine + volume
   if (tenant.fly_machine_id) {
     try {
       await fly.destroyMachine(tenant.fly_machine_id);
     } catch (err) {
-      console.error(`Fly cleanup failed for ${teamId}:`, err);
-      // Continue with DB/KV cleanup even if Fly fails
+      console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+    }
+  }
+  if (tenant.fly_volume_id) {
+    try {
+      await fly.deleteVolume(tenant.fly_volume_id);
+    } catch (err) {
+      console.error(`Fly volume cleanup failed for ${teamId}:`, err);
     }
   }
 
@@ -79,7 +85,7 @@ admin.delete("/tenants/:team_id", async (c) => {
   // Mark tenant as destroyed
   await sql`
     UPDATE tenants
-    SET status = 'destroyed', fly_machine_id = NULL, instance_url = NULL, updated_at = now()
+    SET status = 'destroyed', fly_machine_id = NULL, fly_volume_id = NULL, instance_url = NULL, updated_at = now()
     WHERE id = ${teamId}
   `;
 
@@ -96,12 +102,19 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // Destroy old Fly machine
+  // Destroy old Fly machine + volume
   if (tenant.fly_machine_id) {
     try {
       await fly.destroyMachine(tenant.fly_machine_id);
     } catch (err) {
-      console.error(`Fly cleanup failed for ${teamId}:`, err);
+      console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+    }
+  }
+  if (tenant.fly_volume_id) {
+    try {
+      await fly.deleteVolume(tenant.fly_volume_id);
+    } catch (err) {
+      console.error(`Fly volume cleanup failed for ${teamId}:`, err);
     }
   }
 
@@ -114,7 +127,7 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   // Reset tenant to pending so provision can run
   await sql`
     UPDATE tenants
-    SET status = 'pending', fly_machine_id = NULL, fly_app_name = NULL, instance_url = NULL, updated_at = now()
+    SET status = 'pending', fly_machine_id = NULL, fly_volume_id = NULL, fly_app_name = NULL, instance_url = NULL, updated_at = now()
     WHERE id = ${teamId}
   `;
 
