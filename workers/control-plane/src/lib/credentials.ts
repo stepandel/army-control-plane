@@ -1,6 +1,7 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "./fly";
+import { buildMachineEnv } from "./machine-env";
 
 /**
  * Push all integration tokens to a tenant's Fly machine as env vars.
@@ -23,23 +24,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   if (tokens.length === 0) throw new Error(`No tokens to push for ${tenantId}`);
 
-  const machineEnv: Record<string, string> = {
-    TEAM_ID: tenantId,
-    CONTROL_PLANE_URL: env.BASE_URL,
-    INTERNAL_SECRET: crypto.randomUUID(),
-    SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-    ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
-    BRAVE_API_KEY: env.BRAVE_API_KEY,
-    GITHUB_APP_ID: env.GITHUB_APP_ID,
-    GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
-  };
-
-  for (const t of tokens) {
-    // GitHub stores the installation ID (not a token) — name the env var accordingly
-    const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
-    const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
-    machineEnv[key] = t.access_token;
-  }
+  const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens);
 
   await fly.updateMachine(tenant.fly_machine_id, machineEnv);
 
