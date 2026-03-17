@@ -68,6 +68,7 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 | `workers/control-plane/src/middleware/cf-access.ts` | Cloudflare Access JWT validation |
 | `workers/control-plane/src/lib/oauth-state.ts` | KV-backed single-use CSRF state tokens |
 | `workers/control-plane/src/lib/fly.ts` | Fly Machines API client |
+| `workers/control-plane/src/lib/machine-env.ts` | buildMachineEnv() — single source of truth for machine env vars |
 | `workers/control-plane/src/lib/provision.ts` | provisionTenant() — creates machine, updates DB + KV |
 | `workers/control-plane/src/lib/credentials.ts` | pushCredentials() — updates machine env vars |
 | `workers/control-plane/src/db/client.ts` | Database client factory (Hyperdrive) |

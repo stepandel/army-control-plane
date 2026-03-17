@@ -158,10 +158,13 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `LINEAR_CLIENT_ID` | Linear OAuth app credentials |
 | `LINEAR_CLIENT_SECRET` | Linear OAuth app credentials |
 | `GITHUB_APP_SLUG` | GitHub App slug (used for install URLs) |
+| `GITHUB_APP_ID` | GitHub App ID (pushed to tenant machines for installation token generation) |
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
+| `GITHUB_PRIVATE_KEY` | GitHub App private key (pushed to tenant machines for installation token generation) |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
 | `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |
+| `BRAVE_API_KEY` | Brave Search API key (pushed to tenant machines) |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 
