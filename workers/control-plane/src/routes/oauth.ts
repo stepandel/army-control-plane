@@ -4,6 +4,7 @@ import { getDb } from "../db/client";
 import { createState, verifyState } from "../lib/oauth-state";
 import { provisionTenant } from "../lib/provision";
 import { pushCredentials } from "../lib/credentials";
+import { provisionLinearLabels } from "../lib/linear-labels";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -209,11 +210,12 @@ oauth.get("/linear/callback", async (c) => {
   };
   await c.env.ROUTING_TABLE.put(`linear:${linearOrgId}`, JSON.stringify(linearRoute));
 
-  // Push credentials to the running instance (fire-and-forget)
+  // Provision labels + push credentials (fire-and-forget, sequential)
   c.executionCtx.waitUntil(
-    pushCredentials(c.env, tenantId).catch((err) =>
-      console.error(`Credential push failed for ${tenantId}:`, err),
-    ),
+    provisionLinearLabels(accessToken)
+      .catch((err) => console.error(`Label provisioning failed for ${tenantId}:`, err))
+      .then(() => pushCredentials(c.env, tenantId))
+      .catch((err) => console.error(`Credential push failed for ${tenantId}:`, err)),
   );
 
   return c.text("Linear connected. Credentials are being pushed to your instance.");
