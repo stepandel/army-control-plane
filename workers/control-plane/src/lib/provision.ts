@@ -1,6 +1,7 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "./fly";
+import { buildMachineEnv } from "./machine-env";
 
 /**
  * Provision a new Fly machine for a tenant.
@@ -27,22 +28,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       FROM integration_tokens WHERE tenant_id = ${tenantId}
     `;
 
-    const machineEnv: Record<string, string> = {
-      TEAM_ID: tenantId,
-      CONTROL_PLANE_URL: env.BASE_URL,
-      INTERNAL_SECRET: internalSecret,
-      SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-      ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
-      ANTON_CONFIG_DIR: "/opt/anton/.anton",
-      ANTON_STATE_DIR: "/workspace/.anton",
-    };
-
-    for (const t of tokens) {
-      // GitHub stores the installation ID (not a token) — name the env var accordingly
-      const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
-      const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
-      machineEnv[key] = t.access_token;
-    }
+    const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens);
 
     // Create volume + machine together (retries across regions on capacity errors)
     const volumeName = `state_${tenantId.toLowerCase()}`;
