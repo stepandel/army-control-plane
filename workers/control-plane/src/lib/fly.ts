@@ -8,6 +8,12 @@ const FLY_API_BASE = "https://api.machines.dev/v1";
 const REGIONS = ["ewr", "ord", "iad"];
 const DEFAULT_REGION = REGIONS[0];
 
+const MACHINE_GUEST = {
+  cpu_kind: "shared",
+  cpus: 2,
+  memory_mb: 1024,
+} as const;
+
 interface MachineConfig {
   image: string;
   env?: Record<string, string>;
@@ -118,11 +124,7 @@ export class FlyClient {
       config: {
         image: this.image,
         env,
-        guest: {
-          cpu_kind: "shared",
-          cpus: 1,
-          memory_mb: 512,
-        },
+        guest: MACHINE_GUEST,
         ...(volumeId
           ? { mounts: [{ volume: volumeId, path: "/workspace" }] }
           : {}),
@@ -156,11 +158,7 @@ export class FlyClient {
       config: {
         image: this.image,
         env,
-        guest: {
-          cpu_kind: "shared",
-          cpus: 1,
-          memory_mb: 512,
-        },
+        guest: MACHINE_GUEST,
         services: [
           {
             protocol: "tcp",
