@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "../lib/fly";
+import { AnthropicAdminClient } from "../lib/anthropic-admin";
 import { pushCredentials } from "../lib/credentials";
 import { provisionTenant } from "../lib/provision";
 
@@ -13,7 +14,7 @@ const PLATFORMS = ["slack", "linear", "github", "anthropic"] as const;
 admin.get("/tenants", async (c) => {
   const sql = getDb(c.env);
   const tenants = await sql`
-    SELECT id, name, platform, status, fly_app_name, instance_url, created_at, updated_at
+    SELECT id, name, platform, status, fly_app_name, instance_url, anthropic_workspace_id, created_at, updated_at
     FROM tenants ORDER BY created_at DESC
   `;
   return c.json(tenants);
@@ -61,6 +62,17 @@ admin.delete("/tenants/:team_id", async (c) => {
     } catch (err) {
       console.error(`Fly cleanup failed for ${teamId}:`, err);
       // Continue with DB/KV cleanup even if Fly fails
+    }
+  }
+
+  // Deactivate Anthropic workspace keys + archive workspace
+  if (tenant.anthropic_workspace_id && c.env.ANTHROPIC_ADMIN_KEY) {
+    try {
+      const anthropic = new AnthropicAdminClient(c.env.ANTHROPIC_ADMIN_KEY);
+      await anthropic.deactivateWorkspaceKeys(tenant.anthropic_workspace_id);
+      await anthropic.archiveWorkspace(tenant.anthropic_workspace_id);
+    } catch (err) {
+      console.error(`Anthropic workspace cleanup failed for ${teamId}:`, err);
     }
   }
 
@@ -222,6 +234,141 @@ admin.delete("/tenants/:team_id/anthropic-key", async (c) => {
   }
 
   return c.json({ team_id: teamId, anthropic_key_removed: true });
+});
+
+// ── Anthropic Workspace Management ──────────────────────────────────
+// Workspaces provide per-tenant billing isolation and key lifecycle management.
+// NOTE: Anthropic's Admin API does NOT support creating API keys programmatically.
+//       Keys must be created in Claude Console after workspace provisioning.
+
+/**
+ * POST /admin/tenants/:team_id/anthropic-workspace — create an isolated Anthropic workspace
+ * Returns the workspace ID and Console URL where an API key should be created.
+ */
+admin.post("/tenants/:team_id/anthropic-workspace", async (c) => {
+  const teamId = c.req.param("team_id");
+  if (!c.env.ANTHROPIC_ADMIN_KEY) {
+    return c.json({ error: "ANTHROPIC_ADMIN_KEY not configured" }, 500);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT id, name, anthropic_workspace_id FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  if (tenant.anthropic_workspace_id) {
+    return c.json({
+      error: "Workspace already exists",
+      workspace_id: tenant.anthropic_workspace_id,
+    }, 409);
+  }
+
+  const anthropic = new AnthropicAdminClient(c.env.ANTHROPIC_ADMIN_KEY);
+  const workspaceName = `army-${teamId}`;
+  const workspace = await anthropic.createWorkspace(workspaceName);
+
+  await sql`
+    UPDATE tenants
+    SET anthropic_workspace_id = ${workspace.id}, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  return c.json({
+    team_id: teamId,
+    workspace_id: workspace.id,
+    workspace_name: workspaceName,
+    console_url: `https://console.anthropic.com/settings/workspaces/${workspace.id}`,
+    next_step: "Create an API key in Claude Console for this workspace, then PUT /admin/tenants/:team_id/anthropic-key",
+  }, 201);
+});
+
+/**
+ * GET /admin/tenants/:team_id/anthropic-workspace — workspace info + API key inventory
+ */
+admin.get("/tenants/:team_id/anthropic-workspace", async (c) => {
+  const teamId = c.req.param("team_id");
+  if (!c.env.ANTHROPIC_ADMIN_KEY) {
+    return c.json({ error: "ANTHROPIC_ADMIN_KEY not configured" }, 500);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT id, anthropic_workspace_id FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+  if (!tenant.anthropic_workspace_id) {
+    return c.json({ error: "No Anthropic workspace provisioned for this tenant" }, 404);
+  }
+
+  const anthropic = new AnthropicAdminClient(c.env.ANTHROPIC_ADMIN_KEY);
+
+  const [workspace, keys] = await Promise.all([
+    anthropic.getWorkspace(tenant.anthropic_workspace_id),
+    anthropic.listAPIKeys({ workspaceId: tenant.anthropic_workspace_id }),
+  ]);
+
+  // Check if a per-tenant key is stored in our DB
+  const [storedKey] = await sql`
+    SELECT id, created_at FROM integration_tokens
+    WHERE tenant_id = ${teamId} AND platform = 'anthropic'
+  `;
+
+  return c.json({
+    team_id: teamId,
+    workspace,
+    api_keys: keys.data,
+    stored_key: storedKey ? { id: storedKey.id, created_at: storedKey.created_at } : null,
+    console_url: `https://console.anthropic.com/settings/workspaces/${tenant.anthropic_workspace_id}`,
+  });
+});
+
+/**
+ * DELETE /admin/tenants/:team_id/anthropic-workspace — deactivate keys + archive workspace
+ */
+admin.delete("/tenants/:team_id/anthropic-workspace", async (c) => {
+  const teamId = c.req.param("team_id");
+  if (!c.env.ANTHROPIC_ADMIN_KEY) {
+    return c.json({ error: "ANTHROPIC_ADMIN_KEY not configured" }, 500);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT id, status, fly_machine_id, anthropic_workspace_id FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+  if (!tenant.anthropic_workspace_id) {
+    return c.json({ error: "No Anthropic workspace provisioned for this tenant" }, 404);
+  }
+
+  const anthropic = new AnthropicAdminClient(c.env.ANTHROPIC_ADMIN_KEY);
+
+  // Deactivate all keys in the workspace, then archive it
+  const deactivated = await anthropic.deactivateWorkspaceKeys(tenant.anthropic_workspace_id);
+  const workspace = await anthropic.archiveWorkspace(tenant.anthropic_workspace_id);
+
+  // Remove per-tenant key from our DB
+  await sql`
+    DELETE FROM integration_tokens
+    WHERE tenant_id = ${teamId} AND platform = 'anthropic'
+  `;
+
+  // Clear workspace reference
+  await sql`
+    UPDATE tenants
+    SET anthropic_workspace_id = NULL, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  // If tenant is active, push updated credentials (will revert to global fallback)
+  if (tenant.status === "active" && tenant.fly_machine_id) {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`Credential push failed for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({
+    team_id: teamId,
+    workspace_archived: true,
+    workspace_id: workspace.id,
+    keys_deactivated: deactivated,
+  });
 });
 
 export default admin;

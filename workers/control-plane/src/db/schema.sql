@@ -8,15 +8,19 @@ CREATE TABLE IF NOT EXISTS tenants (
   fly_machine_id TEXT,
   instance_url  TEXT,
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
+  anthropic_workspace_id TEXT,               -- Anthropic workspace ID for per-tenant key isolation
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Migration: add anthropic_workspace_id to existing tenants table
+-- ALTER TABLE tenants ADD COLUMN IF NOT EXISTS anthropic_workspace_id TEXT;
+
 CREATE TABLE IF NOT EXISTS integration_tokens (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  platform    TEXT NOT NULL,              -- "slack" | "linear" | "github"
-  token_type  TEXT NOT NULL DEFAULT 'bot', -- bot | user
+  platform    TEXT NOT NULL,              -- "slack" | "linear" | "github" | "anthropic"
+  token_type  TEXT NOT NULL DEFAULT 'bot', -- bot | user | api_key | installation
   access_token TEXT NOT NULL,
   refresh_token TEXT,
   scopes      TEXT,

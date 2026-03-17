@@ -162,6 +162,7 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
 | `ANTHROPIC_API_KEY` | Default Anthropic API key — used as fallback when no per-tenant key is provisioned |
+| `ANTHROPIC_ADMIN_KEY` | Anthropic Admin API key (`sk-ant-admin...`) for per-tenant workspace management |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 
@@ -190,3 +191,49 @@ Each tenant can have a dedicated Anthropic API key stored in the `integration_to
 - `DELETE /admin/tenants/:team_id/anthropic-key` — remove the per-tenant key (reverts to global fallback)
 
 When provisioning or pushing credentials, the system checks for a per-tenant key first. If none exists, it falls back to the global `ANTHROPIC_API_KEY` worker secret.
+
+### Anthropic Workspace Management (Admin API)
+
+The control plane uses the **Anthropic Admin API** to create isolated workspaces per tenant for billing separation and key lifecycle management. This requires an Admin API key (`sk-ant-admin...`) stored as the `ANTHROPIC_ADMIN_KEY` worker secret.
+
+> **Important:** The Anthropic Admin API does NOT support creating API keys programmatically. Keys must be created manually in the [Claude Console](https://console.anthropic.com) after workspace provisioning.
+
+#### Provisioning flow
+
+```
+1. POST /admin/tenants/:team_id/anthropic-workspace
+   → Creates workspace "army-{team_id}" via Admin API
+   → Stores workspace_id on the tenants row
+   → Returns Console URL for manual key creation
+
+2. Admin creates API key in Claude Console for that workspace
+
+3. PUT /admin/tenants/:team_id/anthropic-key
+   → Stores the key in integration_tokens
+   → Pushes to the running Fly machine
+```
+
+#### Management endpoints
+
+| Method | Path | Action |
+|---|---|---|
+| `POST` | `/admin/tenants/:team_id/anthropic-workspace` | Create isolated workspace |
+| `GET` | `/admin/tenants/:team_id/anthropic-workspace` | Workspace info + API key inventory |
+| `DELETE` | `/admin/tenants/:team_id/anthropic-workspace` | Deactivate keys + archive workspace |
+
+#### Cleanup on tenant teardown
+
+When a tenant is destroyed (`DELETE /admin/tenants/:team_id`), the system automatically:
+1. Deactivates all active API keys in the tenant's Anthropic workspace
+2. Archives the workspace
+3. Proceeds with normal Fly machine and KV cleanup
+
+#### Setting up the Admin API key
+
+1. In the [Claude Console](https://console.anthropic.com), go to **Settings → Admin API keys**
+2. Create a new Admin API key (requires organization admin role)
+3. Set it as a worker secret:
+   ```sh
+   cd workers/control-plane
+   wrangler secret put ANTHROPIC_ADMIN_KEY
+   ```
