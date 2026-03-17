@@ -60,12 +60,13 @@ export async function provisionLinearLabels(accessToken: string) {
     issueLabels: { nodes: { id: string; name: string }[] };
   }>(accessToken, `{ issueLabels(filter: { group: { id: { eq: "${groupId}" } } }) { nodes { id name } } }`);
 
-  const existingNames = new Set(issueLabels.nodes.map((l) => l.name));
+  const existingByName = new Map(issueLabels.nodes.map((l) => [l.name, l.id]));
+  const desiredNames: Set<string> = new Set(LABELS.map((l) => l.name));
 
-  // Step 3 — Create each label (skip if already exists)
+  // Step 3 — Create missing labels
   let created = 0;
   for (const label of LABELS) {
-    if (existingNames.has(label.name)) continue;
+    if (existingByName.has(label.name)) continue;
 
     const { issueLabelCreate } = await linearGraphQL<{
       issueLabelCreate: { issueLabel: { id: string }; success: boolean };
@@ -80,5 +81,21 @@ export async function provisionLinearLabels(accessToken: string) {
     created++;
   }
 
-  console.log(`Linear labels: ${created} created, ${LABELS.length - created} already existed`);
+  // Step 4 — Archive labels in the group that are no longer in LABELS
+  let archived = 0;
+  for (const [name, id] of existingByName) {
+    if (desiredNames.has(name)) continue;
+
+    const { issueLabelArchive } = await linearGraphQL<{
+      issueLabelArchive: { success: boolean };
+    }>(
+      accessToken,
+      `mutation ($id: String!) { issueLabelArchive(id: $id) { success } }`,
+      { id },
+    );
+    if (!issueLabelArchive.success) throw new Error(`Failed to archive label ${name}`);
+    archived++;
+  }
+
+  console.log(`Linear labels: ${created} created, ${archived} archived, ${LABELS.length - created} already existed`);
 }
