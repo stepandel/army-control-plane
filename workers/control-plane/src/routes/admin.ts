@@ -4,6 +4,7 @@ import { getDb } from "../db/client";
 import { FlyClient } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
 import { provisionTenant } from "../lib/provision";
+import { provisionLinearLabels } from "../lib/linear-labels";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -164,6 +165,55 @@ admin.post("/tenants/:team_id/push-credentials", async (c) => {
   try {
     const result = await pushCredentials(c.env, teamId);
     return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ error: message }, 400);
+  }
+});
+
+/** POST /admin/tenants/push-labels — provision Linear labels for all tenants with Linear connected */
+admin.post("/tenants/push-labels", async (c) => {
+  const sql = getDb(c.env);
+  const tokens = await sql`
+    SELECT t.id AS tenant_id, it.access_token
+    FROM tenants t
+    JOIN integration_tokens it ON it.tenant_id = t.id
+    WHERE t.status = 'active' AND it.platform = 'linear'
+  `;
+
+  const results: { tenant_id: string; status: "ok" | "error"; error?: string }[] = [];
+
+  for (const row of tokens) {
+    try {
+      await provisionLinearLabels(row.access_token);
+      results.push({ tenant_id: row.tenant_id, status: "ok" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`pushLabels failed for ${row.tenant_id}:`, message);
+      results.push({ tenant_id: row.tenant_id, status: "error", error: message });
+    }
+  }
+
+  const succeeded = results.filter((r) => r.status === "ok").length;
+  const failed = results.filter((r) => r.status === "error").length;
+
+  return c.json({ total: results.length, succeeded, failed, results });
+});
+
+/** POST /admin/tenants/:team_id/push-labels — provision Linear labels for a single tenant */
+admin.post("/tenants/:team_id/push-labels", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const [token] = await sql`
+    SELECT access_token FROM integration_tokens
+    WHERE tenant_id = ${teamId} AND platform = 'linear'
+  `;
+  if (!token) return c.json({ error: "No Linear integration for this tenant" }, 404);
+
+  try {
+    await provisionLinearLabels(token.access_token);
+    return c.json({ tenant_id: teamId, status: "ok" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: message }, 400);
