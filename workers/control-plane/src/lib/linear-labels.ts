@@ -6,6 +6,7 @@ const LABELS = [
   { name: "#triage", color: "#34D399", description: "Investigate the bug or issue, identify root cause, and recommend a fix" },
   { name: "#execute", color: "#34D399", description: "(default behaviour) Implement the solution and open a pull request" },
   { name: "#review", color: "#34D399", description: "Review the pull request for correctness, style, and edge cases" },
+  { name: "#verbose", color: "#FBBF24", description: "Ask clarifying questions before starting work (use alongside other labels)" },
 ] as const;
 
 interface GraphQLResponse<T> {
