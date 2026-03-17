@@ -88,8 +88,9 @@ The Control Plane manages the full tenant lifecycle. Built with Hono.
 
 | Function | Source | Called by |
 |---|---|---|
+| `buildMachineEnv(env, tenantId, secret, tokens)` | `lib/machine-env.ts` | provisionTenant, pushCredentials |
 | `provisionTenant(env, tenantId)` | `lib/provision.ts` | Slack OAuth callback, admin reprovision |
-| `pushCredentials(env, tenantId)` | `lib/credentials.ts` | Linear/GitHub OAuth callbacks |
+| `pushCredentials(env, tenantId)` | `lib/credentials.ts` | Linear/GitHub OAuth callbacks, admin push-credentials |
 
 ### Cloudflare KV
 
