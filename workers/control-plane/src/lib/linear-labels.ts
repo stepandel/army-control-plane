@@ -61,21 +61,32 @@ export async function provisionLinearLabels(accessToken: string) {
     groupId = issueLabelCreate.issueLabel.id;
   }
 
-  // Step 2 — Fetch existing child labels in this group
+  // Step 2 — Fetch ALL labels with our names (workspace-wide, not just under our group)
+  // This catches orphaned labels from previous failed provisioning attempts
   const { issueLabels } = await linearGraphQL<{
-    issueLabels: { nodes: { id: string; name: string; color: string; description?: string }[] };
+    issueLabels: { nodes: { id: string; name: string; color: string; description?: string; parent?: { id: string } }[] };
   }>(accessToken, `{
-    issueLabels(filter: { parent: { id: { eq: "${groupId}" } } }) {
-      nodes { id name color description }
+    issueLabels(filter: { name: { in: [${LABELS.map((l) => `"${l.name}"`).join(", ")}] } }) {
+      nodes { id name color description parent { id } }
     }
   }`);
 
   const existingByName = new Map(issueLabels.nodes.map((l) => [l.name, l]));
   const desiredNames: Set<string> = new Set(LABELS.map((l) => l.name));
 
-  // Step 3 — Create missing labels, update existing ones if color/description changed
+  // Also fetch labels under our group to detect stale ones that need archiving
+  const { issueLabels: groupChildren } = await linearGraphQL<{
+    issueLabels: { nodes: { id: string; name: string }[] };
+  }>(accessToken, `{
+    issueLabels(filter: { parent: { id: { eq: "${groupId}" } } }) {
+      nodes { id name }
+    }
+  }`);
+
+  // Step 3 — Create missing labels, adopt orphans, update drifted ones
   let created = 0;
   let updated = 0;
+  let adopted = 0;
   for (const label of LABELS) {
     const existing = existingByName.get(label.name);
 
@@ -94,22 +105,28 @@ export async function provisionLinearLabels(accessToken: string) {
       continue;
     }
 
-    // Update if color or description drifted
-    if (existing.color !== label.color || (existing.description ?? "") !== label.description) {
+    // Build update payload for any drift (parent, color, description)
+    const updates: Record<string, string> = {};
+    if (existing.parent?.id !== groupId) updates.parentId = groupId;
+    if (existing.color !== label.color) updates.color = label.color;
+    if ((existing.description ?? "") !== label.description) updates.description = label.description;
+
+    if (Object.keys(updates).length > 0) {
       await linearGraphQL<{ issueLabelUpdate: { success: boolean } }>(
         accessToken,
         `mutation ($id: String!, $input: IssueLabelUpdateInput!) {
           issueLabelUpdate(id: $id, input: $input) { success }
         }`,
-        { id: existing.id, input: { color: label.color, description: label.description } },
+        { id: existing.id, input: updates },
       );
-      updated++;
+      if (updates.parentId) adopted++;
+      else updated++;
     }
   }
 
   // Step 4 — Archive labels in the group that are no longer in LABELS
   let archived = 0;
-  for (const [name, { id }] of existingByName) {
+  for (const { name, id } of groupChildren.nodes) {
     if (desiredNames.has(name)) continue;
 
     const { issueLabelArchive } = await linearGraphQL<{
@@ -123,5 +140,5 @@ export async function provisionLinearLabels(accessToken: string) {
     archived++;
   }
 
-  console.log(`Linear labels: ${created} created, ${updated} updated, ${archived} archived`);
+  console.log(`Linear labels: ${created} created, ${updated} updated, ${adopted} adopted, ${archived} archived`);
 }
