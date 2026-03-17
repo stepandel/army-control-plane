@@ -161,7 +161,7 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
-| `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |
+| `ANTHROPIC_API_KEY` | Default Anthropic API key — used as fallback when no per-tenant key is provisioned |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 
@@ -181,3 +181,12 @@ wrangler secret put SLACK_CLIENT_SECRET
 ```
 
 Secrets are **never** committed to the repository. Local development uses `.dev.vars` files (gitignored).
+
+### Per-tenant Anthropic API keys
+
+Each tenant can have a dedicated Anthropic API key stored in the `integration_tokens` table (`platform='anthropic'`, `token_type='api_key'`). Admin operators manage these via:
+
+- `PUT /admin/tenants/:team_id/anthropic-key` — set/update the per-tenant key
+- `DELETE /admin/tenants/:team_id/anthropic-key` — remove the per-tenant key (reverts to global fallback)
+
+When provisioning or pushing credentials, the system checks for a per-tenant key first. If none exists, it falls back to the global `ANTHROPIC_API_KEY` worker secret.

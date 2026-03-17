@@ -27,17 +27,22 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       FROM integration_tokens WHERE tenant_id = ${tenantId}
     `;
 
+    // Resolve per-tenant Anthropic key (falls back to global key)
+    const anthropicToken = tokens.find((t) => t.platform === "anthropic");
+    const anthropicApiKey = anthropicToken?.access_token ?? env.ANTHROPIC_API_KEY;
+
     const machineEnv: Record<string, string> = {
       TEAM_ID: tenantId,
       CONTROL_PLANE_URL: env.BASE_URL,
       INTERNAL_SECRET: internalSecret,
       SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-      ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+      ANTHROPIC_API_KEY: anthropicApiKey,
       ANTON_CONFIG_DIR: "/opt/anton/.anton",
       ANTON_STATE_DIR: "/workspace/.anton",
     };
 
     for (const t of tokens) {
+      if (t.platform === "anthropic") continue; // handled above
       // GitHub stores the installation ID (not a token) — name the env var accordingly
       const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
       const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;

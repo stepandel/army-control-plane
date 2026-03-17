@@ -7,7 +7,7 @@ import { provisionTenant } from "../lib/provision";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
-const PLATFORMS = ["slack", "linear", "github"] as const;
+const PLATFORMS = ["slack", "linear", "github", "anthropic"] as const;
 
 /** GET /admin/tenants — list all tenants + status */
 admin.get("/tenants", async (c) => {
@@ -168,6 +168,60 @@ admin.post("/tenants/:team_id/push-credentials", async (c) => {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: message }, 400);
   }
+});
+
+/** PUT /admin/tenants/:team_id/anthropic-key — set per-tenant Anthropic API key */
+admin.put("/tenants/:team_id/anthropic-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const body = await c.req.json<{ api_key: string }>();
+  if (!body.api_key) return c.json({ error: "Missing api_key in request body" }, 400);
+
+  const sql = getDb(c.env);
+
+  const [tenant] = await sql`SELECT id, status, fly_machine_id FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  await sql`
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token)
+    VALUES (${teamId}, 'anthropic', 'api_key', ${body.api_key})
+    ON CONFLICT (tenant_id, platform) DO UPDATE SET access_token = ${body.api_key}
+  `;
+
+  // If tenant is active, push updated credentials to the running machine
+  if (tenant.status === "active" && tenant.fly_machine_id) {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`Credential push failed for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ team_id: teamId, anthropic_key_set: true });
+});
+
+/** DELETE /admin/tenants/:team_id/anthropic-key — remove per-tenant key (reverts to global fallback) */
+admin.delete("/tenants/:team_id/anthropic-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const [tenant] = await sql`SELECT id, status, fly_machine_id FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  await sql`
+    DELETE FROM integration_tokens
+    WHERE tenant_id = ${teamId} AND platform = 'anthropic'
+  `;
+
+  // If tenant is active, push updated credentials (will use global fallback)
+  if (tenant.status === "active" && tenant.fly_machine_id) {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`Credential push failed for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ team_id: teamId, anthropic_key_removed: true });
 });
 
 export default admin;
