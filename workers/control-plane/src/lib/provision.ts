@@ -32,7 +32,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
 
     // Create volume + machine together (retries across regions on capacity errors)
     const volumeName = `state_${tenantId.toLowerCase()}`;
-    const { machine } = await fly.createMachineWithVolume(machineName, machineEnv, volumeName, 1);
+    const { machine, volume } = await fly.createMachineWithVolume(machineName, machineEnv, volumeName, 1);
     const instanceUrl = `https://${env.FLY_APP}.fly.dev`;
 
     // Update tenant record
@@ -40,6 +40,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       UPDATE tenants
       SET fly_app_name = ${env.FLY_APP},
           fly_machine_id = ${machine.id},
+          fly_volume_id = ${volume.id},
           instance_url = ${instanceUrl},
           status = 'active',
           updated_at = now()
