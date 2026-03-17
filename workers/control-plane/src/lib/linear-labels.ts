@@ -55,30 +55,46 @@ export async function provisionLinearLabels(accessToken: string) {
     groupId = issueLabelGroupCreate.labelGroup.id;
   }
 
-  // Fetch existing labels in this group to skip duplicates
+  // Fetch existing labels in this group with color/description for diffing
   const { issueLabels } = await linearGraphQL<{
-    issueLabels: { nodes: { id: string; name: string }[] };
-  }>(accessToken, `{ issueLabels(filter: { group: { id: { eq: "${groupId}" } } }) { nodes { id name } } }`);
+    issueLabels: { nodes: { id: string; name: string; color: string; description?: string }[] };
+  }>(accessToken, `{ issueLabels(filter: { group: { id: { eq: "${groupId}" } } }) { nodes { id name color description } } }`);
 
-  const existingByName = new Map(issueLabels.nodes.map((l) => [l.name, l.id]));
+  const existingByName = new Map(issueLabels.nodes.map((l) => [l.name, l]));
   const desiredNames: Set<string> = new Set(LABELS.map((l) => l.name));
 
-  // Step 3 — Create missing labels
+  // Step 3 — Create missing labels, update existing ones if color/description changed
   let created = 0;
+  let updated = 0;
   for (const label of LABELS) {
-    if (existingByName.has(label.name)) continue;
+    const existing = existingByName.get(label.name);
 
-    const { issueLabelCreate } = await linearGraphQL<{
-      issueLabelCreate: { issueLabel: { id: string }; success: boolean };
-    }>(
-      accessToken,
-      `mutation ($input: IssueLabelCreateInput!) {
-        issueLabelCreate(input: $input) { issueLabel { id } success }
-      }`,
-      { input: { name: label.name, color: label.color, description: label.description, labelGroupId: groupId } },
-    );
-    if (!issueLabelCreate.success) throw new Error(`Failed to create label ${label.name}`);
-    created++;
+    if (!existing) {
+      const { issueLabelCreate } = await linearGraphQL<{
+        issueLabelCreate: { issueLabel: { id: string }; success: boolean };
+      }>(
+        accessToken,
+        `mutation ($input: IssueLabelCreateInput!) {
+          issueLabelCreate(input: $input) { issueLabel { id } success }
+        }`,
+        { input: { name: label.name, color: label.color, description: label.description, labelGroupId: groupId } },
+      );
+      if (!issueLabelCreate.success) throw new Error(`Failed to create label ${label.name}`);
+      created++;
+      continue;
+    }
+
+    // Update if color or description drifted
+    if (existing.color !== label.color || (existing.description ?? "") !== label.description) {
+      await linearGraphQL<{ issueLabelUpdate: { success: boolean } }>(
+        accessToken,
+        `mutation ($id: String!, $input: IssueLabelUpdateInput!) {
+          issueLabelUpdate(id: $id, input: $input) { success }
+        }`,
+        { id: existing.id, input: { color: label.color, description: label.description } },
+      );
+      updated++;
+    }
   }
 
   // Step 4 — Archive labels in the group that are no longer in LABELS
@@ -97,5 +113,5 @@ export async function provisionLinearLabels(accessToken: string) {
     archived++;
   }
 
-  console.log(`Linear labels: ${created} created, ${archived} archived, ${LABELS.length - created} already existed`);
+  console.log(`Linear labels: ${created} created, ${updated} updated, ${archived} archived`);
 }
