@@ -129,14 +129,14 @@ export async function provisionLinearLabels(accessToken: string) {
   for (const { name, id } of groupChildren.nodes) {
     if (desiredNames.has(name)) continue;
 
-    const { issueLabelArchive } = await linearGraphQL<{
-      issueLabelArchive: { success: boolean };
+    const { issueLabelRetire } = await linearGraphQL<{
+      issueLabelRetire: { success: boolean };
     }>(
       accessToken,
-      `mutation ($id: String!) { issueLabelArchive(id: $id) { success } }`,
+      `mutation ($id: String!) { issueLabelRetire(id: $id) { success } }`,
       { id },
     );
-    if (!issueLabelArchive.success) throw new Error(`Failed to archive label ${name}`);
+    if (!issueLabelRetire.success) throw new Error(`Failed to retire label ${name}`);
     archived++;
   }
 
