@@ -21,6 +21,8 @@ export function buildMachineEnv(
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
     LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
     LINEAR_CLIENT_SECRET: env.LINEAR_CLIENT_SECRET,
+    LANGSMITH_TRACING: "true",
+    LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
     ANTON_CONFIG_DIR: "/opt/anton/.anton",
     ANTON_STATE_DIR: "/workspace/.anton",
   };
