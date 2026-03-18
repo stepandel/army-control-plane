@@ -31,7 +31,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens);
 
     // Create volume + machine together (retries across regions on capacity errors)
-    const volumeName = `state_${tenantId.toLowerCase()}`;
+    const volumeName = "anton_state";
     const { machine, volume } = await fly.createMachineWithVolume(machineName, machineEnv, volumeName, 1);
     const instanceUrl = `https://${env.FLY_APP}.fly.dev`;
 
