@@ -41,5 +41,7 @@ export interface ControlPlaneEnv {
   CF_ACCESS_AUD: string;
   ANTHROPIC_API_KEY: string;
   BRAVE_API_KEY: string;
+  LANGSMITH_TRACING: string;
+  LANGSMITH_PROJECT: string;
   LANGSMITH_API_KEY: string;
 }

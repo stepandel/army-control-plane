@@ -28,6 +28,8 @@ LINEAR_CLIENT_ID = "fab76ad6254da0fe26f554297302d3cd"
 GITHUB_APP_SLUG = "agent-vera"
 GITHUB_CLIENT_ID = "Iv23liNbB1TLvul88Ikx"
 GITHUB_APP_ID="3061325"
+LANGSMITH_TRACING = "true"
+LANGSMITH_PROJECT = "anton-remote"
 
 [triggers]
 crons = ["*/30 * * * *"]  # Every 30 minutes — refresh Linear tokens expiring within 1 hour
