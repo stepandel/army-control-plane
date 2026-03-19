@@ -7,6 +7,8 @@
 const FLY_API_BASE = "https://api.machines.dev/v1";
 const REGIONS = ["ewr", "ord", "iad"];
 const DEFAULT_REGION = REGIONS[0];
+const VOLUME_NAME = "anton_state";
+const VOLUME_PATH = "/workspace";
 
 const MACHINE_GUEST = {
   cpu_kind: "shared",
@@ -24,6 +26,7 @@ interface MachineConfig {
   };
   mounts?: Array<{
     volume: string;
+    name: string;
     path: string;
   }>;
   services?: Array<{
@@ -126,7 +129,7 @@ export class FlyClient {
         env,
         guest: MACHINE_GUEST,
         ...(volumeId
-          ? { mounts: [{ volume: volumeId, path: "/workspace" }] }
+          ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
           : {}),
         services: [
           {
@@ -161,7 +164,7 @@ export class FlyClient {
         env,
         guest: MACHINE_GUEST,
         ...(volumeId
-          ? { mounts: [{ volume: volumeId, path: "/workspace" }] }
+          ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
           : {}),
         services: [
           {
