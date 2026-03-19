@@ -26,7 +26,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens);
 
-  await fly.updateMachine(tenant.fly_machine_id, machineEnv);
+  await fly.updateMachine(tenant.fly_machine_id, machineEnv, tenant.fly_volume_id);
 
   // Write KV routing entries for all webhook-based platforms
   const internalSecret = machineEnv.INTERNAL_SECRET;
