@@ -153,12 +153,16 @@ export class FlyClient {
   async updateMachine(
     machineId: string,
     env: Record<string, string>,
+    volumeId?: string,
   ): Promise<MachineResponse> {
     return this.request<MachineResponse>("POST", `/machines/${machineId}`, {
       config: {
         image: this.image,
         env,
         guest: MACHINE_GUEST,
+        ...(volumeId
+          ? { mounts: [{ volume: volumeId, path: "/workspace" }] }
+          : {}),
         services: [
           {
             protocol: "tcp",
