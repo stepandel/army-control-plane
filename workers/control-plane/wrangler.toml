@@ -48,3 +48,10 @@ invocation_logs = true
 enabled = false
 persist = true
 head_sampling_rate = 1
+
+# Portal UI — static assets served by Workers Static Assets
+[assets]
+directory = "./public"
+not_found_handling = "single-page-application"
+binding = "ASSETS"
+run_worker_first = ["/admin/*", "/oauth/*", "/internal/*", "/health", "/portal/*"]

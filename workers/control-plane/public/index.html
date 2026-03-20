@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Army Control Plane</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/htmx.min.js"></script>
+</head>
+<body>
+  <div id="app" hx-get="/portal/dashboard" hx-trigger="load" hx-target="#app" hx-push-url="/portal/dashboard">
+    <div class="loading">Loading...</div>
+  </div>
+  <script>document.addEventListener('animationend', e => { if (e.target.classList.contains('toast')) e.target.remove(); });</script>
+</body>
+</html>

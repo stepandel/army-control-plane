@@ -3,6 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
 import admin from "./routes/admin";
 import internal from "./routes/internal";
+import portal from "./portal/index.js";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 
@@ -18,6 +19,9 @@ app.route("/internal", internal);
 // Protected routes — require Cloudflare Access JWT
 app.use("/admin/*", cfAccessGuard);
 app.route("/admin", admin);
+
+app.use("/portal/*", cfAccessGuard);
+app.route("/portal", portal);
 
 export default {
   fetch: app.fetch,
