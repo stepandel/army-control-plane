@@ -2,7 +2,7 @@ const LABEL_GROUP_NAME = "Anton Controls";
 
 const LABELS = [
   { name: "#research", color: "#34D399", description: "Deep-dive research across the web and codebase, returns a written report" },
-  { name: "#plan", color: "#34D399", description: "Break down the ticket into subtasks and propose an implementation plan" },
+  { name: "#prep", color: "#34D399", description: "Break down the ticket into subtasks and propose an implementation plan" },
   { name: "#triage", color: "#34D399", description: "Investigate the bug or issue, identify root cause, and recommend a fix" },
   { name: "#execute", color: "#34D399", description: "(default behaviour) Implement the solution and open a pull request" },
   { name: "#review", color: "#34D399", description: "Review the pull request for correctness, style, and edge cases" },
