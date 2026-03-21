@@ -43,6 +43,10 @@ interface MachineConfig {
       hard_limit: number;
     };
   }>;
+  metrics?: {
+    port: number;
+    path: string;
+  };
 }
 
 interface VolumeResponse {
@@ -146,6 +150,7 @@ export class FlyClient {
             },
           },
         ],
+        metrics: { port: 3000, path: "/metrics" },
       },
     };
 
@@ -181,6 +186,7 @@ export class FlyClient {
             },
           },
         ],
+        metrics: { port: 3000, path: "/metrics" },
       },
     });
   }
