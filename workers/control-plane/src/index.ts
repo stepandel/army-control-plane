@@ -3,6 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
 import admin from "./routes/admin";
 import internal from "./routes/internal";
+import onboarding from "./routes/onboarding";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 
@@ -13,6 +14,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 
 // Public routes
 app.route("/oauth", oauth);
+app.route("/onboarding", onboarding);
 app.route("/internal", internal);
 
 // Protected routes — require Cloudflare Access JWT
