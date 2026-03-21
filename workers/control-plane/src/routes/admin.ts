@@ -14,7 +14,7 @@ const PLATFORMS = ["slack", "linear", "github"] as const;
 admin.get("/tenants", async (c) => {
   const sql = getDb(c.env);
   const tenants = await sql`
-    SELECT id, name, platform, status, fly_app_name, instance_url, created_at, updated_at
+    SELECT id, name, platform, status, fly_app_name, fly_machine_id, fly_volume_id, instance_url, created_at, updated_at
     FROM tenants ORDER BY created_at DESC
   `;
   return c.json(tenants);
