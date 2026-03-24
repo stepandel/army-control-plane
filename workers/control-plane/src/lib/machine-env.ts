@@ -10,6 +10,7 @@ export function buildMachineEnv(
   internalSecret: string,
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
+  veraProduction?: boolean,
 ): Record<string, string> {
   const machineEnv: Record<string, string> = {
     TEAM_ID: tenantId,
@@ -25,6 +26,7 @@ export function buildMachineEnv(
     LANGSMITH_TRACING: env.LANGSMITH_TRACING,
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
     LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
+    VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
     ANTON_CONFIG_DIR: "/opt/anton/.anton",
     ANTON_STATE_DIR: "/workspace/.anton",
   };

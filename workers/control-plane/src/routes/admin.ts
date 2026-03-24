@@ -148,6 +148,37 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   return c.json({ team_id: teamId, status: "reprovisioning" });
 });
 
+/** PATCH /admin/tenants/:team_id/vera-production — toggle VERA_PRODUCTION for a tenant */
+admin.patch("/tenants/:team_id/vera-production", async (c) => {
+  const teamId = c.req.param("team_id");
+  const body = await c.req.json<{ enabled: boolean }>();
+
+  if (typeof body.enabled !== "boolean") {
+    return c.json({ error: "Request body must include { enabled: boolean }" }, 400);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  await sql`
+    UPDATE tenants SET vera_production = ${body.enabled}, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  // Push updated env to the machine if it's active
+  if (tenant.status === "active") {
+    try {
+      await pushCredentials(c.env, teamId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ team_id: teamId, vera_production: body.enabled, push_error: message }, 200);
+    }
+  }
+
+  return c.json({ team_id: teamId, vera_production: body.enabled });
+});
+
 /** POST /admin/tenants/push-credentials — push credentials to all active tenants */
 admin.post("/tenants/push-credentials", async (c) => {
   const sql = getDb(c.env);
