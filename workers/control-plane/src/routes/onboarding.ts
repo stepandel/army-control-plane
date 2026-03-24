@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { html, raw } from "hono/html";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
+import { pushCredentials } from "../lib/credentials";
 
 const onboarding = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -193,6 +194,39 @@ function layout(title: string, body: string) {
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
           }
+          .key-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+          }
+          .key-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: #e5e5e5;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+          }
+          .key-input:focus {
+            border-color: #555;
+          }
+          .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+          }
+          .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+          }
+          .step-optional {
+            font-size: 11px;
+            color: #666;
+            font-weight: 400;
+            margin-left: 6px;
+          }
         </style>
       </head>
       <body>
@@ -256,6 +290,7 @@ onboarding.get("/:team_id", async (c) => {
 
   const isActive = tenant.status === "active";
   const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
+  const hasCustomKey = !!tenant.anthropic_api_key;
   const allDone = connected.has("slack") && connected.has("linear") && connected.has("github");
 
   const linearUrl = `${c.env.BASE_URL}/oauth/linear/install?tenant_id=${teamId}`;
@@ -320,6 +355,23 @@ onboarding.get("/:team_id", async (c) => {
               : ""
         }
       </div>
+
+      <div class="step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}">
+        <div class="step-number">${hasCustomKey ? "✓" : "⚙"}</div>
+        <div class="step-body">
+          <div class="step-title">Anthropic API Key <span class="step-optional">Optional</span></div>
+          <div class="step-desc">${hasCustomKey ? "Custom key configured" : "Using shared key — bring your own for dedicated usage"}</div>
+          ${
+            isActive && !hasCustomKey
+              ? `<form class="key-form" onsubmit="saveKey(event)">
+                  <input type="password" class="key-input" id="anthropic-key" placeholder="sk-ant-..." required />
+                  <button type="submit" class="btn btn-primary">Save</button>
+                </form>`
+              : ""
+          }
+        </div>
+        ${hasCustomKey ? `<button class="btn btn-danger" onclick="removeKey()">Reset</button>` : ""}
+      </div>
     </div>
 
     ${allDone ? `<div class="done-banner">All integrations connected — Anton is ready to go.</div>` : ""}
@@ -339,6 +391,30 @@ onboarding.get("/:team_id", async (c) => {
             })();
           </script>`
         : ""
+    }
+
+    ${
+      isActive
+        ? `<script>
+            async function saveKey(e) {
+              e.preventDefault();
+              const key = document.getElementById('anthropic-key').value;
+              const res = await fetch(location.pathname + '/anthropic-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: key }),
+              });
+              if (res.ok) { location.reload(); }
+              else { const d = await res.json(); alert(d.error || 'Failed to save key'); }
+            }
+            async function removeKey() {
+              if (!confirm('Reset to shared key?')) return;
+              const res = await fetch(location.pathname + '/anthropic-key', { method: 'DELETE' });
+              if (res.ok) { location.reload(); }
+              else { alert('Failed to remove key'); }
+            }
+          </script>`
+        : ""
     }`;
   return c.html(layout("Army — Setup", body));
 });
@@ -351,6 +427,53 @@ onboarding.get("/:team_id/status", async (c) => {
   const [tenant] = await sql`SELECT status FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "not_found" }, 404);
   return c.json({ status: tenant.status });
+});
+
+// ─── Anthropic API key BYOK ─────────────────────────────────────
+
+onboarding.post("/:team_id/anthropic-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const body = await c.req.json<{ api_key?: string }>();
+  if (!body.api_key || typeof body.api_key !== "string" || !body.api_key.startsWith("sk-ant-")) {
+    return c.json({ error: "Invalid API key — must start with sk-ant-" }, 400);
+  }
+
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
+
+  await sql`UPDATE tenants SET anthropic_api_key = ${body.api_key}, updated_at = now() WHERE id = ${teamId}`;
+
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`pushCredentials failed after BYOK set for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ success: true, status: "custom_key_set" });
+});
+
+onboarding.delete("/:team_id/anthropic-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
+
+  await sql`UPDATE tenants SET anthropic_api_key = NULL, updated_at = now() WHERE id = ${teamId}`;
+
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`pushCredentials failed after BYOK reset for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ success: true, status: "using_default" });
 });
 
 // ─── Helper ─────────────────────────────────────────────────────

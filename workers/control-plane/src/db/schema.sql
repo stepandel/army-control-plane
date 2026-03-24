@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   fly_machine_id TEXT,
   fly_volume_id TEXT,
   instance_url  TEXT,
+  anthropic_api_key TEXT,                        -- optional BYOK Anthropic key (NULL = use global fallback)
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
