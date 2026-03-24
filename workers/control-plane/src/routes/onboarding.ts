@@ -245,7 +245,7 @@ onboarding.get("/", (c) => {
   const body = `
     <h1>Set up your workspace</h1>
     <p class="subtitle">
-      Connect Slack, Linear, and GitHub to get Anton running in your workspace.
+      Connect Slack, Linear, and GitHub to get Vera running in your workspace.
       Slack is required first — it creates your tenant.
     </p>
     <div class="steps">
@@ -299,7 +299,7 @@ onboarding.get("/:team_id", async (c) => {
   const body = `
     <h1>Welcome, ${escapeHtml(tenant.name)}</h1>
     <p class="subtitle">
-      Connect your tools to finish setting up Anton.
+      Connect your tools to finish setting up Vera.
     </p>
     <div class="steps">
       <div class="step connected">
@@ -374,7 +374,7 @@ onboarding.get("/:team_id", async (c) => {
       </div>
     </div>
 
-    ${allDone ? `<div class="done-banner">All integrations connected — Anton is ready to go.</div>` : ""}
+    ${allDone ? `<div class="done-banner">All integrations connected — Vera is ready to go.</div>` : ""}
 
     ${
       isProvisioning
