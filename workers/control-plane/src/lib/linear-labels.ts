@@ -1,4 +1,4 @@
-const LABEL_GROUP_NAME = "Anton Controls";
+const LABEL_GROUP_NAME = "Vera Controls";
 
 const LABELS = [
   { name: "#research", color: "#34D399", description: "Deep-dive research across the web and codebase, returns a written report" },
@@ -26,7 +26,7 @@ async function linearGraphQL<T>(accessToken: string, query: string, variables?: 
 }
 
 /**
- * Provision the "Anton Controls" label group and labels in the Linear workspace.
+ * Provision the "Vera Controls" label group and labels in the Linear workspace.
  * Idempotent — creates missing labels, updates drifted ones, archives removed ones.
  *
  * Linear models label groups as labels with `isGroup: true`.

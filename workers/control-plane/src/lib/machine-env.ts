@@ -27,8 +27,8 @@ export function buildMachineEnv(
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
     LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
-    ANTON_CONFIG_DIR: "/opt/anton/.anton",
-    ANTON_STATE_DIR: "/workspace/.anton",
+    VERA_CONFIG_DIR: "/opt/anton/.anton",
+    VERA_STATE_DIR: "/workspace/.anton",
   };
 
   for (const t of tokens) {
