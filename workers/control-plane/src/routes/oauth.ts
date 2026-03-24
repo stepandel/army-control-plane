@@ -103,12 +103,12 @@ oauth.get("/slack/callback", async (c) => {
     ON CONFLICT (id) DO UPDATE SET name = ${teamName}, updated_at = now()
   `;
 
-  // Upsert bot token
+  // Upsert bot token (external_id = teamId enables KV routing for Slack)
   await sql`
-    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes)
-    VALUES (${teamId}, 'slack', 'bot', ${botToken}, ${scopes})
+    INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
+    VALUES (${teamId}, 'slack', 'bot', ${botToken}, ${scopes}, ${teamId})
     ON CONFLICT (tenant_id, platform) DO UPDATE
-      SET access_token = ${botToken}, scopes = ${scopes}
+      SET access_token = ${botToken}, scopes = ${scopes}, external_id = ${teamId}
   `;
 
   // Provision machine (fire-and-forget)

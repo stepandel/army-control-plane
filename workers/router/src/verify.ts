@@ -60,13 +60,35 @@ async function verifyGitHub(
   return timingSafeEqual(computed, expected);
 }
 
+// ── Slack ─────────────────────────────────────────────────────────
+async function verifySlack(
+  body: string,
+  headers: Headers,
+  secret: string,
+): Promise<boolean> {
+  const signature = headers.get("x-slack-signature");
+  const timestamp = headers.get("x-slack-request-timestamp");
+  if (!signature || !timestamp) return false;
+
+  // Replay protection: reject requests older than 5 minutes
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - Number(timestamp)) > 300) return false;
+
+  const sigPayload = `v0:${timestamp}:${body}`;
+  const computed = await hmacSha256(secret, sigPayload);
+  const expected = hexToBuffer(signature.replace("v0=", ""));
+  return timingSafeEqual(computed, expected);
+}
+
 export async function verifyWebhook(
   source: WebhookSource,
   body: string,
   headers: Headers,
-  secrets: { linear: string; github: string },
+  secrets: { slack: string; linear: string; github: string },
 ): Promise<boolean> {
   switch (source) {
+    case "slack":
+      return verifySlack(body, headers, secrets.slack);
     case "linear":
       return verifyLinear(body, headers, secrets.linear);
     case "github":
