@@ -2,9 +2,11 @@ import type { RouterEnv, WebhookSource } from "@army/shared";
 import { verifyWebhook } from "./verify";
 import { extractTeamId, resolveRoute, forwardToInstance } from "./forward";
 
-/** Map exact URL path → webhook source (Slack uses Socket Mode, not webhooks) */
+/** Map exact URL path → webhook source */
 function parseRoute(pathname: string): WebhookSource | null {
   switch (pathname) {
+    case "/webhooks/slack":
+      return "slack";
     case "/webhooks/linear":
       return "linear";
     case "/webhooks/github":
@@ -30,11 +32,25 @@ export default {
 
     // ── 1. Verify HMAC ──────────────────────────────────────────
     const valid = await verifyWebhook(source, rawBody, request.headers, {
+      slack: env.SLACK_SIGNING_SECRET,
       linear: env.LINEAR_WEBHOOK_SECRET,
       github: env.GITHUB_WEBHOOK_SECRET,
     });
     if (!valid) {
       return new Response("Invalid signature", { status: 401 });
+    }
+
+    // ── 1b. Slack URL verification challenge (one-time setup) ──
+    if (source === "slack") {
+      try {
+        const payload = JSON.parse(rawBody);
+        if (payload.type === "url_verification") {
+          return new Response(JSON.stringify({ challenge: payload.challenge }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+      } catch { /* not JSON — continue to normal flow */ }
     }
 
     // ── 2. Extract team identifier ──────────────────────────────
