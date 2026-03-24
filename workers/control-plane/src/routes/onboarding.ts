@@ -360,7 +360,7 @@ onboarding.get("/:team_id", async (c) => {
         <div class="step-number">${hasCustomKey ? "✓" : "⚙"}</div>
         <div class="step-body">
           <div class="step-title">Anthropic API Key <span class="step-optional">Optional</span></div>
-          <div class="step-desc">${hasCustomKey ? "Custom key configured" : "Using shared key — bring your own for dedicated usage"}</div>
+          <div class="step-desc">${hasCustomKey ? "Custom key configured" : `Using shared key — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#888;text-decoration:underline">get your key from the Anthropic Console</a> or run <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:12px">claude auth</code> in your terminal`}</div>
           ${
             isActive && !hasCustomKey
               ? `<form class="key-form" onsubmit="saveKey(event)">
