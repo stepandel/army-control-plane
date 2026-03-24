@@ -3,6 +3,7 @@ import type { TenantRoute, WebhookSource, RouterEnv } from "@army/shared";
 /**
  * Extract the team/org identifier from the webhook payload.
  *
+ * - Slack:   JSON body → `team_id`
  * - Linear:  JSON body → `organizationId`
  * - GitHub:  JSON body → `installation.id`
  */
@@ -13,6 +14,8 @@ export function extractTeamId(
   try {
     const payload = JSON.parse(rawBody);
     switch (source) {
+      case "slack":
+        return (payload.team_id as string) ?? null;
       case "linear":
         return (payload.organizationId as string) ?? null;
       case "github": {
