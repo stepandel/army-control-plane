@@ -1,6 +1,6 @@
 import type { RouterEnv, WebhookSource } from "@army/shared";
 import { verifyWebhook } from "./verify";
-import { extractTeamId, resolveRoute, forwardToInstance } from "./forward";
+import { extractTeamId, extractTeamIdFromForm, resolveRoute, forwardToInstance } from "./forward";
 
 /** Map exact URL path → webhook source */
 function parseRoute(pathname: string): WebhookSource | null {
@@ -23,6 +23,28 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    // ── Slack slash commands (form-encoded, separate from Events API) ──
+    if (url.pathname === "/slack/commands") {
+      const rawBody = await request.text();
+
+      const valid = await verifyWebhook("slack", rawBody, request.headers, {
+        slack: env.SLACK_SIGNING_SECRET,
+        linear: env.LINEAR_WEBHOOK_SECRET,
+        github: env.GITHUB_WEBHOOK_SECRET,
+      });
+      if (!valid) return new Response("Invalid signature", { status: 401 });
+
+      const teamId = extractTeamIdFromForm(rawBody);
+      if (!teamId) return new Response("Missing team_id", { status: 400 });
+
+      const tenantRoute = await resolveRoute(env, "slack", teamId);
+      if (!tenantRoute) return new Response("Tenant not found", { status: 404 });
+
+      forwardToInstance(ctx, tenantRoute, "slack", rawBody, request.headers, "/slack/commands");
+      return new Response("", { status: 200 });
+    }
+
     const source = parseRoute(url.pathname);
     if (!source) {
       return new Response("Not found", { status: 404 });

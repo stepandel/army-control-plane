@@ -45,6 +45,14 @@ export async function resolveRoute(
 }
 
 /**
+ * Extract team_id from a URL-encoded Slack slash command body.
+ */
+export function extractTeamIdFromForm(rawBody: string): string | null {
+  const params = new URLSearchParams(rawBody);
+  return params.get("team_id");
+}
+
+/**
  * Fire-and-forget forward: POST the original body to the Fly instance.
  * Uses waitUntil so the 200 ACK is not delayed.
  * Logs a dead-letter entry on failure (non-2xx or network error).
@@ -55,8 +63,10 @@ export function forwardToInstance(
   source: WebhookSource,
   rawBody: string,
   incomingHeaders: Headers,
+  /** Override the default /webhooks/{source} path */
+  pathOverride?: string,
 ) {
-  const url = `${route.instance_url}/webhooks/${source}`;
+  const url = `${route.instance_url}${pathOverride ?? `/webhooks/${source}`}`;
 
   const work = fetch(url, {
     method: "POST",
