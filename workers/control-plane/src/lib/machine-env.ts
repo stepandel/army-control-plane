@@ -9,13 +9,14 @@ export function buildMachineEnv(
   tenantId: string,
   internalSecret: string,
   tokens: readonly Record<string, string>[],
+  tenantAnthropicKey?: string | null,
 ): Record<string, string> {
   const machineEnv: Record<string, string> = {
     TEAM_ID: tenantId,
     CONTROL_PLANE_URL: env.BASE_URL,
     INTERNAL_SECRET: internalSecret,
     SLACK_APP_TOKEN: env.SLACK_APP_TOKEN,
-    ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+    ANTHROPIC_API_KEY: tenantAnthropicKey || env.ANTHROPIC_API_KEY,
     BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
