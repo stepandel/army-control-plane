@@ -28,12 +28,12 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   await fly.updateMachine(tenant.fly_machine_id, machineEnv, tenant.fly_volume_id);
 
-  // Write KV routing entries for all webhook-based platforms
+  // Write KV routing entries for all platforms with an external_id
   const internalSecret = machineEnv.INTERNAL_SECRET;
   const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret, fly_machine_id: tenant.fly_machine_id };
   const platformKeys = await sql`
     SELECT DISTINCT platform, external_id FROM integration_tokens
-    WHERE tenant_id = ${tenantId} AND platform != 'slack' AND external_id IS NOT NULL
+    WHERE tenant_id = ${tenantId} AND external_id IS NOT NULL
   `;
   for (const { platform, external_id } of platformKeys) {
     await env.ROUTING_TABLE.put(`${platform}:${external_id}`, JSON.stringify(route));
