@@ -1,0 +1,104 @@
+name: DB Migrations
+
+on:
+  # Auto-run when migration files change on main
+  push:
+    branches: [main]
+    paths:
+      - "workers/control-plane/db/migrations/**"
+
+  # Manual trigger with environment selection
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+      dry_run:
+        description: "Dry run (status check only, no migrations applied)"
+        required: false
+        type: boolean
+        default: false
+
+  # PR check — report migration status when migration files change
+  pull_request:
+    paths:
+      - "workers/control-plane/db/migrations/**"
+
+jobs:
+  # ── PR check: report pending migrations ──────────────────────────────
+  migration-status:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    name: Migration Status Check
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check pending migrations (staging)
+        working-directory: workers/control-plane
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_STAGING }}
+        run: |
+          echo "## Migration Status (staging)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npx dbmate status 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── Apply migrations ─────────────────────────────────────────────────
+  migrate:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    name: Run Migrations
+    # Use GitHub environments for secret scoping
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Show migration status
+        working-directory: workers/control-plane
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npx dbmate status
+
+      - name: Apply migrations
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true') }}
+        working-directory: workers/control-plane
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npx dbmate --no-dump-schema up
+
+      - name: Verify migration status
+        working-directory: workers/control-plane
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          echo "## Migration Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npx dbmate status 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
