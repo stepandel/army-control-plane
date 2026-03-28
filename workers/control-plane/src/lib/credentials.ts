@@ -24,7 +24,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string) {
 
   if (tokens.length === 0) throw new Error(`No tokens to push for ${tenantId}`);
 
-  const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production);
+  const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production, tenant.agentmail_api_key);
 
   await fly.updateMachine(tenant.fly_machine_id, machineEnv, tenant.fly_volume_id);
 

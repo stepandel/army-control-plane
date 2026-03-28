@@ -28,7 +28,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
       FROM integration_tokens WHERE tenant_id = ${tenantId}
     `;
 
-    const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key, tenant.vera_production);
+    const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key, tenant.vera_production, tenant.agentmail_api_key);
 
     // Create volume + machine together (retries across regions on capacity errors)
     const volumeName = "anton_state";

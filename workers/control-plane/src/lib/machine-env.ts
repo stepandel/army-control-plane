@@ -11,6 +11,7 @@ export function buildMachineEnv(
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
+  tenantAgentmailKey?: string | null,
 ): Record<string, string> {
   const machineEnv: Record<string, string> = {
     TEAM_ID: tenantId,
@@ -27,6 +28,12 @@ export function buildMachineEnv(
     LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
   };
+
+  // AgentMail — per-tenant key takes priority, then global fallback
+  const agentmailKey = (tenantAgentmailKey && tenantAgentmailKey !== "null") ? tenantAgentmailKey : env.AGENTMAIL_API_KEY;
+  if (agentmailKey) {
+    machineEnv.AGENTMAIL_API_KEY = agentmailKey;
+  }
 
   for (const t of tokens) {
     // GitHub stores the installation ID (not a token) — name the env var accordingly

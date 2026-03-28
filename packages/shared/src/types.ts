@@ -44,4 +44,5 @@ export interface ControlPlaneEnv {
   LANGSMITH_TRACING: string;
   LANGSMITH_PROJECT: string;
   LANGSMITH_API_KEY: string;
+  AGENTMAIL_API_KEY: string;
 }

@@ -16,6 +16,7 @@ admin.get("/tenants", async (c) => {
   const tenants = await sql`
     SELECT id, name, platform, status, fly_app_name, fly_machine_id, fly_volume_id, instance_url,
            (anthropic_api_key IS NOT NULL) AS has_custom_anthropic_key,
+           (agentmail_api_key IS NOT NULL) AS has_custom_agentmail_key,
            created_at, updated_at
     FROM tenants ORDER BY created_at DESC
   `;

@@ -291,6 +291,7 @@ onboarding.get("/:team_id", async (c) => {
   const isActive = tenant.status === "active";
   const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
   const hasCustomKey = !!tenant.anthropic_api_key;
+  const hasAgentmailKey = !!tenant.agentmail_api_key;
   const allDone = connected.has("slack") && connected.has("linear") && connected.has("github");
 
   const linearUrl = `${c.env.BASE_URL}/oauth/linear/install?tenant_id=${teamId}`;
@@ -372,6 +373,23 @@ onboarding.get("/:team_id", async (c) => {
         </div>
         ${hasCustomKey ? `<button class="btn btn-danger" onclick="removeKey()">Reset</button>` : ""}
       </div>
+
+      <div class="step ${hasAgentmailKey ? "connected" : isActive ? "active" : "disabled"}">
+        <div class="step-number">${hasAgentmailKey ? "✓" : "⚙"}</div>
+        <div class="step-body">
+          <div class="step-title">AgentMail API Key <span class="step-optional">Optional</span></div>
+          <div class="step-desc">${hasAgentmailKey ? "Custom key configured" : "Enable AgentMail integration for this tenant"}</div>
+          ${
+            isActive && !hasAgentmailKey
+              ? `<form class="key-form" onsubmit="saveAgentmailKey(event)">
+                  <input type="password" class="key-input" id="agentmail-key" placeholder="am_..." required />
+                  <button type="submit" class="btn btn-primary">Save</button>
+                </form>`
+              : ""
+          }
+        </div>
+        ${hasAgentmailKey ? `<button class="btn btn-danger" onclick="removeAgentmailKey()">Reset</button>` : ""}
+      </div>
     </div>
 
     ${allDone ? `<div class="done-banner">All integrations connected — Vera is ready to go.</div>` : ""}
@@ -410,6 +428,23 @@ onboarding.get("/:team_id", async (c) => {
             async function removeKey() {
               if (!confirm('Reset to shared key?')) return;
               const res = await fetch(location.pathname + '/anthropic-key', { method: 'DELETE' });
+              if (res.ok) { location.reload(); }
+              else { alert('Failed to remove key'); }
+            }
+            async function saveAgentmailKey(e) {
+              e.preventDefault();
+              const key = document.getElementById('agentmail-key').value;
+              const res = await fetch(location.pathname + '/agentmail-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: key }),
+              });
+              if (res.ok) { location.reload(); }
+              else { const d = await res.json(); alert(d.error || 'Failed to save key'); }
+            }
+            async function removeAgentmailKey() {
+              if (!confirm('Remove AgentMail key?')) return;
+              const res = await fetch(location.pathname + '/agentmail-key', { method: 'DELETE' });
               if (res.ok) { location.reload(); }
               else { alert('Failed to remove key'); }
             }
@@ -474,6 +509,53 @@ onboarding.delete("/:team_id/anthropic-key", async (c) => {
   }
 
   return c.json({ success: true, status: "using_default" });
+});
+
+// ─── AgentMail API key BYOK ─────────────────────────────────────
+
+onboarding.post("/:team_id/agentmail-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const body = await c.req.json<{ api_key?: string }>();
+  if (!body.api_key || typeof body.api_key !== "string" || body.api_key.trim().length === 0) {
+    return c.json({ error: "Invalid API key" }, 400);
+  }
+
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
+
+  await sql`UPDATE tenants SET agentmail_api_key = ${body.api_key}, updated_at = now() WHERE id = ${teamId}`;
+
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`pushCredentials failed after AgentMail key set for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ success: true, status: "agentmail_key_set" });
+});
+
+onboarding.delete("/:team_id/agentmail-key", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
+
+  await sql`UPDATE tenants SET agentmail_api_key = NULL, updated_at = now() WHERE id = ${teamId}`;
+
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`pushCredentials failed after AgentMail key reset for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ success: true, status: "agentmail_key_removed" });
 });
 
 // ─── Helper ─────────────────────────────────────────────────────
