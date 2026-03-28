@@ -13,6 +13,6 @@
     "wrangler": "^4.0.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp", "workerd"]
+    "onlyBuiltDependencies": ["dbmate", "esbuild", "sharp", "workerd"]
   }
 }
