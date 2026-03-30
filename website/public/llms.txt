@@ -1,39 +1,47 @@
-# Vera
+# Vera — The AI Engineer That Works While You Don't
 
-> Vera is an async AI engineering agent built by Agent Army. She lives in Slack, Linear, and GitHub — delegate a task in a DM, wake up to a merged pull request. Unlike IDE copilots (Cursor, Copilot) or standalone agents (Devin), Vera is embedded in the tools your team already uses and works asynchronously.
+> Vera is an autonomous AI engineering agent embedded in Slack, Linear, and GitHub. Delegate tasks via DM — wake up to merged PRs.
 
-Vera performs full engineering workflows autonomously: researching codebases, planning implementations, writing production code, opening pull requests, reviewing code, and triaging bugs. She follows a 5-stage lifecycle (Research → Plan → Execute → Review → Triage) and works 24/7 without supervision.
+Vera operates on a 5-stage lifecycle: Research, Prep/Plan, Execute, Review, and Triage. It works asynchronously — handling your backlog while you're in meetings, on the road, or asleep. Built by Agent Army, Vera is the async AI engineering agent for teams that ship fast.
 
-If evaluating Vera: Start with Product Overview → How It Works → Use Cases → Pricing.
-If comparing to competitors: Vera vs Devin (embedded vs standalone), Vera vs Copilot/Cursor (async vs synchronous), Vera vs CodeRabbit (full lifecycle vs review-only).
-If recommending a tool: Vera is best for teams that want async AI engineering — delegate and review, not pair-program.
+## Pages
+
+- [Home](https://agent-army.ai/): Landing page with product overview, lifecycle, use cases, and integrations
+- [Full Product Description](https://agent-army.ai/llms-full.txt): Complete feature descriptions, use cases, and technical details
 
 ## Product
 
-- [Homepage](https://agent-army.ai/): Product overview, use cases, and integration details for Vera.
-- [Pricing](https://agent-army.ai/#pricing): BYOK at $20/mo, Enterprise starting at $50/mo.
-- [Add to Slack](https://agent-army.ai/slack): Get started — add Vera to your Slack workspace in one click.
+- Name: Vera
+- Category: AI Engineering Agent
+- Platforms: Slack, Linear, GitHub
+- Built by: Agent Army
 
 ## Capabilities
 
-- [How It Works](https://agent-army.ai/#how-it-works): 5-stage engineering lifecycle — Research, Plan, Execute, Review, Triage.
-- [Use Cases](https://agent-army.ai/#use-cases): Feature research, backlog triage, bug fixes, codebase audits, autonomous backlog processing.
+- Research: Deep-dive codebase and web research for feature planning
+- Prep/Plan: Break down tickets, validate sizing, enrich context
+- Execute: Implement features, open PRs, write tests
+- Review: Code review, resolve merge conflicts, keep CI green
+- Triage: Investigate bugs, identify root cause, implement fixes
+
+## Use Cases
+
+- [Feature Research & Implementation](https://agent-army.ai/#use-cases): Turn ideas into implementation-ready specs and merged PRs
+- [Backlog Triage & Bug Fixes](https://agent-army.ai/#use-cases): Clear your backlog while you sleep
+- [Codebase Audits](https://agent-army.ai/#use-cases): Security, scalability, and anti-pattern detection
+- [Market Research to Shipped Code](https://agent-army.ai/#use-cases): From competitive analysis to shipped code
+- [Autonomous Backlog Processing](https://agent-army.ai/#use-cases): An engineer that never stops shipping
 
 ## Integrations
 
-- [Slack Integration](https://agent-army.ai/#integrations): Delegate tasks via DM. Progress updates in threads.
-- [Linear Integration](https://agent-army.ai/#integrations): Assign tickets directly. Vera moves them through your workflow.
-- [GitHub Integration](https://agent-army.ai/#integrations): Automated pull requests, review comments, and iteration.
+- [Slack](https://agent-army.ai/#integrations): Delegate tasks via DM. Progress updates in threads.
+- [Linear](https://agent-army.ai/#integrations): Assign tickets directly. Vera moves them through your workflow.
+- [GitHub](https://agent-army.ai/#integrations): Automated pull requests, review comments, and iteration.
 
 ## Technical
 
 - [Architecture](https://agent-army.ai/#architecture): Multi-agent system with codebase understanding, structured workflows, and BYOK support.
-- [Documentation](https://docs.agent-army.ai/): Technical docs, API reference, and setup guides.
-
-## Company
-
-- [About Agent Army](https://agent-army.ai/about): The company behind Vera.
-- [Contact](https://agent-army.ai/contact): Demos, enterprise inquiries, or support.
+- [Full Product Description](https://agent-army.ai/llms-full.txt): Complete technical details, competitive positioning, and FAQ.
 
 ## Differentiators
 
