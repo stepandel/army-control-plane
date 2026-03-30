@@ -7,18 +7,37 @@
       <span class="logo-icon">⚡</span>
       <span class="logo-text">Agent Army</span>
     </a>
-    <div class="nav-links">
+    <div class="nav-links" id="nav-links">
       <a href="#how-it-works">How It Works</a>
       <a href="#use-cases">Use Cases</a>
       <a href="#integrations">Integrations</a>
       <a href="#architecture">Architecture</a>
     </div>
     <a href="#cta" class="nav-cta">Add to Slack →</a>
-    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
       <span class="hamburger"></span>
     </button>
   </div>
 </nav>
+
+<script>
+  const toggle = document.getElementById("nav-toggle");
+  const links = document.getElementById("nav-links");
+  if (toggle && links) {
+    toggle.addEventListener("click", () => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+      links.classList.toggle("open");
+    });
+    // Close menu when a nav link is clicked
+    links.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => {
+        toggle.setAttribute("aria-expanded", "false");
+        links.classList.remove("open");
+      });
+    });
+  }
+</script>
 
 <style>
   .nav {
@@ -134,8 +153,21 @@
   }
 
   @media (max-width: 768px) {
+    .nav-inner {
+      flex-wrap: wrap;
+    }
+
     .nav-links {
       display: none;
+      width: 100%;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem 0;
+      order: 3;
+    }
+
+    .nav-links.open {
+      display: flex;
     }
 
     .nav-cta {
