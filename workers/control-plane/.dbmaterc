@@ -1,0 +1,8 @@
+## dbmate configuration
+## https://github.com/amacneil/dbmate
+
+# Migration files directory (relative to this file)
+--migrations-dir ./db/migrations
+
+# Disable schema dump (we manage schema via migrations only)
+--no-dump-schema
