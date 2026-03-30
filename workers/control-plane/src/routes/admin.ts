@@ -3,6 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
+import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
 import { provisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 
@@ -215,6 +216,24 @@ admin.post("/tenants/:team_id/push-credentials", async (c) => {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: message }, 400);
   }
+});
+
+/** POST /admin/tenants/:team_id/refresh-token — refresh Linear token for a single tenant */
+admin.post("/tenants/:team_id/refresh-token", async (c) => {
+  const teamId = c.req.param("team_id");
+
+  const refreshed = await refreshLinearToken(c.env, teamId);
+  if (!refreshed) return c.json({ error: "Token refresh failed" }, 502);
+
+  await pushCredentials(c.env, teamId);
+
+  return c.json({ team_id: teamId, refreshed: true });
+});
+
+/** POST /admin/refresh-tokens — refresh all expiring Linear tokens (same as cron) */
+admin.post("/refresh-tokens", async (c) => {
+  await refreshExpiringTokens(c.env);
+  return c.json({ ok: true });
 });
 
 /** POST /admin/tenants/push-labels — provision Linear labels for all tenants with Linear connected */
