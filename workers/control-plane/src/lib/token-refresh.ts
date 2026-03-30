@@ -6,7 +6,12 @@ import { pushCredentials } from "./credentials";
 /**
  * Refresh a single Linear token using the stored refresh_token.
  * Updates the DB with the new access_token, refresh_token, and expires_at.
- * Returns true if the refresh succeeded.
+ *
+ * Uses optimistic locking (WHERE refresh_token = old) to handle concurrent
+ * refreshes, and retries the DB write since the Linear token exchange is
+ * irreversible (the old refresh token is revoked on success).
+ *
+ * Returns true if the refresh succeeded (or another process already refreshed).
  */
 export async function refreshLinearToken(
   env: ControlPlaneEnv,
@@ -25,19 +30,34 @@ export async function refreshLinearToken(
     return false;
   }
 
+  const oldRefreshToken = token.refresh_token;
+
   const resp = await fetch("https://api.linear.app/oauth/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_id: env.LINEAR_CLIENT_ID,
       client_secret: env.LINEAR_CLIENT_SECRET,
-      refresh_token: token.refresh_token,
+      refresh_token: oldRefreshToken,
       grant_type: "refresh_token",
     }),
   });
 
   if (!resp.ok) {
-    console.error(`Linear token refresh failed for ${tenantId}: ${resp.status} ${await resp.text()}`);
+    const body = await resp.text();
+    console.error(`Linear token refresh failed for ${tenantId}: ${resp.status} ${body}`);
+    // If the refresh token was revoked, another process may have already refreshed it.
+    // Check if the DB token has changed — if so, the refresh already happened.
+    if (resp.status === 400 && body.includes("invalid_grant")) {
+      const [current] = await db`
+        SELECT refresh_token FROM integration_tokens
+        WHERE tenant_id = ${tenantId} AND platform = 'linear'
+      `;
+      if (current?.refresh_token && current.refresh_token !== oldRefreshToken) {
+        console.log(`Linear token for ${tenantId} was already refreshed by another process`);
+        return true;
+      }
+    }
     return false;
   }
 
@@ -48,20 +68,41 @@ export async function refreshLinearToken(
   }
 
   const accessToken = data.access_token as string;
-  const refreshToken = (data.refresh_token as string) ?? token.refresh_token;
+  const refreshToken = (data.refresh_token as string) ?? oldRefreshToken;
   const expiresIn = data.expires_in as number | undefined;
   const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
 
-  await db`
-    UPDATE integration_tokens
-    SET access_token = ${accessToken},
-        refresh_token = ${refreshToken},
-        expires_at = ${expiresAt}::timestamptz
-    WHERE tenant_id = ${tenantId} AND platform = 'linear'
-  `;
+  // Retry DB write — the Linear exchange is irreversible (old refresh token is revoked),
+  // so failing to persist the new tokens would lock the tenant out.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      // Optimistic lock: only update if refresh_token hasn't changed (no concurrent refresh)
+      const result = await db`
+        UPDATE integration_tokens
+        SET access_token = ${accessToken},
+            refresh_token = ${refreshToken},
+            expires_at = ${expiresAt}::timestamptz
+        WHERE tenant_id = ${tenantId} AND platform = 'linear'
+          AND refresh_token = ${oldRefreshToken}
+      `;
+      if (result.count === 0) {
+        console.log(`Linear token for ${tenantId} was already refreshed by another process`);
+        return true;
+      }
+      console.log(`Refreshed Linear token for tenant ${tenantId}, expires_at=${expiresAt}`);
+      return true;
+    } catch (err) {
+      console.error(`DB write failed for ${tenantId} (attempt ${attempt}/3):`, err);
+      if (attempt < 3) continue;
+      console.error(
+        `CRITICAL: Linear issued new tokens for ${tenantId} but DB write failed after 3 attempts. ` +
+        `Old refresh token is revoked — tenant needs to re-authenticate.`,
+      );
+      return false;
+    }
+  }
 
-  console.log(`Refreshed Linear token for tenant ${tenantId}, expires_at=${expiresAt}`);
-  return true;
+  return false;
 }
 
 /**
