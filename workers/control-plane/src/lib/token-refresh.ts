@@ -1,4 +1,5 @@
 import type { ControlPlaneEnv } from "@army/shared";
+import type postgres from "postgres";
 import { getDb } from "../db/client";
 import { pushCredentials } from "./credentials";
 
@@ -10,10 +11,11 @@ import { pushCredentials } from "./credentials";
 export async function refreshLinearToken(
   env: ControlPlaneEnv,
   tenantId: string,
+  sql?: postgres.Sql,
 ): Promise<boolean> {
-  const sql = getDb(env);
+  const db = sql ?? getDb(env);
 
-  const [token] = await sql`
+  const [token] = await db`
     SELECT refresh_token FROM integration_tokens
     WHERE tenant_id = ${tenantId} AND platform = 'linear'
   `;
@@ -50,7 +52,7 @@ export async function refreshLinearToken(
   const expiresIn = data.expires_in as number | undefined;
   const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
 
-  await sql`
+  await db`
     UPDATE integration_tokens
     SET access_token = ${accessToken},
         refresh_token = ${refreshToken},
@@ -69,30 +71,34 @@ export async function refreshLinearToken(
 export async function refreshExpiringTokens(env: ControlPlaneEnv): Promise<void> {
   const sql = getDb(env);
 
-  // Find Linear tokens that expire within the next hour
-  const expiring = await sql`
-    SELECT it.tenant_id
-    FROM integration_tokens it
-    JOIN tenants t ON t.id = it.tenant_id
-    WHERE it.platform = 'linear'
-      AND it.refresh_token IS NOT NULL
-      AND it.expires_at IS NOT NULL
-      AND it.expires_at < now() + interval '1 hour'
-      AND t.status = 'active'
-  `;
+  try {
+    // Find Linear tokens that expire within the next hour
+    const expiring = await sql`
+      SELECT it.tenant_id
+      FROM integration_tokens it
+      JOIN tenants t ON t.id = it.tenant_id
+      WHERE it.platform = 'linear'
+        AND it.refresh_token IS NOT NULL
+        AND it.expires_at IS NOT NULL
+        AND it.expires_at < now() + interval '1 hour'
+        AND t.status = 'active'
+    `;
 
-  if (expiring.length === 0) return;
+    if (expiring.length === 0) return;
 
-  console.log(`Refreshing ${expiring.length} expiring Linear token(s)`);
+    console.log(`Refreshing ${expiring.length} expiring Linear token(s)`);
 
-  for (const { tenant_id } of expiring) {
-    try {
-      const refreshed = await refreshLinearToken(env, tenant_id);
-      if (refreshed) {
-        await pushCredentials(env, tenant_id);
+    for (const { tenant_id } of expiring) {
+      try {
+        const refreshed = await refreshLinearToken(env, tenant_id, sql);
+        if (refreshed) {
+          await pushCredentials(env, tenant_id, sql);
+        }
+      } catch (err) {
+        console.error(`Token refresh cycle failed for ${tenant_id}:`, err);
       }
-    } catch (err) {
-      console.error(`Token refresh cycle failed for ${tenant_id}:`, err);
     }
+  } finally {
+    await sql.end();
   }
 }
