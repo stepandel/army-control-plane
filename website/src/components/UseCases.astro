@@ -1,0 +1,153 @@
+---
+const cases = [
+  {
+    title: "Turn ideas into implementation-ready specs",
+    description:
+      "Describe a feature in plain English. Vera researches technical approaches, evaluates tradeoffs, and delivers a structured plan with entry points, edge cases, and a concrete implementation prompt.",
+    icon: "💡",
+  },
+  {
+    title: "Clear your backlog while you sleep",
+    description:
+      "Point Vera at your backlog. She investigates bugs, identifies root causes, writes fixes, and opens pull requests — processing tickets autonomously so your team starts each morning with fewer open issues.",
+    icon: "🌙",
+  },
+  {
+    title: "Security, scalability, and anti-pattern detection",
+    description:
+      "Vera audits your codebase for security vulnerabilities, performance bottlenecks, and architectural anti-patterns. She delivers actionable reports with specific file references and recommended fixes.",
+    icon: "🛡",
+  },
+  {
+    title: "From competitive analysis to shipped code",
+    description:
+      "Ask Vera to research a market segment or competitor feature. She produces a structured report, creates implementation tickets, and starts building — turning research into results without handoffs.",
+    icon: "🔬",
+  },
+  {
+    title: "An engineer that never stops shipping",
+    description:
+      "Configure Vera to continuously process your Linear backlog. She picks up tickets, implements solutions, opens PRs, and moves work forward — a full-time async AI engineering agent working in parallel with your team.",
+    icon: "🚀",
+    featured: true,
+  },
+];
+---
+
+<section id="use-cases" class="use-cases" aria-labelledby="uc-heading">
+  <div class="section-inner">
+    <h2 id="uc-heading">
+      Your async AI engineer for every engineering workflow
+    </h2>
+    <p class="section-intro">
+      From greenfield features to backlog grooming, Vera handles the engineering
+      work that slows your team down.
+    </p>
+
+    <div class="cards-grid">
+      {
+        cases.map((c) => (
+          <article class:list={["card", { featured: c.featured }]}>
+            <div class="card-icon" aria-hidden="true">
+              {c.icon}
+            </div>
+            <h3>{c.title}</h3>
+            <p>{c.description}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .use-cases {
+    padding: 5rem 1.5rem;
+  }
+
+  .section-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    max-width: 640px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 2rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .card.featured {
+    grid-column: 1 / -1;
+    background: linear-gradient(
+      135deg,
+      rgba(108, 92, 231, 0.08),
+      rgba(0, 210, 255, 0.05)
+    );
+    border-color: rgba(108, 92, 231, 0.3);
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: rgba(108, 92, 231, 0.1);
+    border-radius: 12px;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .card p {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .card.featured {
+      grid-column: 1;
+    }
+  }
+</style>

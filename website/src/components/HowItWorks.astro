@@ -1,0 +1,173 @@
+---
+const stages = [
+  {
+    icon: "🔍",
+    name: "Research",
+    description:
+      "Vera investigates the problem space: reads the codebase, searches documentation, analyzes competitor approaches, and gathers the context needed to make informed decisions.",
+  },
+  {
+    icon: "📋",
+    name: "Prep & Plan",
+    description:
+      "Before writing a single line of code, Vera sizes the work, validates scope, identifies entry points, and creates a concrete implementation plan — just like a senior engineer would.",
+  },
+  {
+    icon: "⚡",
+    name: "Execute",
+    description:
+      "Vera implements the solution: writes production code, follows existing patterns and conventions, adds tests, and opens a pull request with a clear description of what changed and why.",
+  },
+  {
+    icon: "👁",
+    name: "Review",
+    description:
+      "Vera reviews code for correctness, style, edge cases, and potential regressions. She posts structured review feedback directly on pull requests — acting as a tireless second pair of eyes.",
+  },
+  {
+    icon: "🐛",
+    name: "Triage",
+    description:
+      "When bugs surface or tickets pile up, Vera investigates root causes, assesses impact, and either fixes issues directly or provides detailed analysis so your team can act fast.",
+  },
+];
+---
+
+<section id="how-it-works" class="how-it-works" aria-labelledby="hiw-heading">
+  <div class="section-inner">
+    <h2 id="hiw-heading">From Slack message to merged PR — autonomously</h2>
+    <p class="section-intro">
+      Vera follows the same engineering workflow your team does. Every task moves
+      through a five-stage lifecycle — no babysitting required.
+    </p>
+
+    <div class="pipeline">
+      {
+        stages.map((stage, i) => (
+          <>
+            <div class="stage">
+              <div class="stage-icon" aria-hidden="true">
+                {stage.icon}
+              </div>
+              <h3 class="stage-name">{stage.name}</h3>
+              <p class="stage-desc">{stage.description}</p>
+            </div>
+            {i < stages.length - 1 && (
+              <div class="stage-arrow" aria-hidden="true">
+                <span class="arrow-h">→</span>
+                <span class="arrow-v">↓</span>
+              </div>
+            )}
+          </>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .how-it-works {
+    padding: 5rem 1.5rem;
+    background: var(--color-bg-alt);
+  }
+
+  .section-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    max-width: 640px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+
+  .pipeline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .stage {
+    flex: 1;
+    max-width: 220px;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  .stage-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .stage-name {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  .stage-desc {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  .stage-arrow {
+    display: flex;
+    align-items: center;
+    padding-top: 2.5rem;
+    color: var(--color-primary-light);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .arrow-v {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .pipeline {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stage {
+      max-width: 100%;
+    }
+
+    .stage-arrow {
+      padding-top: 0;
+    }
+
+    .arrow-h {
+      display: none;
+    }
+
+    .arrow-v {
+      display: inline;
+    }
+  }
+</style>

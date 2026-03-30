@@ -1,0 +1,147 @@
+---
+---
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">AI Engineering Agent</div>
+    <h1>The AI engineering agent that works while you don't.</h1>
+    <p class="hero-subtitle">
+      Vera is the async AI engineer embedded in Slack, Linear, and GitHub.
+      Delegate a task in a DM — wake up to a merged pull request.
+    </p>
+    <p class="hero-body">
+      Vera is an autonomous AI engineering agent built for teams that ship fast.
+      Unlike IDE copilots that need you at the keyboard, Vera works
+      asynchronously — researching codebases, triaging bugs, writing
+      implementations, and opening pull requests while you focus on what matters.
+      Tell Vera what to build in a Slack DM or assign a Linear ticket. She does
+      the rest.
+    </p>
+    <div class="hero-ctas">
+      <a href="#cta" class="btn btn-primary">Add to Slack</a>
+      <a href="#how-it-works" class="btn btn-secondary">See How It Works ↓</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hero {
+    padding: 6rem 1.5rem 4rem;
+    text-align: center;
+  }
+
+  .hero-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: rgba(108, 92, 231, 0.15);
+    border: 1px solid rgba(108, 92, 231, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-primary-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(
+      135deg,
+      var(--color-text) 0%,
+      var(--color-primary-light) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-body {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 180px;
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.35);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-light);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(108, 92, 231, 0.5);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      padding: 4rem 1.5rem 3rem;
+    }
+
+    .hero-ctas {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+</style>
