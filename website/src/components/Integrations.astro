@@ -1,20 +1,24 @@
 ---
+import SlackIcon from "./icons/SlackIcon.astro";
+import LinearIcon from "./icons/LinearIcon.astro";
+import GitHubIcon from "./icons/GitHubIcon.astro";
+
 const integrations = [
   {
     name: "Slack",
-    icon: "💬",
+    iconComponent: "slack",
     description:
       "Delegate tasks in a DM. Get progress updates in threads. Review results without leaving your conversation.",
   },
   {
     name: "Linear",
-    icon: "📐",
+    iconComponent: "linear",
     description:
       "Assign tickets directly. Vera reads descriptions, adds research, and moves tickets through your workflow — from Backlog to In Review.",
   },
   {
     name: "GitHub",
-    icon: "🐙",
+    iconComponent: "github",
     description:
       "Vera opens pull requests, responds to review comments, and iterates on feedback. Code lands in your repo following your team's conventions.",
   },
@@ -36,8 +40,10 @@ const integrations = [
       {
         integrations.map((item) => (
           <div class="integration-card">
-            <div class="integration-icon" aria-hidden="true">
-              {item.icon}
+            <div class="integration-icon">
+              {item.iconComponent === "slack" && <SlackIcon size={32} />}
+              {item.iconComponent === "linear" && <LinearIcon size={32} />}
+              {item.iconComponent === "github" && <GitHubIcon size={32} />}
             </div>
             <h3>{item.name}</h3>
             <p>{item.description}</p>
@@ -97,7 +103,6 @@ const integrations = [
   }
 
   .integration-icon {
-    font-size: 2.5rem;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -108,6 +113,7 @@ const integrations = [
     border-radius: 16px;
     margin-left: auto;
     margin-right: auto;
+    color: var(--color-text);
   }
 
   h3 {
