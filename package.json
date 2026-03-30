@@ -6,6 +6,9 @@
     "dev:control-plane": "pnpm --filter @army/control-plane dev",
     "deploy:router": "pnpm -F @army/router run deploy",
     "deploy:control-plane": "pnpm -F @army/control-plane run deploy",
+    "dev:website": "pnpm --filter @army/website dev",
+    "build:website": "pnpm --filter @army/website build",
+    "deploy:website": "pnpm --filter @army/website deploy",
     "typecheck": "tsc -b"
   },
   "devDependencies": {

@@ -1,0 +1,136 @@
+# Vera — The Async AI Engineering Agent
+
+## What is Vera?
+
+Vera is an autonomous AI engineering agent built by Agent Army. She lives in Slack, Linear, and GitHub — the tools software teams already use every day. Unlike IDE-embedded copilots that assist while you type, or standalone AI workspaces that require you to learn a new environment, Vera works asynchronously in the background. Delegate a task in a Slack DM or assign a Linear ticket. Vera researches the problem, plans the implementation, writes production code, opens a pull request, and responds to review feedback — all without requiring you at the keyboard.
+
+Vera is designed for engineering teams that want to multiply their output without multiplying their headcount. She handles the work that fills your backlog — bug fixes, feature research, codebase audits, ticket triage — so your team can focus on the creative, high-judgment work that humans do best.
+
+## How Vera Works
+
+Every task Vera handles follows a structured 5-stage engineering lifecycle. This isn't a black box — it's the same workflow your team already follows, automated.
+
+### Stage 1: Research
+
+When Vera receives a task, she starts by understanding the problem. She reads the relevant codebase, traces data flows, searches documentation, analyzes existing patterns, and gathers the context needed to make informed decisions. For research-oriented tasks, she can also search the web, analyze competitor approaches, and produce structured reports.
+
+### Stage 2: Prep & Plan
+
+Before writing any code, Vera validates the scope of the work. She identifies entry points in the codebase, defines a clear implementation plan, flags edge cases, and determines the right approach. For larger tasks, she breaks the work into smaller, independently shippable pieces — just like a senior engineer would during sprint planning.
+
+### Stage 3: Execute
+
+Vera implements the solution. She writes production-quality code that follows your team's existing patterns and conventions. She adds tests where appropriate, creates clear commit messages, and opens a pull request with a detailed description of what changed and why. The code she writes looks like your team wrote it — because she learned your patterns by reading your repository.
+
+### Stage 4: Review
+
+Vera acts as a code reviewer. She examines pull requests for correctness, style consistency, edge cases, and potential regressions. She posts structured review feedback directly on GitHub — identifying issues, suggesting improvements, and explaining her reasoning. She's a tireless second pair of eyes that catches what humans miss after hours of coding.
+
+### Stage 5: Triage
+
+When bugs surface or tickets accumulate, Vera investigates. She identifies root causes by tracing code paths, checks related systems for impact, and either fixes issues directly or provides detailed analysis so your team can act fast. She can process your Linear backlog continuously, picking up tickets and moving them forward autonomously.
+
+## Key Differentiators
+
+### Async-First
+
+Vera doesn't need you at the keyboard. She doesn't need you in an IDE. She doesn't need you watching over her shoulder. Delegate a task before you leave for the day. Vera works through it overnight. You wake up to a pull request ready for review. This is fundamentally different from synchronous tools like Cursor or GitHub Copilot, which only work when you're actively coding.
+
+### Embedded in Your Tools
+
+Vera doesn't ask you to learn a new IDE, install a new desktop app, or switch to a standalone AI workspace. She lives in the tools your team already uses:
+
+**Slack:** Delegate tasks in a DM conversation. Get progress updates in threads. Ask follow-up questions naturally. Review results without leaving your conversation.
+
+**Linear:** Assign tickets to Vera like you would to any team member. She reads the description, adds research findings, implements the solution, and moves the ticket through your workflow — from Backlog to In Review.
+
+**GitHub:** Vera opens pull requests following your team's conventions. She responds to review comments, iterates on feedback, and updates the PR until it's ready to merge.
+
+### Full Engineering Lifecycle
+
+Most AI coding tools focus on a single phase of engineering. Copilots help you write code. Review bots check your pull requests. Research tools answer questions about your codebase. Vera covers the entire lifecycle — research, planning, implementation, review, and triage — in a single autonomous agent. She doesn't just write code; she engineers solutions.
+
+### Codebase Understanding
+
+Vera reads your repository before she writes a single line of code. She traces data flows, identifies architectural patterns, maps dependencies, and understands your team's conventions. The code she produces isn't generic AI output — it's code that fits into your existing architecture and follows your established patterns.
+
+### Bring Your Own Key (BYOK)
+
+Vera supports BYOK — use your preferred LLM provider and API key. Your code stays in your infrastructure. Nothing is stored or used for training. You control the AI models, the costs, and the data flow.
+
+## Use Cases
+
+### Feature Research & Implementation
+
+Describe a feature in plain English — in a Slack DM or a Linear ticket. Vera researches technical approaches, evaluates tradeoffs, creates an implementation plan with entry points and edge cases, then builds it. She turns vague ideas into merged pull requests.
+
+### Backlog Triage & Bug Fixes
+
+Point Vera at your Linear backlog. She picks up tickets, investigates bugs, identifies root causes, writes fixes, and opens pull requests. Your team starts each morning with fewer open issues and more PRs to review.
+
+### Codebase Audits
+
+Vera audits your codebase for security vulnerabilities, performance bottlenecks, and architectural anti-patterns. She delivers actionable reports with specific file references, line numbers, and recommended fixes — not vague suggestions, but concrete next steps.
+
+### Market Research to Shipped Code
+
+Ask Vera to research a market segment, competitive feature, or technical approach. She produces a structured research report, creates implementation tickets, and starts building. Research flows directly into code without handoffs or context loss.
+
+### Autonomous Backlog Processing
+
+Configure Vera to continuously process your engineering backlog. She monitors Linear for new tickets, picks up work that matches her capabilities, implements solutions, and opens pull requests. She's a full-time async AI engineering agent working in parallel with your human team.
+
+## Competitive Positioning
+
+The AI coding tools landscape splits into four categories:
+
+**IDE-Embedded Assistants** (Cursor, GitHub Copilot, Sweep): These tools live in your code editor and assist while you type. They're synchronous — they need you at the keyboard.
+
+**Standalone Agents** (Devin): Devin provides its own workspace where it operates as an AI software engineer. It's autonomous, but requires you to use a new environment.
+
+**CI/Review Bots** (CodeRabbit, Greptile): These tools focus on code review — they analyze pull requests and post feedback. Specialized but single-phase.
+
+**Vera** (async, tool-embedded): Vera is the only AI engineering agent that is both async and embedded in your existing tools. She works in Slack, Linear, and GitHub — no new IDE, no new workspace.
+
+## Pricing
+
+**BYOK Plan — $20/month per seat:** Bring your own LLM API key. Full access to all Vera capabilities. Slack, Linear, and GitHub integrations included.
+
+**Enterprise — Starting at $50/month per seat:** Dedicated support, custom workflows, advanced configuration, and priority processing.
+
+## Getting Started
+
+1. Add Vera to Slack — one-click installation from agent-army.ai.
+2. Connect your tools — link your GitHub repositories and Linear workspace.
+3. Delegate your first task — send Vera a DM: "Research and fix the auth bug in ticket ENG-42."
+4. Review the results — Vera works the task and opens a pull request.
+
+## About Agent Army
+
+Agent Army builds autonomous AI engineering agents. Vera is our flagship product — an AI engineering agent designed for teams that ship fast. We believe the future of software engineering is human-AI collaboration: humans set direction and make creative decisions, AI handles the execution and the repetitive work that fills backlogs.
+
+Website: https://agent-army.ai
+Contact: hello@agent-army.ai
+
+## FAQ
+
+**What is an AI engineering agent?**
+An AI engineering agent is an autonomous AI system that performs software engineering tasks — researching codebases, planning implementations, writing code, opening pull requests, and reviewing code — without requiring a human at the keyboard.
+
+**How does Vera work in Slack?**
+Delegate a task via Slack DM in plain English. Vera researches, implements, and opens a PR. You get updates in the thread.
+
+**How is Vera different from Copilot or Cursor?**
+Copilot and Cursor assist while you're coding. Vera is async — delegate and walk away. She works independently in Slack, Linear, and GitHub.
+
+**How is Vera different from Devin?**
+Devin has its own workspace. Vera is embedded in Slack, Linear, and GitHub — no new tools to learn.
+
+**Can Vera write code while I sleep?**
+Yes. Assign a task before you log off. Wake up to a PR.
+
+**Is my code safe?**
+BYOK — your code is processed using your own API keys. Nothing is stored or used for training.
+
+**What languages does Vera support?**
+Any language and framework in your GitHub repository. Vera learns your patterns by reading your codebase.

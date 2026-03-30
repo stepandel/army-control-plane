@@ -1,0 +1,246 @@
+---
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonicalURL = "https://agent-army.ai/";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://agent-army.ai/#organization",
+      name: "Agent Army",
+      url: "https://agent-army.ai",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://agent-army.ai/logo.png",
+        width: 512,
+        height: 512,
+      },
+      sameAs: [
+        "https://github.com/agent-army",
+        "https://x.com/agent_army",
+      ],
+      description:
+        "Agent Army builds autonomous AI engineering agents. Our flagship product, Vera, is an AI engineering agent embedded in Slack, Linear, and GitHub.",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://agent-army.ai/#vera",
+      name: "Vera",
+      applicationCategory: "DeveloperApplication",
+      applicationSubCategory: "AI Engineering Agent",
+      operatingSystem: "Web, Slack, Linear, GitHub",
+      description:
+        "Vera is an async AI engineering agent that lives in Slack, Linear, and GitHub. Delegate a task in a DM, wake up to a merged pull request.",
+      url: "https://agent-army.ai",
+      author: { "@id": "https://agent-army.ai/#organization" },
+      offers: [
+        {
+          "@type": "Offer",
+          name: "BYOK",
+          price: "20.00",
+          priceCurrency: "USD",
+          billingIncrement: "P1M",
+          description: "Bring your own API key. $20/month per seat.",
+        },
+        {
+          "@type": "Offer",
+          name: "Enterprise",
+          price: "50.00",
+          priceCurrency: "USD",
+          billingIncrement: "P1M",
+          description:
+            "Enterprise plan with dedicated support. Starting at $50/month per seat.",
+        },
+      ],
+      featureList: [
+        "Async AI engineering agent",
+        "Slack integration — delegate tasks via DM",
+        "Linear integration — assign tickets directly",
+        "GitHub integration — automated pull requests",
+        "5-stage engineering lifecycle (Research, Plan, Execute, Review, Triage)",
+        "Codebase-aware — reads your repo before writing code",
+        "BYOK — bring your own LLM API key",
+        "Autonomous backlog processing",
+        "Bug triage and root cause analysis",
+        "Code review with structured feedback",
+      ],
+      softwareVersion: "1.0",
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://agent-army.ai/#webpage",
+      url: "https://agent-army.ai",
+      name: "Vera — AI Engineering Agent for Slack, Linear & GitHub",
+      description:
+        "Vera is the async AI engineering agent that lives in Slack, Linear, and GitHub.",
+      isPartOf: {
+        "@type": "WebSite",
+        "@id": "https://agent-army.ai/#website",
+        name: "Agent Army",
+        url: "https://agent-army.ai",
+      },
+      about: { "@id": "https://agent-army.ai/#vera" },
+      publisher: { "@id": "https://agent-army.ai/#organization" },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://agent-army.ai/#faq",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is an AI engineering agent?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "An AI engineering agent is an autonomous AI system that performs software engineering tasks — researching codebases, planning implementations, writing code, opening pull requests, and reviewing code — without requiring a human at the keyboard. Unlike IDE copilots that assist while you type, an AI engineering agent like Vera works asynchronously on delegated tasks.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How does Vera work in Slack?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "You delegate a task to Vera via Slack DM — describe what you need in plain English. Vera researches the codebase, creates a plan, implements the solution, and opens a pull request on GitHub. You get progress updates in the Slack thread and review the final PR when it's ready.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How is Vera different from GitHub Copilot or Cursor?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Copilot and Cursor are IDE-embedded assistants that help while you're actively coding. Vera is an async AI engineering agent — you delegate a task and walk away. Vera works independently in Slack, Linear, and GitHub, completing full engineering workflows without requiring you at the keyboard.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How is Vera different from Devin?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Devin is a standalone AI software engineer with its own workspace. Vera is embedded in the tools your team already uses — Slack, Linear, and GitHub. No new workspace to learn. No context switching. Delegate in a DM, review a PR.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can Vera write code while I sleep?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Vera is designed for async delegation. Assign a task before you log off and Vera works through it overnight. You wake up to a pull request ready for review.",
+          },
+        },
+      ],
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta
+      name="keywords"
+      content="AI engineering agent, async AI engineer, AI coding agent Slack, autonomous coding agent, AI agent for Slack, delegate engineering work to AI"
+    />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="Vera — The AI Engineering Agent That Works While You Don't"
+    />
+    <meta
+      property="og:description"
+      content="Delegate a task in Slack. Wake up to a merged PR. Vera is the async AI engineering agent embedded in your workflow."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content="https://agent-army.ai/og-image.png" />
+    <meta property="og:site_name" content="Agent Army" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Vera — AI Engineering Agent for Slack, Linear & GitHub"
+    />
+    <meta
+      name="twitter:description"
+      content="Delegate a task in Slack. Wake up to a merged PR. No IDE. No babysitting."
+    />
+    <meta name="twitter:image" content="https://agent-army.ai/og-image.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <slot />
+    <style is:global>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --color-bg: #0a0a0f;
+        --color-bg-alt: #12121a;
+        --color-bg-card: #1a1a25;
+        --color-text: #e8e8ed;
+        --color-text-muted: #9898a8;
+        --color-primary: #6c5ce7;
+        --color-primary-light: #a29bfe;
+        --color-accent: #00d2ff;
+        --color-border: #2a2a3a;
+        --color-success: #00b894;
+        --max-width: 1200px;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono",
+          monospace;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+      }
+
+      a {
+        color: var(--color-primary-light);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      a:hover {
+        color: var(--color-accent);
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+    </style>
+  </body>
+</html>
