@@ -225,15 +225,54 @@ admin.post("/tenants/:team_id/refresh-token", async (c) => {
   const refreshed = await refreshLinearToken(c.env, teamId);
   if (!refreshed) return c.json({ error: "Token refresh failed" }, 502);
 
-  await pushCredentials(c.env, teamId);
+  try {
+    await pushCredentials(c.env, teamId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ team_id: teamId, refreshed: true, push_error: message }, 200);
+  }
 
   return c.json({ team_id: teamId, refreshed: true });
 });
 
-/** POST /admin/refresh-tokens — refresh all expiring Linear tokens (same as cron) */
+/** POST /admin/refresh-tokens — refresh all Linear tokens that have a refresh_token */
 admin.post("/refresh-tokens", async (c) => {
-  await refreshExpiringTokens(c.env);
-  return c.json({ ok: true });
+  const sql = getDb(c.env);
+
+  const candidates = await sql`
+    SELECT it.tenant_id, it.expires_at
+    FROM integration_tokens it
+    JOIN tenants t ON t.id = it.tenant_id
+    WHERE it.platform = 'linear'
+      AND it.refresh_token IS NOT NULL
+      AND t.status = 'active'
+  `;
+
+  if (candidates.length === 0) {
+    return c.json({ total: 0, refreshed: 0, failed: 0, results: [], message: "No Linear tokens with refresh_token found" });
+  }
+
+  const results: { tenant_id: string; expires_at: string | null; status: "refreshed" | "failed"; error?: string }[] = [];
+
+  for (const { tenant_id, expires_at } of candidates) {
+    try {
+      const refreshed = await refreshLinearToken(c.env, tenant_id);
+      if (!refreshed) {
+        results.push({ tenant_id, expires_at, status: "failed", error: "refreshLinearToken returned false" });
+        continue;
+      }
+      await pushCredentials(c.env, tenant_id);
+      results.push({ tenant_id, expires_at, status: "refreshed" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      results.push({ tenant_id, expires_at, status: "failed", error: message });
+    }
+  }
+
+  const refreshed = results.filter((r) => r.status === "refreshed").length;
+  const failed = results.filter((r) => r.status === "failed").length;
+
+  return c.json({ total: results.length, refreshed, failed, results });
 });
 
 /** POST /admin/tenants/push-labels — provision Linear labels for all tenants with Linear connected */
