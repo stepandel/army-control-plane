@@ -4,32 +4,47 @@
  * - Favicon ICO (16x16 + 32x32)
  * - Favicon PNG (32x32)
  * - Android icon (192x192)
- * - OG image (1200x630) using the logo
+ * - OG image (1200x630) — clean design with integration flow
+ *
+ * Requires: npm install canvas sharp png-to-ico
+ * Fonts: download Inter to /tmp/fonts/extras/ttf/ (see README)
  */
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage, registerFont } from "canvas";
 import sharp from "sharp";
 import pngToIco from "png-to-ico";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "website", "public");
 
-// Brand colors (matching the site's CSS variables)
-const colors = {
+// Register Inter font if available
+const fontDir = "/tmp/fonts/extras/ttf";
+if (existsSync(join(fontDir, "Inter-Regular.ttf"))) {
+  registerFont(join(fontDir, "Inter-Regular.ttf"), { family: "Inter", weight: "400" });
+  registerFont(join(fontDir, "Inter-Medium.ttf"), { family: "Inter", weight: "500" });
+  registerFont(join(fontDir, "Inter-SemiBold.ttf"), { family: "Inter", weight: "600" });
+  registerFont(join(fontDir, "Inter-Bold.ttf"), { family: "Inter", weight: "700" });
+}
+
+const c = {
   bg: "#0a0a0f",
-  bgAlt: "#12121a",
-  bgCard: "#1a1a25",
+  bgCard: "#14141e",
   primary: "#6c5ce7",
   primaryLight: "#a29bfe",
   accent: "#00d2ff",
-  text: "#e8e8ed",
-  textMuted: "#9898a8",
-  border: "#2a2a3a",
+  text: "#f0f0f5",
+  textMuted: "#8888a0",
+  border: "#252535",
+  slack: "#E01E5A",
+  slackGreen: "#2EB67D",
+  slackBlue: "#36C5F0",
+  slackYellow: "#ECB22E",
+  linear: "#5E6AD2",
+  github: "#e6edf3",
 };
 
-// ─── Helper: rounded rectangle ──────────────────────────────────────────
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -44,212 +59,190 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ─── Rasterize SVG at a given size via sharp ────────────────────────────
-async function rasterizeSvg(svgPath, size) {
-  const svgBuf = readFileSync(svgPath);
-  return sharp(svgBuf).resize(size, size).png().toBuffer();
+function drawCircle(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
 }
 
-// ─── OG Image (1200x630) with the logo ─────────────────────────────────
-async function generateOGImage(logoPngBuffer) {
-  const w = 1200,
-    h = 630;
-  const canvas = createCanvas(w, h);
+function drawSlackIcon(ctx, cx, cy, size) {
+  const s = size * 0.35;
+  const g = s * 0.25;
+  const r = s * 0.22;
+  drawCircle(ctx, cx - g, cy - g - s * 0.15, r); ctx.fillStyle = c.slackBlue; ctx.fill();
+  drawCircle(ctx, cx + g + s * 0.15, cy - g, r); ctx.fillStyle = c.slackGreen; ctx.fill();
+  drawCircle(ctx, cx - g - s * 0.15, cy + g, r); ctx.fillStyle = c.slackYellow; ctx.fill();
+  drawCircle(ctx, cx + g, cy + g + s * 0.15, r); ctx.fillStyle = c.slack; ctx.fill();
+  ctx.lineCap = "round"; ctx.lineWidth = r * 1.4;
+  ctx.strokeStyle = c.slackBlue; ctx.beginPath(); ctx.moveTo(cx - g, cy - g - s * 0.15); ctx.lineTo(cx - g, cy + g); ctx.stroke();
+  ctx.strokeStyle = c.slackGreen; ctx.beginPath(); ctx.moveTo(cx + g + s * 0.15, cy - g); ctx.lineTo(cx - g, cy - g); ctx.stroke();
+  ctx.strokeStyle = c.slack; ctx.beginPath(); ctx.moveTo(cx + g, cy + g + s * 0.15); ctx.lineTo(cx + g, cy - g); ctx.stroke();
+  ctx.strokeStyle = c.slackYellow; ctx.beginPath(); ctx.moveTo(cx - g - s * 0.15, cy + g); ctx.lineTo(cx + g, cy + g); ctx.stroke();
+}
+
+function drawLinearIcon(ctx, cx, cy, size) {
+  const r = size * 0.32;
+  ctx.save();
+  drawCircle(ctx, cx, cy, r); ctx.clip();
+  ctx.strokeStyle = c.linear; ctx.lineWidth = 2.5; ctx.lineCap = "round";
+  for (let i = -6; i <= 6; i++) {
+    const offset = i * (r * 0.3);
+    ctx.beginPath(); ctx.moveTo(cx + offset - r, cy + r); ctx.lineTo(cx + offset + r, cy - r); ctx.stroke();
+  }
+  ctx.restore();
+  drawCircle(ctx, cx, cy, r); ctx.strokeStyle = c.linear; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function drawGitHubIcon(ctx, cx, cy, size) {
+  const r = size * 0.32;
+  drawCircle(ctx, cx, cy, r); ctx.fillStyle = c.github; ctx.fill();
+  ctx.fillStyle = c.bgCard;
+  const s = r * 0.55;
+  drawCircle(ctx, cx, cy - s * 0.15, s * 0.7); ctx.fill();
+  roundRect(ctx, cx - s * 0.5, cy + s * 0.1, s, s * 0.7, s * 0.15); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx - s * 0.55, cy - s * 0.55); ctx.lineTo(cx - s * 0.15, cy - s * 0.55); ctx.lineTo(cx - s * 0.45, cy - s * 0.9); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx + s * 0.55, cy - s * 0.55); ctx.lineTo(cx + s * 0.15, cy - s * 0.55); ctx.lineTo(cx + s * 0.45, cy - s * 0.9); ctx.closePath(); ctx.fill();
+}
+
+function drawConnection(ctx, x1, y1, x2, y2, color) {
+  ctx.save(); ctx.strokeStyle = color || c.border; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+}
+
+function drawArrow(ctx, x, y, color) {
+  ctx.save(); ctx.fillStyle = color || c.textMuted;
+  ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 8, y); ctx.lineTo(x, y + 5); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+// ─── Rasterize SVG ──────────────────────────────────────────────────────
+async function rasterizeSvg(svgPath, size) {
+  return sharp(readFileSync(svgPath)).resize(size, size).png().toBuffer();
+}
+
+// ─── OG Image ───────────────────────────────────────────────────────────
+async function generateOGImage(svgBuf) {
+  const W = 1200, H = 630;
+  const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
 
-  // Background
-  ctx.fillStyle = colors.bg;
-  ctx.fillRect(0, 0, w, h);
+  // Background + glow
+  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(780, 300, 0, 780, 300, 350);
+  glow.addColorStop(0, "rgba(108,92,231,0.08)"); glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 
-  // Subtle gradient overlay
-  const bgGrad = ctx.createLinearGradient(0, 0, w, h);
-  bgGrad.addColorStop(0, "rgba(108, 92, 231, 0.12)");
-  bgGrad.addColorStop(0.5, "rgba(10, 10, 15, 0)");
-  bgGrad.addColorStop(1, "rgba(0, 210, 255, 0.08)");
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, w, h);
+  // Top accent
+  const topLine = ctx.createLinearGradient(0, 0, W, 0);
+  topLine.addColorStop(0, "rgba(108,92,231,0)"); topLine.addColorStop(0.3, c.primary);
+  topLine.addColorStop(0.7, c.accent); topLine.addColorStop(1, "rgba(0,210,255,0)");
+  ctx.fillStyle = topLine; ctx.fillRect(0, 0, W, 3);
 
-  // Grid pattern
-  ctx.strokeStyle = "rgba(42, 42, 58, 0.4)";
-  ctx.lineWidth = 0.5;
-  for (let x = 0; x < w; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 0; y < h; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
+  // Logo + brand
+  const logoPng = await sharp(svgBuf).resize(80, 80).png().toBuffer();
+  ctx.drawImage(await loadImage(logoPng), 72, 72, 64, 64);
+  ctx.fillStyle = c.textMuted; ctx.font = '600 18px Inter, sans-serif'; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText("Agent Army", 148, 104);
 
-  // Decorative glows
-  const drawGlow = (x, y, r, color) => {
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, color);
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  };
-  drawGlow(200, 160, 250, "rgba(108, 92, 231, 0.15)");
-  drawGlow(1000, 480, 200, "rgba(0, 210, 255, 0.10)");
-
-  // Top border accent line
-  const topGrad = ctx.createLinearGradient(0, 0, w, 0);
-  topGrad.addColorStop(0, colors.primary);
-  topGrad.addColorStop(0.5, colors.accent);
-  topGrad.addColorStop(1, colors.primary);
-  ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, w, 3);
-
-  // Draw the Agent Army logo on the right side
-  const logoImg = await loadImage(logoPngBuffer);
-  const logoSize = 280;
-  const logoX = w - logoSize - 80;
-  const logoY = (h - logoSize) / 2 - 20;
-  ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-
-  // Top-left: brand badge
-  ctx.fillStyle = "rgba(108, 92, 231, 0.2)";
-  roundRect(ctx, 60, 50, 180, 38, 19);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(108, 92, 231, 0.4)";
-  ctx.lineWidth = 1;
-  roundRect(ctx, 60, 50, 180, 38, 19);
-  ctx.stroke();
-
-  ctx.fillStyle = colors.primaryLight;
-  ctx.font = '600 14px -apple-system, "Segoe UI", Roboto, sans-serif';
-  ctx.textAlign = "center";
-  ctx.fillText("AGENT ARMY", 150, 74);
-
-  // Main title
-  ctx.textAlign = "left";
-  ctx.fillStyle = colors.text;
-  ctx.font = 'bold 56px -apple-system, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText("Vera", 60, 170);
-
-  // Subtitle
-  ctx.font = '700 42px -apple-system, "Segoe UI", Roboto, sans-serif';
-  const titleGrad = ctx.createLinearGradient(60, 190, 750, 280);
-  titleGrad.addColorStop(0, colors.text);
-  titleGrad.addColorStop(1, colors.primaryLight);
-  ctx.fillStyle = titleGrad;
-  ctx.fillText("The AI engineering agent", 60, 240);
-  ctx.fillText("that works while you don't.", 60, 295);
+  // Headlines
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = c.text; ctx.font = 'bold 52px Inter, sans-serif'; ctx.fillText("Vera", 72, 220);
+  const subGrad = ctx.createLinearGradient(72, 250, 500, 320);
+  subGrad.addColorStop(0, c.text); subGrad.addColorStop(1, c.primaryLight);
+  ctx.fillStyle = subGrad; ctx.font = '600 34px Inter, sans-serif';
+  ctx.fillText("AI engineering agent", 72, 275); ctx.fillText("for your team", 72, 320);
 
   // Tagline
-  ctx.fillStyle = colors.textMuted;
-  ctx.font = '400 22px -apple-system, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText("Delegate a task in Slack. Wake up to a merged PR.", 60, 350);
+  ctx.fillStyle = c.textMuted; ctx.font = '400 20px Inter, sans-serif';
+  ctx.fillText("Delegate in Slack. Wake up to a merged PR.", 72, 375);
 
-  // Integration badges
-  const badges = [
-    { label: "Slack", color: "#E01E5A" },
-    { label: "Linear", color: "#5E6AD2" },
-    { label: "GitHub", color: "#f0f0f0" },
+  // CTA pill
+  roundRect(ctx, 72, 410, 200, 44, 22); ctx.fillStyle = c.primary; ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.font = '600 16px Inter, sans-serif'; ctx.textAlign = "center";
+  ctx.fillText("agent-army.ai", 172, 437); ctx.textAlign = "left";
+
+  // Integration cards
+  const cardW = 130, cardH = 130, iconSize = 56;
+  const cards = [
+    { x: 600, y: 140, label: "Slack", color: c.slack, draw: drawSlackIcon },
+    { x: 820, y: 140, label: "Linear", color: c.linear, draw: drawLinearIcon },
+    { x: 1020, y: 140, label: "GitHub", color: c.github, draw: drawGitHubIcon },
   ];
-  let bx = 60;
-  badges.forEach((b) => {
-    const pw = ctx.measureText(b.label).width + 40;
-    ctx.fillStyle = "rgba(26, 26, 37, 0.8)";
-    roundRect(ctx, bx, 385, pw, 36, 8);
-    ctx.fill();
-    ctx.strokeStyle = colors.border;
-    ctx.lineWidth = 1;
-    roundRect(ctx, bx, 385, pw, 36, 8);
-    ctx.stroke();
+  const veraX = 810, veraY = 380, veraW = 160, veraH = 100;
 
-    ctx.beginPath();
-    ctx.arc(bx + 16, 403, 5, 0, Math.PI * 2);
-    ctx.fillStyle = b.color;
-    ctx.fill();
-
-    ctx.fillStyle = colors.text;
-    ctx.font = '500 15px -apple-system, "Segoe UI", Roboto, sans-serif';
-    ctx.textAlign = "left";
-    ctx.fillText(b.label, bx + 28, 408);
-
-    bx += pw + 12;
+  // Lines from integrations to Vera
+  cards.forEach((card) => {
+    ctx.save(); ctx.strokeStyle = card.color + "40"; ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
+    ctx.beginPath(); ctx.moveTo(card.x + cardW / 2, card.y + cardH + 4);
+    ctx.lineTo(veraX + cardW / 2, veraY - 4); ctx.stroke(); ctx.restore();
   });
 
-  // Pipeline stages at bottom
-  const stages = ["Research", "Prep", "Execute", "Review", "Triage"];
-  const stageStartX = 60;
-  const stageY = 475;
-  const stageW = 140;
-  const stageGap = 18;
+  // Horizontal connections
+  for (let i = 0; i < cards.length - 1; i++) {
+    const y = cards[i].y + cardH / 2;
+    drawConnection(ctx, cards[i].x + cardW + 8, y, cards[i + 1].x - 8, y, c.border);
+    drawArrow(ctx, cards[i + 1].x - 10, y, c.textMuted);
+  }
 
-  stages.forEach((s, i) => {
-    const sx = stageStartX + i * (stageW + stageGap);
-    ctx.fillStyle = colors.bgAlt;
-    roundRect(ctx, sx, stageY, stageW, 90, 10);
-    ctx.fill();
-    ctx.strokeStyle = i === 2 ? colors.primary : colors.border;
-    ctx.lineWidth = i === 2 ? 2 : 1;
-    roundRect(ctx, sx, stageY, stageW, 90, 10);
-    ctx.stroke();
-
-    ctx.fillStyle = i === 2 ? colors.primary : colors.textMuted;
-    ctx.font = '600 12px -apple-system, "Segoe UI", Roboto, sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText(`0${i + 1}`, sx + stageW / 2, stageY + 30);
-
-    ctx.fillStyle = i === 2 ? colors.text : colors.textMuted;
-    ctx.font = '600 16px -apple-system, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText(s, sx + stageW / 2, stageY + 55);
-
-    if (i < stages.length - 1) {
-      ctx.fillStyle = colors.border;
-      ctx.font = '400 18px -apple-system, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText("→", sx + stageW + stageGap / 2, stageY + 45);
-    }
+  // Draw cards
+  cards.forEach((card) => {
+    roundRect(ctx, card.x, card.y, cardW, cardH, 16); ctx.fillStyle = c.bgCard; ctx.fill();
+    ctx.strokeStyle = c.border; ctx.lineWidth = 1; roundRect(ctx, card.x, card.y, cardW, cardH, 16); ctx.stroke();
+    ctx.save(); roundRect(ctx, card.x, card.y, cardW, cardH, 16); ctx.clip();
+    ctx.fillStyle = card.color + "30"; ctx.fillRect(card.x, card.y, cardW, 3); ctx.restore();
+    card.draw(ctx, card.x + cardW / 2, card.y + cardH / 2 - 8, iconSize);
+    ctx.fillStyle = c.textMuted; ctx.font = '500 14px Inter, sans-serif'; ctx.textAlign = "center";
+    ctx.fillText(card.label, card.x + cardW / 2, card.y + cardH - 14); ctx.textAlign = "left";
   });
 
-  // Bottom right: URL
-  ctx.fillStyle = colors.textMuted;
-  ctx.font = '400 16px -apple-system, "Segoe UI", Roboto, sans-serif';
-  ctx.textAlign = "right";
-  ctx.fillText("agent-army.ai", w - 60, h - 30);
+  // Vera card
+  const veraCardX = veraX + (cardW - veraW) / 2;
+  roundRect(ctx, veraCardX, veraY, veraW, veraH, 16); ctx.fillStyle = c.bgCard; ctx.fill();
+  ctx.strokeStyle = c.primary + "80"; ctx.lineWidth = 2;
+  roundRect(ctx, veraCardX, veraY, veraW, veraH, 16); ctx.stroke();
+
+  const veraLogoPng = await sharp(svgBuf).resize(36, 36).png().toBuffer();
+  const veraLogoCx = veraCardX + veraW / 2;
+  ctx.drawImage(await loadImage(veraLogoPng), veraLogoCx - 56, veraY + 20, 32, 32);
+  ctx.fillStyle = c.text; ctx.font = 'bold 26px Inter, sans-serif'; ctx.fillText("Vera", veraLogoCx - 18, veraY + 46);
+  ctx.fillStyle = c.textMuted; ctx.font = '400 13px Inter, sans-serif'; ctx.textAlign = "center";
+  ctx.fillText("AI Engineering Agent", veraCardX + veraW / 2, veraY + 72); ctx.textAlign = "left";
+
+  // Footer
+  ctx.fillStyle = c.border + "60"; ctx.fillRect(72, H - 60, W - 144, 1);
+  ctx.fillStyle = c.textMuted + "80"; ctx.font = '400 14px Inter, sans-serif';
+  ctx.fillText("Async AI agent embedded in Slack, Linear & GitHub", 72, H - 28);
+  ctx.textAlign = "right"; ctx.fillText("agent-army.ai", W - 72, H - 28);
 
   return canvas.toBuffer("image/png");
 }
 
-// ─── Generate all assets ────────────────────────────────────────────────
+// ─── Main ───────────────────────────────────────────────────────────────
 async function main() {
   const svgPath = join(publicDir, "favicon.svg");
+  const svgBuf = readFileSync(svgPath);
 
   console.log("Rasterizing favicon.svg for icon variants...");
   const logo512 = await rasterizeSvg(svgPath, 512);
 
   console.log("Generating apple-touch-icon (180x180)...");
-  const appleIcon = await sharp(logo512).resize(180, 180).png().toBuffer();
-  writeFileSync(join(publicDir, "apple-touch-icon.png"), appleIcon);
-  console.log("  ✓ website/public/apple-touch-icon.png");
+  writeFileSync(join(publicDir, "apple-touch-icon.png"), await sharp(logo512).resize(180, 180).png().toBuffer());
+  console.log("  ✓ apple-touch-icon.png");
 
   console.log("Generating favicon...");
-  const favicon32 = await sharp(logo512).resize(32, 32).png().toBuffer();
-  const favicon16 = await sharp(logo512).resize(16, 16).png().toBuffer();
-  writeFileSync(join(publicDir, "favicon-32x32.png"), favicon32);
-  console.log("  ✓ website/public/favicon-32x32.png");
+  const f32 = await sharp(logo512).resize(32, 32).png().toBuffer();
+  const f16 = await sharp(logo512).resize(16, 16).png().toBuffer();
+  writeFileSync(join(publicDir, "favicon-32x32.png"), f32);
+  writeFileSync(join(publicDir, "favicon.ico"), await pngToIco([f16, f32]));
+  console.log("  ✓ favicon.ico + favicon-32x32.png");
 
-  const icoBuffer = await pngToIco([favicon16, favicon32]);
-  writeFileSync(join(publicDir, "favicon.ico"), icoBuffer);
-  console.log("  ✓ website/public/favicon.ico");
+  console.log("Generating icon-192 (Android)...");
+  writeFileSync(join(publicDir, "icon-192.png"), await sharp(logo512).resize(192, 192).png().toBuffer());
+  console.log("  ✓ icon-192.png");
 
-  const android192 = await sharp(logo512).resize(192, 192).png().toBuffer();
-  writeFileSync(join(publicDir, "icon-192.png"), android192);
-  console.log("  ✓ website/public/icon-192.png");
+  console.log("Generating OG image (1200x630)...");
+  writeFileSync(join(publicDir, "og-image.png"), await generateOGImage(svgBuf));
+  console.log("  ✓ og-image.png");
 
-  console.log("Generating OG image (1200x630) with logo...");
-  const logoPng = await rasterizeSvg(svgPath, 512);
-  const ogBuffer = await generateOGImage(logoPng);
-  writeFileSync(join(publicDir, "og-image.png"), ogBuffer);
-  console.log("  ✓ website/public/og-image.png");
-
-  console.log("\nDone! All assets generated from favicon.svg.");
+  console.log("\nDone!");
 }
 
 main().catch(console.error);
