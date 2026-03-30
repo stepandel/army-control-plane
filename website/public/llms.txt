@@ -50,7 +50,4 @@ Vera occupies a unique position in the AI coding tools landscape:
 - **vs. Standalone agents** (Devin): Vera is embedded in Slack/Linear/GitHub — no new workspace.
 - **vs. CI/review bots** (CodeRabbit, Greptile): Full engineering lifecycle, not just code review.
 
-## Company
-
-- [About Agent Army](https://agent-army.ai/about): The company behind Vera.
-- [Contact](mailto:hello@agent-army.ai): Demos, enterprise inquiries, or support.
+Primary keywords: AI engineering agent, async AI engineer, AI coding agent Slack, autonomous coding agent.
