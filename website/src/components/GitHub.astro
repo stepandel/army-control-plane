@@ -1,0 +1,298 @@
+---
+import GitHubIcon from "./icons/GitHubIcon.astro";
+
+const features = [
+  {
+    name: "@agent-vera",
+    description:
+      "Tag @agent-vera in any GitHub comment to get her help. Works great for resolving merge conflicts or fixing CI — she reads the context, pushes a fix, and replies with what she did.",
+    screenshot: "/screenshot-github-mention.png",
+    screenshotAlt: "Tagging @agent-vera in a GitHub comment to fix CI, with her response and commit",
+  },
+  {
+    name: "PR review",
+    description:
+      "Review Vera's PR like you would any teammate's. Leave comments, request changes — Vera reads your feedback, makes the fixes, and pushes updated commits.",
+    screenshot: "/screenshot-github-review.png",
+    screenshotAlt: "Vera responding to PR review feedback by reverting a change as requested",
+  },
+];
+---
+
+<section id="github" class="github-section" aria-labelledby="gh-heading">
+  <div class="section-inner">
+    <div class="section-header">
+      <h2 id="gh-heading">
+        <span class="section-wordmark">
+          <GitHubIcon size={24} class="section-logo" />
+          <span class="section-wordmark-text">GitHub</span>
+        </span>
+      </h2>
+    </div>
+    <p class="section-intro">
+      Vera lives in your GitHub repos. Mention her in comments or review her
+      PRs — she responds like any other engineer on the team.
+    </p>
+
+    <div class="book-wrapper">
+      <div class="book" id="gh-book">
+        {
+          features.map((feature, i) => (
+            <div
+              class:list={["book-page", { active: i === 0 }]}
+              data-index={i}
+            >
+              <div class="page-spine">
+                <span class="spine-label">{feature.name}</span>
+              </div>
+              <div class="page-content">
+                <div class="page-text">
+                  <h3 class="page-name">{feature.name}</h3>
+                  <p class="page-desc">{feature.description}</p>
+                </div>
+                <div class="page-screenshot">
+                  <img src={feature.screenshot} alt={feature.screenshotAlt} loading="lazy" />
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const book = document.getElementById("gh-book");
+  const pages = book?.querySelectorAll<HTMLDivElement>(".book-page");
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  function activate(index: number) {
+    pages?.forEach((p, i) => {
+      if (i === index) {
+        p.classList.add("active");
+      } else {
+        p.classList.remove("active");
+      }
+    });
+  }
+
+  pages?.forEach((page, i) => {
+    page.addEventListener("mouseenter", () => {
+      if (page.classList.contains("active")) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => activate(i), 80);
+    });
+
+    page.addEventListener("click", () => {
+      if (timer) clearTimeout(timer);
+      activate(i);
+    });
+  });
+
+  book?.addEventListener("mouseleave", () => {
+    if (timer) clearTimeout(timer);
+  });
+</script>
+
+<style>
+  .github-section {
+    padding: 5rem 1.5rem;
+    border-top: 1px solid rgba(13, 40, 24, 0.15);
+  }
+
+  .section-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  h2 {
+    display: flex;
+    justify-content: center;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-logo {
+    flex-shrink: 0;
+    color: var(--color-text);
+  }
+
+  .section-wordmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45em;
+    padding: 0.3em 0.62em;
+    font-size: 2.1rem;
+    line-height: 1;
+    border: 1px solid rgba(13, 40, 24, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 0 rgba(13, 40, 24, 0.04);
+  }
+
+  .section-wordmark-text {
+    font-size: 1em;
+  }
+
+  .section-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    max-width: 640px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+
+  .book {
+    display: flex;
+    flex: 1;
+    height: 480px;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .book-page {
+    position: relative;
+    flex: 0 0 60px;
+    overflow: hidden;
+    cursor: pointer;
+    border-right: 1px solid rgba(13, 40, 24, 0.15);
+    transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-page:last-child {
+    border-right: none;
+  }
+
+  .book-page.active {
+    flex: 1 0 0;
+    cursor: default;
+  }
+
+  .page-spine {
+    position: absolute;
+    inset: 0;
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .spine-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    transform: rotate(-90deg);
+  }
+
+  .book-page.active .page-spine {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .page-content {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.15s;
+  }
+
+  .book-page.active .page-content {
+    opacity: 1;
+  }
+
+  .page-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .page-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .page-screenshot {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    max-height: 420px;
+  }
+
+  .page-screenshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .book {
+      flex-direction: column;
+      height: auto;
+    }
+
+    .book-page {
+      flex: 0 0 48px;
+      border-right: none;
+      border-bottom: 1px solid rgba(13, 40, 24, 0.15);
+      transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .book-page:last-child {
+      border-bottom: none;
+    }
+
+    .book-page.active {
+      flex: 1 0 auto;
+    }
+
+    .page-spine {
+      width: 100%;
+    }
+
+    .spine-label {
+      transform: none;
+    }
+
+    .page-content {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+
+    .page-screenshot {
+      max-height: 300px;
+    }
+  }
+</style>
