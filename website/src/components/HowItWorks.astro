@@ -1,6 +1,4 @@
 ---
-import LinearIcon from "./icons/LinearIcon.astro";
-
 const stages = [
   {
     name: "Research",
@@ -41,10 +39,13 @@ const stages = [
   <div class="section-inner">
     <div class="section-header">
       <h2 id="hiw-heading">
-        <span class="section-wordmark">
-          <LinearIcon size={20} variant="mono" class="section-logo" />
-          <span>Linear</span>
-        </span>
+        <img
+          src="/linear-logo-dark.svg"
+          alt="Linear"
+          class="section-logo"
+          width="144"
+          height="36"
+        />
       </h2>
     </div>
     <p class="section-intro">
@@ -132,6 +133,8 @@ const stages = [
   }
 
   h2 {
+    display: flex;
+    justify-content: center;
     font-size: clamp(1.75rem, 3.5vw, 2.5rem);
     font-weight: 700;
     text-align: center;
@@ -147,20 +150,9 @@ const stages = [
   }
 
   .section-logo {
-    flex-shrink: 0;
-    color: var(--color-text);
-  }
-
-  .section-wordmark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    padding: 0.3rem 0.85rem;
-    border: 1px solid rgba(13, 40, 24, 0.16);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.35);
-    line-height: 1;
+    display: block;
+    width: auto;
+    height: 2rem;
   }
 
   .section-intro {
