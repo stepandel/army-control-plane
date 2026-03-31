@@ -1,6 +1,12 @@
 name = "army-website"
 account_id = "eb4ad8fa494badb4359e91aa85ebf768"
+main = "dist/_worker.js/index.js"
 compatibility_date = "2026-02-17"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
+binding = "ASSETS"
 directory = "./dist"
+
+[vars]
+API_BASE_URL = "https://army-control-plane.stepandel.workers.dev"

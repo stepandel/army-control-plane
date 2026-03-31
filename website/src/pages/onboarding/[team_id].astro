@@ -1,0 +1,421 @@
+---
+export const prerender = false;
+
+import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
+
+const { team_id } = Astro.params;
+const runtime = Astro.locals.runtime;
+const apiBase = runtime.env.API_BASE_URL;
+
+const res = await fetch(`${apiBase}/api/onboarding/${team_id}`);
+if (!res.ok) {
+  return Astro.redirect("/onboarding");
+}
+
+const data = await res.json() as {
+  tenant: { id: string; name: string; status: string; has_anthropic_key: boolean };
+  integrations: string[];
+};
+
+const { tenant, integrations } = data;
+const connected = new Set(integrations);
+const isActive = tenant.status === "active";
+const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
+const hasCustomKey = tenant.has_anthropic_key;
+const allDone = connected.has("slack") && connected.has("linear") && connected.has("github");
+
+const linearUrl = `${apiBase}/oauth/linear/install?tenant_id=${team_id}`;
+const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
+---
+
+<OnboardingLayout title="Vera — Setup">
+  <div
+    id="onboarding-app"
+    data-api-base={apiBase}
+    data-team-id={team_id}
+  >
+    <h1>Welcome, {tenant.name}</h1>
+    <p class="subtitle">Connect your tools to finish setting up Vera.</p>
+
+    <div class="steps">
+      <!-- Slack: always connected -->
+      <div class="step connected">
+        <div class="step-number">&#10003;</div>
+        <div class="step-body">
+          <div class="step-title">Slack</div>
+          <div class="step-desc">Connected</div>
+        </div>
+        <span class="badge badge-ok">Done</span>
+      </div>
+
+      <!-- Provisioning -->
+      {isProvisioning && (
+        <div class="step active">
+          <div class="step-number">&#8987;</div>
+          <div class="step-body">
+            <div class="step-title">Provisioning your instance</div>
+            <div class="provisioning">
+              <div class="spinner"></div>
+              Setting up your Fly machine&hellip;
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Linear -->
+      <div class={`step ${connected.has("linear") ? "connected" : isActive ? "active" : "disabled"}`}>
+        <div class="step-number">{connected.has("linear") ? "\u2713" : "2"}</div>
+        <div class="step-body">
+          <div class="step-title">Linear</div>
+          <div class="step-desc">
+            {connected.has("linear") ? "Connected" : "Issue tracking and project management"}
+          </div>
+        </div>
+        {connected.has("linear") ? (
+          <span class="badge badge-ok">Done</span>
+        ) : isActive ? (
+          <a href={linearUrl} class="btn btn-primary">Connect</a>
+        ) : null}
+      </div>
+
+      <!-- GitHub -->
+      <div class={`step ${connected.has("github") ? "connected" : isActive ? "active" : "disabled"}`}>
+        <div class="step-number">{connected.has("github") ? "\u2713" : "3"}</div>
+        <div class="step-body">
+          <div class="step-title">GitHub</div>
+          <div class="step-desc">
+            {connected.has("github") ? "Connected" : "Code repositories and pull requests"}
+          </div>
+        </div>
+        {connected.has("github") ? (
+          <span class="badge badge-ok">Done</span>
+        ) : isActive ? (
+          <a href={githubUrl} class="btn btn-primary">Connect</a>
+        ) : null}
+      </div>
+
+      <!-- Anthropic API Key -->
+      <div class={`step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}`}>
+        <div class="step-number">{hasCustomKey ? "\u2713" : "\u2699"}</div>
+        <div class="step-body">
+          <div class="step-title">
+            Anthropic API Key <span class="step-optional">Optional</span>
+          </div>
+          <div class="step-desc">
+            {hasCustomKey ? (
+              "Custom key configured"
+            ) : (
+              <Fragment>
+                Using shared key &mdash;{" "}
+                <a
+                  href="https://console.anthropic.com/settings/keys"
+                  target="_blank"
+                  rel="noopener"
+                  class="link-inline"
+                >get your key</a>
+              </Fragment>
+            )}
+          </div>
+          {isActive && !hasCustomKey && (
+            <form class="key-form" id="key-form">
+              <input
+                type="password"
+                class="key-input"
+                id="anthropic-key"
+                placeholder="sk-ant-..."
+                required
+              />
+              <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+          )}
+        </div>
+        {hasCustomKey && (
+          <button class="btn btn-danger" id="remove-key-btn">Reset</button>
+        )}
+      </div>
+    </div>
+
+    {allDone && (
+      <div class="done-banner">
+        All integrations connected &mdash; Vera is ready to go.
+      </div>
+    )}
+  </div>
+</OnboardingLayout>
+
+{isProvisioning && (
+  <script>
+    (async function poll() {
+      const el = document.getElementById("onboarding-app");
+      if (!el) return;
+      const apiBase = el.dataset.apiBase;
+      const teamId = el.dataset.teamId;
+      while (true) {
+        await new Promise((r) => setTimeout(r, 3000));
+        try {
+          const res = await fetch(`${apiBase}/api/onboarding/${teamId}/status`);
+          const data = await res.json();
+          if (data.status === "active") {
+            location.reload();
+            return;
+          }
+        } catch {}
+      }
+    })();
+  </script>
+)}
+
+{isActive && (
+  <script>
+    const el = document.getElementById("onboarding-app");
+    const API_BASE = el?.dataset.apiBase ?? "";
+    const TEAM_ID = el?.dataset.teamId ?? "";
+
+    const form = document.getElementById("key-form");
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const input = document.getElementById("anthropic-key") as HTMLInputElement;
+        const key = input.value;
+        const res = await fetch(
+          `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ api_key: key }),
+          }
+        );
+        if (res.ok) {
+          location.reload();
+        } else {
+          const d = await res.json();
+          alert(d.error || "Failed to save key");
+        }
+      });
+    }
+
+    const removeBtn = document.getElementById("remove-key-btn");
+    if (removeBtn) {
+      removeBtn.addEventListener("click", async () => {
+        if (!confirm("Reset to shared key?")) return;
+        const res = await fetch(
+          `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
+          { method: "DELETE" }
+        );
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert("Failed to remove key");
+        }
+      });
+    }
+  </script>
+)}
+
+<style>
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+    opacity: 0.7;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step {
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .step.active {
+    border-color: rgba(13, 40, 24, 0.4);
+  }
+
+  .step.connected {
+    border-color: #166534;
+    background: rgba(22, 101, 52, 0.06);
+  }
+
+  .step.disabled {
+    opacity: 0.45;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(13, 40, 24, 0.06);
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .step.connected .step-number {
+    background: #166534;
+    border-color: #166534;
+    color: #fff;
+  }
+
+  .step-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .step-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+
+  .step.connected .step-desc {
+    color: #166534;
+    opacity: 1;
+  }
+
+  .step-optional {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    font-weight: 400;
+    margin-left: 0.375rem;
+  }
+
+  .link-inline {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+
+  .link-inline:hover {
+    opacity: 1;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.85;
+    color: var(--color-bg);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  .btn-danger:hover {
+    background: rgba(220, 38, 38, 0.15);
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 99px;
+    font-weight: 500;
+  }
+
+  .badge-ok {
+    background: rgba(22, 101, 52, 0.1);
+    color: #166534;
+  }
+
+  .provisioning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #92400e;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(13, 40, 24, 0.15);
+    border-top-color: #92400e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .key-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .key-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(13, 40, 24, 0.2);
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--color-text);
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .key-input:focus {
+    border-color: rgba(13, 40, 24, 0.4);
+  }
+
+  .done-banner {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(22, 101, 52, 0.06);
+    border: 1px solid #166534;
+    text-align: center;
+    color: #166534;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+</style>
