@@ -12,14 +12,19 @@ let data: {
 };
 
 try {
-  const res = await fetch(`${apiBase}/api/onboarding/${team_id}`);
+  const url = `${apiBase}/api/onboarding/${team_id}`;
+  const res = await fetch(url);
   if (!res.ok) {
-    return Astro.redirect("/onboarding");
+    const body = await res.text();
+    return new Response(
+      `SSR debug: fetch failed\nurl=${url}\nstatus=${res.status}\nbody=${body}`,
+      { status: 500 }
+    );
   }
   data = await res.json();
 } catch (err) {
   return new Response(
-    `SSR debug: apiBase=${apiBase}, error=${err instanceof Error ? err.message : String(err)}`,
+    `SSR debug: fetch threw\napiBase=${apiBase}\nerror=${err instanceof Error ? err.message : String(err)}`,
     { status: 500 }
   );
 }
