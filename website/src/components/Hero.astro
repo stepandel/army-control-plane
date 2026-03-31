@@ -28,24 +28,12 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
     </div>
 
     <div class="hero-bubbles" aria-hidden="true">
-      <div class="bubble bubble-clock">
-        <span class="bubble-text">24/7</span>
-      </div>
-      <div class="bubble bubble-slack">
-        <SlackIcon size={28} />
-      </div>
-      <div class="bubble bubble-linear">
-        <LinearIcon size={28} />
-      </div>
-      <div class="bubble bubble-github">
-        <GitHubIcon size={28} />
-      </div>
-      <div class="bubble bubble-pr">
-        <span class="bubble-text">PRs</span>
-      </div>
-      <div class="bubble bubble-async">
-        <span class="bubble-text">Async</span>
-      </div>
+      <div class="bubble b1"><span class="bubble-label">24/7</span></div>
+      <div class="bubble b2"><SlackIcon size={26} /></div>
+      <div class="bubble b3"><LinearIcon size={26} /></div>
+      <div class="bubble b4"><GitHubIcon size={26} /></div>
+      <div class="bubble b5"><span class="bubble-label">PRs</span></div>
+      <div class="bubble b6"><span class="bubble-label">Async</span></div>
     </div>
   </div>
 </header>
@@ -151,96 +139,41 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
     transform: translateY(-2px);
   }
 
-  /* Bubbles grid */
+  /* Bubbles */
   .hero-bubbles {
     position: relative;
-    height: 360px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 1rem;
+    height: 380px;
   }
 
   .bubble {
+    position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(13, 40, 24, 0.12);
     border-radius: 50%;
+    border: 1px solid rgba(13, 40, 24, 0.12);
     background: rgba(255, 255, 255, 0.4);
-    aspect-ratio: 1;
     color: var(--color-text);
     transition: transform 0.3s ease;
   }
 
   .bubble:hover {
-    transform: scale(1.08);
+    transform: scale(1.1);
   }
 
-  .bubble-text {
+  .bubble-label {
     font-size: 0.85rem;
     font-weight: 700;
     letter-spacing: 0.02em;
   }
 
-  .bubble-clock {
-    grid-column: 1;
-    grid-row: 1;
-    width: 90px;
-    height: 90px;
-    justify-self: end;
-    align-self: center;
-  }
-
-  .bubble-clock .bubble-text {
-    font-size: 1.1rem;
-  }
-
-  .bubble-slack {
-    grid-column: 2;
-    grid-row: 1;
-    width: 72px;
-    height: 72px;
-    justify-self: center;
-    align-self: end;
-  }
-
-  .bubble-linear {
-    grid-column: 3;
-    grid-row: 1;
-    width: 68px;
-    height: 68px;
-    justify-self: start;
-    align-self: center;
-  }
-
-  .bubble-github {
-    grid-column: 1;
-    grid-row: 2;
-    width: 72px;
-    height: 72px;
-    justify-self: center;
-    align-self: center;
-  }
-
-  .bubble-pr {
-    grid-column: 2;
-    grid-row: 2;
-    width: 80px;
-    height: 80px;
-    justify-self: center;
-    align-self: center;
-  }
-
-  .bubble-async {
-    grid-column: 3;
-    grid-row: 2;
-    width: 76px;
-    height: 76px;
-    justify-self: center;
-    align-self: start;
-  }
+  .b1 { width: 88px; height: 88px; top: 8%;  left: 55%; }
+  .b1 .bubble-label { font-size: 1.1rem; }
+  .b2 { width: 72px; height: 72px; top: 5%;  left: 15%; }
+  .b3 { width: 68px; height: 68px; top: 32%; left: 5%;  }
+  .b4 { width: 76px; height: 76px; top: 38%; left: 65%; }
+  .b5 { width: 80px; height: 80px; top: 65%; left: 25%; }
+  .b6 { width: 72px; height: 72px; top: 70%; left: 70%; }
 
   @media (max-width: 768px) {
     .hero {
@@ -256,20 +189,12 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
       text-align: center;
     }
 
-    .hero-subtitle {
-      max-width: 640px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
     .hero-ctas {
       justify-content: center;
     }
 
     .hero-bubbles {
-      height: 240px;
-      max-width: 320px;
-      margin: 0 auto;
+      height: 200px;
     }
 
     .btn {
