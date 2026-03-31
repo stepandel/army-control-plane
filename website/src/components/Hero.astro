@@ -28,10 +28,10 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
     </div>
 
     <div class="hero-bubbles" aria-hidden="true">
-      <div class="bubble b1"><span class="bubble-label">24/7</span></div>
-      <div class="bubble b2"><SlackIcon size={26} /></div>
-      <div class="bubble b3"><LinearIcon size={26} /></div>
-      <div class="bubble b4"><GitHubIcon size={26} /></div>
+      <div class="bubble b1"><span class="bubble-label">Works 24/7</span></div>
+      <div class="bubble b2"><SlackIcon size={22} /></div>
+      <div class="bubble b3"><LinearIcon size={22} /></div>
+      <div class="bubble b4"><GitHubIcon size={22} /></div>
       <div class="bubble b5"><span class="bubble-label">PRs</span></div>
       <div class="bubble b6"><span class="bubble-label">Async</span></div>
     </div>
@@ -150,7 +150,7 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 20px;
     border: 1px solid rgba(13, 40, 24, 0.12);
     background: rgba(255, 255, 255, 0.4);
     color: var(--color-text);
@@ -158,22 +158,22 @@ import GitHubIcon from "./icons/GitHubIcon.astro";
   }
 
   .bubble:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
 
   .bubble-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.02em;
   }
 
-  .b1 { width: 88px; height: 88px; top: 8%;  left: 55%; }
-  .b1 .bubble-label { font-size: 1.1rem; }
-  .b2 { width: 72px; height: 72px; top: 5%;  left: 15%; }
-  .b3 { width: 68px; height: 68px; top: 32%; left: 5%;  }
-  .b4 { width: 76px; height: 76px; top: 38%; left: 65%; }
-  .b5 { width: 80px; height: 80px; top: 65%; left: 25%; }
-  .b6 { width: 72px; height: 72px; top: 70%; left: 70%; }
+  .b1 { width: 140px; height: 120px; top: 5%;  left: 30%; }
+  .b1 .bubble-label { font-size: 1.15rem; }
+  .b2 { width: 64px;  height: 64px;  top: 0%;  left: 8%;  border-radius: 16px; }
+  .b3 { width: 56px;  height: 56px;  top: 15%; left: 82%; border-radius: 14px; }
+  .b4 { width: 72px;  height: 72px;  top: 50%; left: 0%;  border-radius: 18px; }
+  .b5 { width: 80px;  height: 70px;  top: 55%; left: 60%; border-radius: 18px; }
+  .b6 { width: 70px;  height: 60px;  top: 80%; left: 25%; border-radius: 16px; }
 
   @media (max-width: 768px) {
     .hero {
