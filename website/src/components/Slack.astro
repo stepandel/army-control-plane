@@ -1,0 +1,304 @@
+---
+import SlackIcon from "./icons/SlackIcon.astro";
+
+const features = [
+  {
+    name: "Scheduled workflows",
+    description:
+      "Try asking Vera to create an EOD report. She'll set up a scheduled workflow that runs daily and DMs you the results — no cron syntax required.",
+    screenshot: "/screenshot-slack-scheduled.png",
+    screenshotAlt: "Vera creating a scheduled cron workflow in Slack to check email every 5 minutes",
+  },
+  {
+    name: "Live debugging",
+    description:
+      "Ask Vera to investigate a bug right in Slack. She'll scan the codebase, trace the root cause, and reply with a detailed analysis — all in the thread.",
+    screenshot: "/screenshot-slack-debug.png",
+    screenshotAlt: "Vera debugging silent failure vectors in Slack with detailed code analysis",
+  },
+  {
+    name: "Ticket creation",
+    description:
+      "Ask Vera to create a ticket based on your conversation. She'll structure it into an epic with sub-issues, dependencies, and priorities — ready to execute.",
+    screenshot: "/screenshot-slack-ticket.png",
+    screenshotAlt: "Vera creating a Linear epic with sub-issues directly from a Slack conversation",
+  },
+];
+---
+
+<section id="slack" class="slack-section" aria-labelledby="slack-heading">
+  <div class="section-inner">
+    <div class="section-header">
+      <h2 id="slack-heading">
+        <span class="section-wordmark">
+          <SlackIcon size={24} class="section-logo" />
+          <span class="section-wordmark-text">Slack</span>
+        </span>
+      </h2>
+    </div>
+    <p class="section-intro">
+      DM Vera in Slack like you would any teammate. Debug live, create tickets,
+      or set up automations — all from a conversation.
+    </p>
+
+    <div class="book-wrapper">
+      <div class="book" id="slack-book">
+        {
+          features.map((feature, i) => (
+            <div
+              class:list={["book-page", { active: i === 0 }]}
+              data-index={i}
+            >
+              <div class="page-spine">
+                <span class="spine-label">{feature.name}</span>
+              </div>
+              <div class="page-content">
+                <div class="page-text">
+                  <h3 class="page-name">{feature.name}</h3>
+                  <p class="page-desc">{feature.description}</p>
+                </div>
+                <div class="page-screenshot">
+                  <img src={feature.screenshot} alt={feature.screenshotAlt} loading="lazy" />
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const book = document.getElementById("slack-book");
+  const pages = book?.querySelectorAll<HTMLDivElement>(".book-page");
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  function activate(index: number) {
+    pages?.forEach((p, i) => {
+      if (i === index) {
+        p.classList.add("active");
+      } else {
+        p.classList.remove("active");
+      }
+    });
+  }
+
+  pages?.forEach((page, i) => {
+    page.addEventListener("mouseenter", () => {
+      if (page.classList.contains("active")) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => activate(i), 80);
+    });
+
+    page.addEventListener("click", () => {
+      if (timer) clearTimeout(timer);
+      activate(i);
+    });
+  });
+
+  book?.addEventListener("mouseleave", () => {
+    if (timer) clearTimeout(timer);
+  });
+</script>
+
+<style>
+  .slack-section {
+    padding: 5rem 1.5rem;
+    border-top: 1px solid rgba(13, 40, 24, 0.15);
+  }
+
+  .section-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  h2 {
+    display: flex;
+    justify-content: center;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-logo {
+    flex-shrink: 0;
+  }
+
+  .section-wordmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45em;
+    padding: 0.3em 0.62em;
+    font-size: 2.1rem;
+    line-height: 1;
+    border: 1px solid rgba(13, 40, 24, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 0 rgba(13, 40, 24, 0.04);
+  }
+
+  .section-wordmark-text {
+    font-size: 1em;
+  }
+
+  .section-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    max-width: 640px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+
+  .book {
+    display: flex;
+    flex: 1;
+    height: 480px;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .book-page {
+    position: relative;
+    flex: 0 0 60px;
+    overflow: hidden;
+    cursor: pointer;
+    border-right: 1px solid rgba(13, 40, 24, 0.15);
+    transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-page:last-child {
+    border-right: none;
+  }
+
+  .book-page.active {
+    flex: 1 0 0;
+    cursor: default;
+  }
+
+  .page-spine {
+    position: absolute;
+    inset: 0;
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .spine-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    transform: rotate(-90deg);
+  }
+
+  .book-page.active .page-spine {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .page-content {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.15s;
+  }
+
+  .book-page.active .page-content {
+    opacity: 1;
+  }
+
+  .page-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .page-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .page-screenshot {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    max-height: 420px;
+  }
+
+  .page-screenshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .book {
+      flex-direction: column;
+      height: auto;
+    }
+
+    .book-page {
+      flex: 0 0 48px;
+      border-right: none;
+      border-bottom: 1px solid rgba(13, 40, 24, 0.15);
+      transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .book-page:last-child {
+      border-bottom: none;
+    }
+
+    .book-page.active {
+      flex: 1 0 auto;
+    }
+
+    .page-spine {
+      width: 100%;
+    }
+
+    .spine-label {
+      transform: none;
+    }
+
+    .page-content {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+
+    .page-screenshot {
+      max-height: 300px;
+    }
+  }
+</style>
