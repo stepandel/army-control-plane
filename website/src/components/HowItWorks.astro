@@ -58,6 +58,7 @@ const stages = [
     </p>
 
     <div class="book-wrapper"><div class="book" id="book">
+      <div class="book-label" aria-hidden="true"><span>Labels</span></div>
       {
         stages.map((stage, i) => (
           <div
@@ -189,6 +190,26 @@ const stages = [
     border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 12px;
     overflow: hidden;
+  }
+
+  .book-label {
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid rgba(13, 40, 24, 0.15);
+    background: rgba(13, 40, 24, 0.03);
+  }
+
+  .book-label span {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(13, 40, 24, 0.4);
   }
 
   .book-page {
