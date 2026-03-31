@@ -9,18 +9,24 @@ const stages = [
     name: "Research",
     description:
       "Vera investigates the problem space: reads the codebase, searches documentation, analyzes competitor approaches, and gathers the context needed to make informed decisions.",
+    screenshot: "/screenshot-research.png",
+    screenshotAlt: "Vera researching a codebase in Linear with the #research label",
   },
   {
     iconComponent: "prep",
     name: "Prep & Plan",
     description:
       "Before writing a single line of code, Vera sizes the work, validates scope, identifies entry points, and creates a concrete implementation plan — just like a senior engineer would.",
+    screenshot: "/screenshot-prep.png",
+    screenshotAlt: "Vera creating an execution plan with sub-issues in Linear with the #prep label",
   },
   {
     iconComponent: "execute",
     name: "Execute",
     description:
       "Vera implements the solution: writes production code, follows existing patterns and conventions, adds tests, and opens a pull request with a clear description of what changed and why.",
+    screenshot: "/screenshot-execute.png",
+    screenshotAlt: "Vera completing a task lifecycle — from prep to PR opened in Linear",
   },
 ];
 ---
@@ -33,11 +39,11 @@ const stages = [
       through a three-stage lifecycle — no babysitting required.
     </p>
 
-    <div class="pipeline">
+    <div class="stages">
       {
         stages.map((stage, i) => (
-          <>
-            <div class="stage">
+          <div class:list={["stage-row", { reverse: i % 2 === 1 }]}>
+            <div class="stage-text">
               <div class="stage-icon">
                 {stage.iconComponent === "research" && <ResearchIcon size={28} />}
                 {stage.iconComponent === "prep" && <PrepIcon size={28} />}
@@ -46,28 +52,28 @@ const stages = [
               <h3 class="stage-name">{stage.name}</h3>
               <p class="stage-desc">{stage.description}</p>
             </div>
-            {i < stages.length - 1 && (
-              <div class="stage-arrow" aria-hidden="true">
-                <span class="arrow-h">→</span>
-                <span class="arrow-v">↓</span>
-              </div>
-            )}
-          </>
+            <div class="stage-screenshot">
+              <img src={stage.screenshot} alt={stage.screenshotAlt} loading="lazy" />
+            </div>
+          </div>
         ))
       }
-    </div>
 
-    <div class="standalone-stage">
-      <div class="stage">
-        <div class="stage-icon">
-          <TriageIcon size={28} />
+      <div class="stage-row">
+        <div class="stage-text">
+          <div class="stage-icon">
+            <TriageIcon size={28} />
+          </div>
+          <h3 class="stage-name">Triage</h3>
+          <p class="stage-desc">
+            When bugs surface or tickets pile up, Vera investigates root causes,
+            assesses impact, and either fixes issues directly or provides detailed
+            analysis so your team can act fast.
+          </p>
         </div>
-        <h3 class="stage-name">Triage</h3>
-        <p class="stage-desc">
-          When bugs surface or tickets pile up, Vera investigates root causes,
-          assesses impact, and either fixes issues directly or provides detailed
-          analysis so your team can act fast.
-        </p>
+        <div class="stage-screenshot">
+          <img src="/screenshot-triage.png" alt="Vera triaging and fixing a bug with results shown in Linear and Slack" loading="lazy" />
+        </div>
       </div>
     </div>
   </div>
@@ -101,18 +107,30 @@ const stages = [
     line-height: 1.6;
   }
 
-  .pipeline {
+  .stages {
     display: flex;
-    align-items: flex-start;
-    gap: 0;
-    justify-content: center;
+    flex-direction: column;
+    gap: 4rem;
   }
 
-  .stage {
-    flex: 1;
-    max-width: 220px;
-    text-align: center;
-    padding: 1.5rem 1rem;
+  .stage-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .stage-row.reverse {
+    direction: rtl;
+  }
+
+  .stage-row.reverse > * {
+    direction: ltr;
+  }
+
+  .stage-text {
+    display: flex;
+    flex-direction: column;
   }
 
   .stage-icon {
@@ -124,63 +142,42 @@ const stages = [
     height: 64px;
     border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 16px;
-    margin-left: auto;
-    margin-right: auto;
     color: var(--color-text);
   }
 
   .stage-name {
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: var(--color-text);
   }
 
   .stage-desc {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: var(--color-text-muted);
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
-  .standalone-stage {
-    display: flex;
-    justify-content: center;
-    margin-top: 2rem;
+  .stage-screenshot {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(13, 40, 24, 0.15);
   }
 
-  .stage-arrow {
-    display: flex;
-    align-items: center;
-    padding-top: 2.5rem;
-    color: var(--color-text);
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .arrow-v {
-    display: none;
+  .stage-screenshot img {
+    width: 100%;
+    height: auto;
+    display: block;
   }
 
   @media (max-width: 768px) {
-    .pipeline {
-      flex-direction: column;
-      align-items: center;
+    .stage-row {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
 
-    .stage {
-      max-width: 100%;
-    }
-
-    .stage-arrow {
-      padding-top: 0;
-    }
-
-    .arrow-h {
-      display: none;
-    }
-
-    .arrow-v {
-      display: inline;
+    .stage-row.reverse {
+      direction: ltr;
     }
   }
 </style>
