@@ -51,7 +51,7 @@ const stages = [
       switches execution mode — from deep research to full implementation.
     </p>
 
-    <div class="book-wrapper"><div class="book">
+    <div class="book-wrapper"><div class="book" id="book">
       {
         stages.map((stage, i) => (
           <div
@@ -85,18 +85,36 @@ const stages = [
 </section>
 
 <script>
+  const book = document.getElementById("book");
   const pages = document.querySelectorAll<HTMLDivElement>(".book-page");
+  const count = pages.length;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
-  pages.forEach((page) => {
+  function activate(index: number) {
+    pages.forEach((p, i) => {
+      if (i === index) {
+        p.classList.add("active");
+      } else {
+        p.classList.remove("active");
+      }
+    });
+  }
+
+  pages.forEach((page, i) => {
     page.addEventListener("mouseenter", () => {
-      pages.forEach((p) => p.classList.remove("active"));
-      page.classList.add("active");
+      if (page.classList.contains("active")) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => activate(i), 80);
     });
 
     page.addEventListener("click", () => {
-      pages.forEach((p) => p.classList.remove("active"));
-      page.classList.add("active");
+      if (timer) clearTimeout(timer);
+      activate(i);
     });
+  });
+
+  book?.addEventListener("mouseleave", () => {
+    if (timer) clearTimeout(timer);
   });
 </script>
 
@@ -143,13 +161,12 @@ const stages = [
   }
 
   .book-page {
-    display: flex;
-    flex: 0 0 auto;
-    width: 60px;
-    transition: width 0.4s ease, flex 0.4s ease;
+    position: relative;
+    flex: 0 0 60px;
     overflow: hidden;
     cursor: pointer;
     border-right: 1px solid rgba(13, 40, 24, 0.15);
+    transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .book-page:last-child {
@@ -157,14 +174,15 @@ const stages = [
   }
 
   .book-page.active {
-    flex: 1;
-    width: auto;
+    flex: 1 0 0;
     cursor: default;
   }
 
+  /* Spine — always rendered, fades out when active */
   .page-spine {
+    position: absolute;
+    inset: 0;
     width: 60px;
-    min-width: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -175,24 +193,29 @@ const stages = [
     font-weight: 600;
     color: var(--color-text);
     user-select: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
   }
 
   .book-page.active .page-spine {
-    display: none;
+    opacity: 0;
+    pointer-events: none;
   }
 
+  /* Content — always rendered, fades in when active */
   .page-content {
-    display: none;
-    flex: 1;
-    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
     gap: 2rem;
     align-items: center;
-    grid-template-columns: 1fr 1.4fr;
-    min-width: 0;
+    padding: 2rem;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.15s;
   }
 
   .book-page.active .page-content {
-    display: grid;
+    opacity: 1;
   }
 
   .page-text {
@@ -257,10 +280,10 @@ const stages = [
     }
 
     .book-page {
-      width: 100%;
-      height: 48px;
+      flex: 0 0 48px;
       border-right: none;
       border-bottom: 1px solid rgba(13, 40, 24, 0.15);
+      transition: flex 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .book-page:last-child {
@@ -268,24 +291,19 @@ const stages = [
     }
 
     .book-page.active {
-      height: auto;
+      flex: 1 0 auto;
     }
 
     .page-spine {
       width: 100%;
-      min-width: unset;
-      height: 48px;
       writing-mode: horizontal-tb;
       text-orientation: initial;
     }
 
-    .book-page.active .page-spine {
-      display: none;
-    }
-
-    .book-page.active .page-content {
+    .page-content {
       display: flex;
       flex-direction: column;
+      padding: 1.5rem;
     }
 
     .page-screenshot {
