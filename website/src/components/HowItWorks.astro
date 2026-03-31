@@ -47,67 +47,50 @@ const stages = [
       through a structured lifecycle — no babysitting required.
     </p>
 
-    <div class="carousel">
-      <div class="carousel-tabs" role="tablist">
-        {
-          stages.map((stage, i) => (
-            <button
-              class:list={["carousel-tab", { active: i === 0 }]}
-              role="tab"
-              aria-selected={i === 0 ? "true" : "false"}
-              aria-controls={`panel-${i}`}
-              data-index={i}
-            >
-              <span class="tab-icon">
-                {stage.iconComponent === "research" && <ResearchIcon size={20} />}
-                {stage.iconComponent === "prep" && <PrepIcon size={20} />}
-                {stage.iconComponent === "execute" && <ExecuteIcon size={20} />}
-                {stage.iconComponent === "triage" && <TriageIcon size={20} />}
-              </span>
-              <span class="tab-label">{stage.name}</span>
-            </button>
-          ))
-        }
-      </div>
-
-      <div class="carousel-panels">
-        {
-          stages.map((stage, i) => (
-            <div
-              class:list={["carousel-panel", { active: i === 0 }]}
-              role="tabpanel"
-              id={`panel-${i}`}
-              data-index={i}
-            >
-              <div class="panel-content">
-                <p class="panel-desc">{stage.description}</p>
+    <div class="book">
+      {
+        stages.map((stage, i) => (
+          <div
+            class:list={["book-page", { active: i === 0 }]}
+            data-index={i}
+          >
+            <div class="page-spine">
+              <span class="spine-label">{stage.name}</span>
+            </div>
+            <div class="page-content">
+              <div class="page-text">
+                <div class="page-icon">
+                  {stage.iconComponent === "research" && <ResearchIcon size={24} />}
+                  {stage.iconComponent === "prep" && <PrepIcon size={24} />}
+                  {stage.iconComponent === "execute" && <ExecuteIcon size={24} />}
+                  {stage.iconComponent === "triage" && <TriageIcon size={24} />}
+                </div>
+                <h3 class="page-name">{stage.name}</h3>
+                <p class="page-desc">{stage.description}</p>
               </div>
-              <div class="panel-screenshot">
+              <div class="page-screenshot">
                 <img src={stage.screenshot} alt={stage.screenshotAlt} loading="lazy" />
               </div>
             </div>
-          ))
-        }
-      </div>
+          </div>
+        ))
+      }
     </div>
   </div>
 </section>
 
 <script>
-  const tabs = document.querySelectorAll<HTMLButtonElement>(".carousel-tab");
-  const panels = document.querySelectorAll<HTMLDivElement>(".carousel-panel");
+  const pages = document.querySelectorAll<HTMLDivElement>(".book-page");
 
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const index = tab.dataset.index;
-      tabs.forEach((t) => {
-        t.classList.remove("active");
-        t.setAttribute("aria-selected", "false");
-      });
-      panels.forEach((p) => p.classList.remove("active"));
-      tab.classList.add("active");
-      tab.setAttribute("aria-selected", "true");
-      document.getElementById(`panel-${index}`)?.classList.add("active");
+  pages.forEach((page) => {
+    page.addEventListener("mouseenter", () => {
+      pages.forEach((p) => p.classList.remove("active"));
+      page.classList.add("active");
+    });
+
+    page.addEventListener("click", () => {
+      pages.forEach((p) => p.classList.remove("active"));
+      page.classList.add("active");
     });
   });
 </script>
@@ -140,91 +123,151 @@ const stages = [
     line-height: 1.6;
   }
 
-  .carousel-tabs {
+  .book {
     display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-bottom: 2.5rem;
-  }
-
-  .carousel-tab {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
+    height: 480px;
     border: 1px solid rgba(13, 40, 24, 0.15);
-    border-radius: 100px;
-    background: transparent;
-    color: var(--color-text);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .book-page {
+    display: flex;
+    flex: 0 0 auto;
+    width: 60px;
+    transition: width 0.4s ease, flex 0.4s ease;
+    overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s;
+    border-right: 1px solid rgba(13, 40, 24, 0.15);
   }
 
-  .carousel-tab:hover {
-    border-color: var(--color-text);
+  .book-page:last-child {
+    border-right: none;
   }
 
-  .carousel-tab.active {
-    background: var(--color-text);
-    color: var(--color-bg);
-    border-color: var(--color-text);
+  .book-page.active {
+    flex: 1;
+    width: auto;
+    cursor: default;
   }
 
-  .tab-icon {
+  .page-spine {
+    width: 60px;
+    min-width: 60px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    user-select: none;
   }
 
-  .carousel-panel {
+  .book-page.active .page-spine {
     display: none;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 2.5rem;
-    align-items: center;
   }
 
-  .carousel-panel.active {
+  .page-content {
+    display: none;
+    flex: 1;
+    padding: 2rem;
+    gap: 2rem;
+    align-items: center;
+    grid-template-columns: 1fr 1.4fr;
+    min-width: 0;
+  }
+
+  .book-page.active .page-content {
     display: grid;
   }
 
-  .panel-desc {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    color: var(--color-text-muted);
+  .page-text {
+    display: flex;
+    flex-direction: column;
   }
 
-  .panel-screenshot {
+  .page-icon {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 12px;
+    color: var(--color-text);
+  }
+
+  .page-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .page-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .page-screenshot {
+    border-radius: 8px;
     overflow: hidden;
     border: 1px solid rgba(13, 40, 24, 0.15);
+    max-height: 420px;
   }
 
-  .panel-screenshot img {
+  .page-screenshot img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
     display: block;
   }
 
   @media (max-width: 768px) {
-    .carousel-tabs {
-      flex-wrap: wrap;
+    .book {
+      flex-direction: column;
+      height: auto;
     }
 
-    .carousel-tab {
-      padding: 0.5rem 1rem;
-      font-size: 0.8rem;
+    .book-page {
+      width: 100%;
+      height: 48px;
+      border-right: none;
+      border-bottom: 1px solid rgba(13, 40, 24, 0.15);
     }
 
-    .tab-label {
+    .book-page:last-child {
+      border-bottom: none;
+    }
+
+    .book-page.active {
+      height: auto;
+    }
+
+    .page-spine {
+      width: 100%;
+      min-width: unset;
+      height: 48px;
+      writing-mode: horizontal-tb;
+      text-orientation: initial;
+    }
+
+    .book-page.active .page-spine {
       display: none;
     }
 
-    .carousel-panel.active {
+    .book-page.active .page-content {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+    }
+
+    .page-screenshot {
+      max-height: 300px;
     }
   }
 </style>
