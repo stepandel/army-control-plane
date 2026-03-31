@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
-import { FlyClient } from "../lib/fly";
+import { FlyClient, type GuestConfig } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
 import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
 import { provisionTenant } from "../lib/provision";
@@ -49,7 +49,7 @@ admin.get("/tenants/:team_id", async (c) => {
   return c.json({ ...tenant, integrations, tokens, deployments });
 });
 
-/** DELETE /admin/tenants/:team_id — destroy machine, delete KV entries, mark destroyed */
+/** DELETE /admin/tenants/:team_id — destroy machine/app, delete KV entries, mark destroyed */
 admin.delete("/tenants/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
@@ -58,19 +58,29 @@ admin.delete("/tenants/:team_id", async (c) => {
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
-  // Destroy Fly machine + volume
-  if (tenant.fly_machine_id) {
+  // Destroy Fly resources: per-tenant app or legacy machine+volume
+  if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
+    // Per-tenant app: delete the whole app (cascades to machines+volumes+IPs)
     try {
-      await fly.destroyMachine(tenant.fly_machine_id);
+      await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
-      console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+      console.error(`Fly app deletion failed for ${teamId}:`, err);
     }
-  }
-  if (tenant.fly_volume_id) {
-    try {
-      await fly.deleteVolume(tenant.fly_volume_id);
-    } catch (err) {
-      console.error(`Fly volume cleanup failed for ${teamId}:`, err);
+  } else {
+    // Legacy shared app: destroy machine + volume individually
+    if (tenant.fly_machine_id) {
+      try {
+        await fly.destroyMachine(tenant.fly_machine_id);
+      } catch (err) {
+        console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+      }
+    }
+    if (tenant.fly_volume_id) {
+      try {
+        await fly.deleteVolume(tenant.fly_volume_id);
+      } catch (err) {
+        console.error(`Fly volume cleanup failed for ${teamId}:`, err);
+      }
     }
   }
 
@@ -88,14 +98,14 @@ admin.delete("/tenants/:team_id", async (c) => {
   // Mark tenant as destroyed
   await sql`
     UPDATE tenants
-    SET status = 'destroyed', fly_machine_id = NULL, fly_volume_id = NULL, instance_url = NULL, updated_at = now()
+    SET status = 'destroyed', fly_machine_id = NULL, fly_volume_id = NULL, fly_app_name = NULL, instance_url = NULL, updated_at = now()
     WHERE id = ${teamId}
   `;
 
   return c.json({ team_id: teamId, status: "destroyed" });
 });
 
-/** POST /admin/tenants/:team_id/reprovision — destroy + recreate machine */
+/** POST /admin/tenants/:team_id/reprovision — destroy + recreate machine/app */
 admin.post("/tenants/:team_id/reprovision", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
@@ -105,19 +115,27 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // Destroy old Fly machine + volume
-  if (tenant.fly_machine_id) {
+  // Destroy old Fly resources: per-tenant app or legacy machine+volume
+  if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
     try {
-      await fly.destroyMachine(tenant.fly_machine_id);
+      await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
-      console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+      console.error(`Fly app deletion failed for ${teamId}:`, err);
     }
-  }
-  if (tenant.fly_volume_id) {
-    try {
-      await fly.deleteVolume(tenant.fly_volume_id);
-    } catch (err) {
-      console.error(`Fly volume cleanup failed for ${teamId}:`, err);
+  } else {
+    if (tenant.fly_machine_id) {
+      try {
+        await fly.destroyMachine(tenant.fly_machine_id);
+      } catch (err) {
+        console.error(`Fly machine cleanup failed for ${teamId}:`, err);
+      }
+    }
+    if (tenant.fly_volume_id) {
+      try {
+        await fly.deleteVolume(tenant.fly_volume_id);
+      } catch (err) {
+        console.error(`Fly volume cleanup failed for ${teamId}:`, err);
+      }
     }
   }
 
@@ -147,6 +165,69 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   );
 
   return c.json({ team_id: teamId, status: "reprovisioning" });
+});
+
+/** PATCH /admin/tenants/:team_id/resize — resize a tenant's machine CPU/memory */
+admin.patch("/tenants/:team_id/resize", async (c) => {
+  const teamId = c.req.param("team_id");
+  const body = await c.req.json<{ memory_mb?: number; cpus?: number }>();
+
+  // Validate input
+  if (body.memory_mb !== undefined) {
+    if (!Number.isInteger(body.memory_mb) || body.memory_mb < 256 || body.memory_mb % 256 !== 0) {
+      return c.json({ error: "memory_mb must be a positive integer and a multiple of 256" }, 400);
+    }
+  }
+  if (body.cpus !== undefined) {
+    if (!Number.isInteger(body.cpus) || body.cpus < 1) {
+      return c.json({ error: "cpus must be a positive integer >= 1" }, 400);
+    }
+  }
+  if (body.memory_mb === undefined && body.cpus === undefined) {
+    return c.json({ error: "Request body must include at least one of: memory_mb, cpus" }, 400);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+
+  // Update DB columns
+  const newMemory = body.memory_mb ?? tenant.memory_mb;
+  const newCpus = body.cpus ?? tenant.cpus;
+  await sql`
+    UPDATE tenants
+    SET memory_mb = ${newMemory}, cpus = ${newCpus}, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  // If tenant has an active machine, resize it via Fly API
+  if (tenant.status === "active" && tenant.fly_machine_id && tenant.fly_app_name) {
+    const sharedImage = `registry.fly.io/${c.env.FLY_APP}:latest`;
+    const tenantFly = new FlyClient(c.env.FLY_API_TOKEN, tenant.fly_app_name, sharedImage);
+    const guest: GuestConfig = {
+      cpu_kind: "shared",
+      cpus: newCpus ?? 2,
+      memory_mb: newMemory ?? 1024,
+    };
+    try {
+      await tenantFly.resizeMachine(tenant.fly_machine_id, guest);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({
+        team_id: teamId,
+        memory_mb: newMemory,
+        cpus: newCpus,
+        resize_error: message,
+      }, 200);
+    }
+  }
+
+  return c.json({
+    team_id: teamId,
+    memory_mb: newMemory,
+    cpus: newCpus,
+    machine_resized: tenant.status === "active" && !!tenant.fly_machine_id,
+  });
 });
 
 /** PATCH /admin/tenants/:team_id/vera-production — toggle VERA_PRODUCTION for a tenant */
