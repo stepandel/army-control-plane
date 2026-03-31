@@ -8,5 +8,9 @@ compatibility_flags = ["nodejs_compat"]
 binding = "ASSETS"
 directory = "./dist"
 
+[[services]]
+binding = "CONTROL_PLANE"
+service = "army-control-plane"
+
 [vars]
 API_BASE_URL = "https://army-control-plane.stepandel.workers.dev"

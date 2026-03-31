@@ -4,30 +4,19 @@ export const prerender = false;
 import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
 
 const { team_id } = Astro.params;
-const apiBase = Astro.locals.runtime?.env?.API_BASE_URL;
+const env = Astro.locals.runtime.env;
+const apiBase = env.API_BASE_URL;
+const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
 
-let data: {
+const res = await controlPlane.fetch(`https://api/api/onboarding/${team_id}`);
+if (!res.ok) {
+  return Astro.redirect("/onboarding");
+}
+
+const data = await res.json() as {
   tenant: { id: string; name: string; status: string; has_anthropic_key: boolean };
   integrations: string[];
 };
-
-try {
-  const url = `${apiBase}/api/onboarding/${team_id}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const body = await res.text();
-    return new Response(
-      `SSR debug: fetch failed\nurl=${url}\nstatus=${res.status}\nbody=${body}`,
-      { status: 500 }
-    );
-  }
-  data = await res.json();
-} catch (err) {
-  return new Response(
-    `SSR debug: fetch threw\napiBase=${apiBase}\nerror=${err instanceof Error ? err.message : String(err)}`,
-    { status: 500 }
-  );
-}
 
 const { tenant, integrations } = data;
 const connected = new Set(integrations);
