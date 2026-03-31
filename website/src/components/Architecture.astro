@@ -47,17 +47,6 @@ const features = [
       }
     </div>
 
-    <div class="byok-banner">
-      <div class="byok-icon" aria-hidden="true">🔑</div>
-      <div class="byok-content">
-        <h3>Your keys, your models</h3>
-        <p>
-          Vera supports BYOK (bring your own key) — use your preferred LLM
-          provider. Your code stays in your infrastructure. Nothing is stored or
-          used for training.
-        </p>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -132,44 +121,9 @@ const features = [
     line-height: 1.6;
   }
 
-  .byok-banner {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 2rem;
-    border: 1px solid rgba(13, 40, 24, 0.15);
-    border-radius: 16px;
-  }
-
-  .byok-icon {
-    font-size: 2.5rem;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-  }
-
-  .byok-content h3 {
-    margin-bottom: 0.5rem;
-  }
-
-  .byok-content p {
-    font-size: 0.95rem;
-    color: var(--color-text-muted);
-    line-height: 1.6;
-  }
-
   @media (max-width: 768px) {
     .arch-grid {
       grid-template-columns: 1fr;
-    }
-
-    .byok-banner {
-      flex-direction: column;
-      text-align: center;
     }
   }
 </style>
