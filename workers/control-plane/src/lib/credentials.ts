@@ -7,15 +7,20 @@ import { buildMachineEnv } from "./machine-env";
 /**
  * Push all integration tokens to a tenant's Fly machine as env vars.
  * The machine reboots to pick up the new config.
+ * Scopes FlyClient to the tenant's own app (works for both legacy shared-app
+ * and new per-tenant-app tenants).
  */
 export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sql?: postgres.Sql) {
   const db = sql ?? getDb(env);
-  const fly = new FlyClient(env.FLY_API_TOKEN, env.FLY_APP);
+  const sharedImage = `registry.fly.io/${env.FLY_APP}:latest`;
 
   const [tenant] = await db`SELECT * FROM tenants WHERE id = ${tenantId}`;
   if (!tenant) throw new Error(`Tenant ${tenantId} not found`);
   if (tenant.status !== "active") throw new Error(`Tenant ${tenantId} not active`);
   if (!tenant.fly_machine_id) throw new Error(`Tenant ${tenantId} has no Fly machine`);
+
+  // Scope FlyClient to the tenant's app (per-tenant or legacy shared)
+  const fly = new FlyClient(env.FLY_API_TOKEN, tenant.fly_app_name, sharedImage);
 
   const tokens = await db`
     SELECT platform, token_type, access_token
