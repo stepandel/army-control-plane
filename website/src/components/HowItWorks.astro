@@ -1,11 +1,6 @@
 ---
-import ResearchIcon from "./icons/ResearchIcon.astro";
-import PrepIcon from "./icons/PrepIcon.astro";
-import ExecuteIcon from "./icons/ExecuteIcon.astro";
-import TriageIcon from "./icons/TriageIcon.astro";
 const stages = [
   {
-    iconComponent: "research",
     name: "Research",
     label: "#research",
     description:
@@ -14,7 +9,6 @@ const stages = [
     screenshotAlt: "Vera researching a codebase in Linear with the #research label",
   },
   {
-    iconComponent: "prep",
     name: "Prep & Plan",
     label: "#prep",
     description:
@@ -23,7 +17,6 @@ const stages = [
     screenshotAlt: "Vera creating an execution plan with sub-issues in Linear with the #prep label",
   },
   {
-    iconComponent: "execute",
     name: "Execute",
     label: "#execute",
     description:
@@ -32,7 +25,6 @@ const stages = [
     screenshotAlt: "Vera completing a task lifecycle — from prep to PR opened in Linear",
   },
   {
-    iconComponent: "triage",
     name: "Triage",
     label: "#triage",
     description:
@@ -63,13 +55,7 @@ const stages = [
             </div>
             <div class="page-content">
               <div class="page-text">
-                <div class="page-icon">
-                  {stage.iconComponent === "research" && <ResearchIcon size={24} />}
-                  {stage.iconComponent === "prep" && <PrepIcon size={24} />}
-                  {stage.iconComponent === "execute" && <ExecuteIcon size={24} />}
-                  {stage.iconComponent === "triage" && <TriageIcon size={24} />}
-                </div>
-                <span class="page-label">{stage.label}</span>
+                <span class="linear-label"><span class="linear-dot"></span>{stage.label}</span>
                 <h3 class="page-name">{stage.name}</h3>
                 <p class="page-desc">{stage.description}</p>
               </div>
@@ -223,26 +209,26 @@ const stages = [
     flex-direction: column;
   }
 
-  .page-icon {
-    margin-bottom: 0.75rem;
-    display: flex;
+  .linear-label {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border: 1px solid rgba(13, 40, 24, 0.15);
-    border-radius: 12px;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(13, 40, 24, 0.2);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: var(--color-text);
+    width: fit-content;
+    margin-bottom: 0.75rem;
   }
 
-  .page-label {
-    display: inline-block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    font-family: var(--font-mono);
-    color: var(--color-text);
-    opacity: 0.6;
-    margin-bottom: 0.25rem;
+  .linear-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    flex-shrink: 0;
   }
 
   .page-name {
