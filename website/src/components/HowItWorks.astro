@@ -2,9 +2,7 @@
 import ResearchIcon from "./icons/ResearchIcon.astro";
 import PrepIcon from "./icons/PrepIcon.astro";
 import ExecuteIcon from "./icons/ExecuteIcon.astro";
-import ReviewIcon from "./icons/ReviewIcon.astro";
 import TriageIcon from "./icons/TriageIcon.astro";
-
 const stages = [
   {
     iconComponent: "research",
@@ -24,18 +22,6 @@ const stages = [
     description:
       "Vera implements the solution: writes production code, follows existing patterns and conventions, adds tests, and opens a pull request with a clear description of what changed and why.",
   },
-  {
-    iconComponent: "review",
-    name: "Review",
-    description:
-      "Vera reviews code for correctness, style, edge cases, and potential regressions. She posts structured review feedback directly on pull requests — acting as a tireless second pair of eyes.",
-  },
-  {
-    iconComponent: "triage",
-    name: "Triage",
-    description:
-      "When bugs surface or tickets pile up, Vera investigates root causes, assesses impact, and either fixes issues directly or provides detailed analysis so your team can act fast.",
-  },
 ];
 ---
 
@@ -44,7 +30,7 @@ const stages = [
     <h2 id="hiw-heading">From Slack message to merged PR — autonomously</h2>
     <p class="section-intro">
       Vera follows the same engineering workflow your team does. Every task moves
-      through a five-stage lifecycle — no babysitting required.
+      through a three-stage lifecycle — no babysitting required.
     </p>
 
     <div class="pipeline">
@@ -56,8 +42,6 @@ const stages = [
                 {stage.iconComponent === "research" && <ResearchIcon size={28} />}
                 {stage.iconComponent === "prep" && <PrepIcon size={28} />}
                 {stage.iconComponent === "execute" && <ExecuteIcon size={28} />}
-                {stage.iconComponent === "review" && <ReviewIcon size={28} />}
-                {stage.iconComponent === "triage" && <TriageIcon size={28} />}
               </div>
               <h3 class="stage-name">{stage.name}</h3>
               <p class="stage-desc">{stage.description}</p>
@@ -71,6 +55,20 @@ const stages = [
           </>
         ))
       }
+    </div>
+
+    <div class="standalone-stage">
+      <div class="stage">
+        <div class="stage-icon">
+          <TriageIcon size={28} />
+        </div>
+        <h3 class="stage-name">Triage</h3>
+        <p class="stage-desc">
+          When bugs surface or tickets pile up, Vera investigates root causes,
+          assesses impact, and either fixes issues directly or provides detailed
+          analysis so your team can act fast.
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -143,6 +141,12 @@ const stages = [
     font-size: 0.85rem;
     color: var(--color-text-muted);
     line-height: 1.5;
+  }
+
+  .standalone-stage {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
   }
 
   .stage-arrow {
