@@ -4,8 +4,8 @@ export interface TenantRoute {
   instance_url: string;
   /** Shared secret for Worker ↔ Fly HMAC verification */
   internal_secret: string;
-  /** Fly machine ID — used with fly-force-instance-id header to pin requests to the correct machine */
-  fly_machine_id: string;
+  /** Fly machine ID — stored for reference, no longer used for routing (app-per-tenant = auto-routing) */
+  fly_machine_id?: string;
 }
 
 // ── Webhook source discriminator ─────────────────────────────────

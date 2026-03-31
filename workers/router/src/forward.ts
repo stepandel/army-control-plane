@@ -80,8 +80,6 @@ export function forwardToInstance(
       // Army headers last — cannot be spoofed by incoming request
       "x-army-source": source,
       "x-army-signature": route.internal_secret,
-      // Pin to the exact Fly machine for this tenant
-      "fly-force-instance-id": route.fly_machine_id,
     },
     body: rawBody,
   })
