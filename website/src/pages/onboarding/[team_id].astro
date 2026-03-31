@@ -22,6 +22,7 @@ const { tenant, integrations } = data;
 const connected = new Set(integrations);
 const isActive = tenant.status === "active";
 const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
+const showByok = env.SHOW_BYOK === "true";
 const hasCustomKey = tenant.has_anthropic_key;
 const allDone = connected.has("slack") && connected.has("linear") && connected.has("github");
 
@@ -96,44 +97,46 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
       </div>
 
       <!-- Anthropic API Key -->
-      <div class={`step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}`}>
-        <div class="step-number">{hasCustomKey ? "\u2713" : "\u2699"}</div>
-        <div class="step-body">
-          <div class="step-title">
-            Anthropic API Key <span class="step-optional">Optional</span>
-          </div>
-          <div class="step-desc">
-            {hasCustomKey ? (
-              "Custom key configured"
-            ) : (
-              <Fragment>
-                Using shared key &mdash;{" "}
-                <a
-                  href="https://console.anthropic.com/settings/keys"
-                  target="_blank"
-                  rel="noopener"
-                  class="link-inline"
-                >get your key</a>
-              </Fragment>
+      {showByok && (
+        <div class={`step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}`}>
+          <div class="step-number">{hasCustomKey ? "\u2713" : "\u2699"}</div>
+          <div class="step-body">
+            <div class="step-title">
+              Anthropic API Key <span class="step-optional">Optional</span>
+            </div>
+            <div class="step-desc">
+              {hasCustomKey ? (
+                "Custom key configured"
+              ) : (
+                <Fragment>
+                  Using shared key &mdash;{" "}
+                  <a
+                    href="https://console.anthropic.com/settings/keys"
+                    target="_blank"
+                    rel="noopener"
+                    class="link-inline"
+                  >get your key</a>
+                </Fragment>
+              )}
+            </div>
+            {isActive && !hasCustomKey && (
+              <form class="key-form" id="key-form">
+                <input
+                  type="password"
+                  class="key-input"
+                  id="anthropic-key"
+                  placeholder="sk-ant-..."
+                  required
+                />
+                <button type="submit" class="btn btn-primary">Save</button>
+              </form>
             )}
           </div>
-          {isActive && !hasCustomKey && (
-            <form class="key-form" id="key-form">
-              <input
-                type="password"
-                class="key-input"
-                id="anthropic-key"
-                placeholder="sk-ant-..."
-                required
-              />
-              <button type="submit" class="btn btn-primary">Save</button>
-            </form>
+          {hasCustomKey && (
+            <button class="btn btn-danger" id="remove-key-btn">Reset</button>
           )}
         </div>
-        {hasCustomKey && (
-          <button class="btn btn-danger" id="remove-key-btn">Reset</button>
-        )}
-      </div>
+      )}
     </div>
 
     {allDone && (
