@@ -35,11 +35,7 @@
   .cta-section {
     padding: 6rem 1.5rem;
     text-align: center;
-    background: linear-gradient(
-      180deg,
-      var(--color-bg) 0%,
-      rgba(108, 92, 231, 0.08) 100%
-    );
+    border-top: 1px solid rgba(240, 237, 232, 0.15);
   }
 
   .cta-inner {
@@ -81,34 +77,30 @@
   }
 
   .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.35);
+    background: var(--color-text);
+    color: var(--color-bg);
   }
 
   .btn-primary:hover {
-    background: var(--color-primary-light);
-    color: white;
+    opacity: 0.85;
+    color: var(--color-bg);
     transform: translateY(-2px);
-    box-shadow: 0 6px 30px rgba(108, 92, 231, 0.5);
   }
 
   .btn-secondary {
     background: transparent;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    border: 1px solid rgba(240, 237, 232, 0.3);
   }
 
   .btn-secondary:hover {
-    color: var(--color-text);
-    border-color: var(--color-text-muted);
+    border-color: var(--color-text);
     transform: translateY(-2px);
   }
 
   .footer {
     padding: 2rem 1.5rem;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg);
+    border-top: 1px solid rgba(240, 237, 232, 0.15);
   }
 
   .footer-inner {
