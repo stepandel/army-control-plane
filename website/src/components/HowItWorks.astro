@@ -57,8 +57,9 @@ const stages = [
       triage.
     </p>
 
-    <div class="book-wrapper"><div class="book" id="book">
+    <div class="book-wrapper">
       <div class="book-label" aria-hidden="true"><span>Labels</span></div>
+      <div class="book" id="book">
       {
         stages.map((stage, i) => (
           <div
@@ -130,6 +131,9 @@ const stages = [
   }
 
   .book-wrapper {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
   }
 
   h2 {
@@ -186,17 +190,20 @@ const stages = [
 
   .book {
     display: flex;
+    flex: 1;
     height: 480px;
     border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 12px;
     overflow: hidden;
+    min-width: 0;
   }
 
   .book-label {
-    flex: 0 0 36px;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 0.5rem;
   }
 
   .book-label span {
