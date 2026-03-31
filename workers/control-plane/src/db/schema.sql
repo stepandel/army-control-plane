@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   fly_volume_id TEXT,
   instance_url  TEXT,
   anthropic_api_key TEXT,                        -- optional BYOK Anthropic key (NULL = use global fallback)
+  memory_mb     INTEGER,                     -- per-tenant memory override (NULL = default 1024)
+  cpus          INTEGER,                     -- per-tenant CPU override (NULL = default 2)
   vera_production BOOLEAN NOT NULL DEFAULT true, -- VERA_PRODUCTION env var pushed to machine
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
