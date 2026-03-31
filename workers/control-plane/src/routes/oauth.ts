@@ -118,7 +118,7 @@ oauth.get("/slack/callback", async (c) => {
     ),
   );
 
-  return c.redirect(`${c.env.BASE_URL}/onboarding/${teamId}`);
+  return c.redirect(`${c.env.WEBSITE_URL}/onboarding/${teamId}`);
 });
 
 // ─── Linear ──────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ oauth.get("/linear/callback", async (c) => {
       .catch((err) => console.error(`Credential push failed for ${tenantId}:`, err)),
   );
 
-  return c.redirect(`${c.env.BASE_URL}/onboarding/${tenantId}`);
+  return c.redirect(`${c.env.WEBSITE_URL}/onboarding/${tenantId}`);
 });
 
 // ─── GitHub ──────────────────────────────────────────────────────
@@ -280,7 +280,7 @@ oauth.get("/github/callback", async (c) => {
     ),
   );
 
-  return c.redirect(`${c.env.BASE_URL}/onboarding/${tenantId}`);
+  return c.redirect(`${c.env.WEBSITE_URL}/onboarding/${tenantId}`);
 });
 
 export default oauth;

@@ -1,8 +1,10 @@
 import { defineConfig } from "astro/config";
+import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
   site: "https://agent-army.ai",
   output: "static",
+  adapter: cloudflare(),
   build: {
     assets: "_assets",
   },

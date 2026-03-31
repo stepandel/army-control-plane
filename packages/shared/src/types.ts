@@ -25,6 +25,7 @@ export interface ControlPlaneEnv {
   OAUTH_STATE: KVNamespace;
   DB: Hyperdrive;
   BASE_URL: string;
+  WEBSITE_URL: string;
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
 

@@ -1,9 +1,10 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
 import admin from "./routes/admin";
 import internal from "./routes/internal";
-import onboarding from "./routes/onboarding";
+import apiOnboarding from "./routes/api-onboarding";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 
@@ -12,9 +13,19 @@ const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
 
+// CORS for website → API calls
+app.use(
+  "/api/onboarding/*",
+  cors({
+    origin: (_, c) => c.env.WEBSITE_URL,
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+  }),
+);
+
 // Public routes
 app.route("/oauth", oauth);
-app.route("/onboarding", onboarding);
+app.route("/api/onboarding", apiOnboarding);
 app.route("/internal", internal);
 
 // Protected routes — require Cloudflare Access JWT
