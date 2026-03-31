@@ -9,7 +9,7 @@
       Vera is the async AI engineer embedded in Slack, Linear, and GitHub.
       Delegate a task in a DM. Wake up to a merged pull request.
     </p>
-    <p class="hero-body">
+    <p class="sr-only">
       Vera is an autonomous AI engineering agent built for teams that ship fast.
       Unlike IDE copilots that need you at the keyboard, Vera works
       asynchronously: researching codebases, triaging bugs, writing
@@ -67,14 +67,16 @@
     margin-right: auto;
   }
 
-  .hero-body {
-    font-size: 1rem;
-    color: var(--color-text-muted);
-    line-height: 1.7;
-    margin-bottom: 2.5rem;
-    max-width: 640px;
-    margin-left: auto;
-    margin-right: auto;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .hero-ctas {
