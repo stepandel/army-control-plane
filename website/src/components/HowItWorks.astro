@@ -1,4 +1,6 @@
 ---
+import LinearIcon from "./icons/LinearIcon.astro";
+
 const stages = [
   {
     name: "Research",
@@ -37,10 +39,18 @@ const stages = [
 
 <section id="how-it-works" class="how-it-works" aria-labelledby="hiw-heading">
   <div class="section-inner">
-    <h2 id="hiw-heading">Label-driven execution modes</h2>
+    <div class="section-header">
+      <h2 id="hiw-heading">
+        <span class="section-wordmark">
+          <LinearIcon size={20} variant="mono" class="section-logo" />
+          <span>Linear</span>
+        </span>
+      </h2>
+    </div>
     <p class="section-intro">
       Vera ships with prebuilt Linear labels. Add one to a ticket and Vera
-      switches execution mode — from deep research to full implementation.
+      switches modes instantly, from deep research to prep, execution, and
+      triage.
     </p>
 
     <div class="book-wrapper"><div class="book" id="book">
@@ -125,8 +135,32 @@ const stages = [
     font-size: clamp(1.75rem, 3.5vw, 2.5rem);
     font-weight: 700;
     text-align: center;
-    margin-bottom: 1rem;
+    margin: 0;
     letter-spacing: -0.02em;
+  }
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-logo {
+    flex-shrink: 0;
+    color: var(--color-text);
+  }
+
+  .section-wordmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid rgba(13, 40, 24, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    line-height: 1;
   }
 
   .section-intro {
@@ -212,11 +246,11 @@ const stages = [
   .linear-label {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.7rem;
-    border: 1px solid rgba(13, 40, 24, 0.2);
+    gap: 0.35rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 100px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--color-text);
     width: fit-content;
@@ -224,10 +258,10 @@ const stages = [
   }
 
   .linear-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: #4ade80;
+    background: #34D399;
     flex-shrink: 0;
   }
 
