@@ -25,7 +25,7 @@ FLY_APP = "pi-agent-images"
 BASE_URL = "https://army-control-plane.stepandel.workers.dev"
 GITHUB_APP_SLUG = "agent-vera"
 GITHUB_APP_ID="3061325"
-WEBSITE_URL = "https://agent-army.ai"
+WEBSITE_URL = "https://army-website.stepandel.workers.dev"
 LANGSMITH_TRACING = "true"
 LANGSMITH_PROJECT = "anton-remote"
 
