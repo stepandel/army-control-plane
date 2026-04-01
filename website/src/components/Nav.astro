@@ -1,4 +1,9 @@
 ---
+interface Props {
+  minimal?: boolean;
+}
+
+const { minimal = false } = Astro.props;
 ---
 
 <nav class="nav" aria-label="Main navigation">
@@ -6,16 +11,22 @@
     <a href="/" class="nav-logo" aria-label="Vera AI home">
       <span class="logo-text">Vera AI</span>
     </a>
-    <div class="nav-links" id="nav-links">
-      <a href="#how-it-works">Linear</a>
-      <a href="#github">GitHub</a>
-      <a href="#slack">Slack</a>
-      <a href="#use-cases">Use Cases</a>
-    </div>
-    <a href="/onboarding" class="nav-cta">Install Vera →</a>
-    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
-      <span class="hamburger"></span>
-    </button>
+    {!minimal && (
+      <div class="nav-links" id="nav-links">
+        <a href="#how-it-works">Linear</a>
+        <a href="#github">GitHub</a>
+        <a href="#slack">Slack</a>
+        <a href="#use-cases">Use Cases</a>
+      </div>
+    )}
+    {!minimal && (
+      <a href="/onboarding" class="nav-cta">Install Vera →</a>
+    )}
+    {!minimal && (
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
+        <span class="hamburger"></span>
+      </button>
+    )}
   </div>
 </nav>
 
