@@ -421,10 +421,9 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
   return c.json({ tenant_id: teamId, name: tenant.name, status: "migrated" });
 });
 
-/** POST /admin/tenants/deploy — deploy a new image to all active per-tenant machines */
+/** POST /admin/tenants/deploy — deploy latest image to all active per-tenant machines */
 admin.post("/tenants/deploy", async (c) => {
-  const body = await c.req.json<{ image?: string }>().catch(() => ({} as { image?: string }));
-  const image = body.image ?? `registry.fly.io/${c.env.FLY_APP}:latest`;
+  const image = `registry.fly.io/${c.env.FLY_APP}:latest`;
   const sql = getDb(c.env);
 
   const tenants = await sql`
@@ -458,11 +457,10 @@ admin.post("/tenants/deploy", async (c) => {
   return c.json({ image, total: results.length, deployed, failed, results });
 });
 
-/** POST /admin/tenants/:team_id/deploy — deploy a new image to a single tenant */
+/** POST /admin/tenants/:team_id/deploy — deploy latest image to a single tenant */
 admin.post("/tenants/:team_id/deploy", async (c) => {
   const teamId = c.req.param("team_id");
-  const body = await c.req.json<{ image?: string }>().catch(() => ({} as { image?: string }));
-  const image = body.image ?? `registry.fly.io/${c.env.FLY_APP}:latest`;
+  const image = `registry.fly.io/${c.env.FLY_APP}:latest`;
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
