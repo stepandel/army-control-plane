@@ -60,7 +60,7 @@ admin.delete("/tenants/:team_id", async (c) => {
   // Destroy Fly resources: per-tenant app or legacy machine+volume
   if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
     // Per-tenant app (vera-ai org): delete the app — bucket is kept
-    const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
+    const fly = new FlyClient(c.env.FLY_API_TOKEN_VERA, c.env.FLY_APP);
     try {
       await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
@@ -68,7 +68,7 @@ admin.delete("/tenants/:team_id", async (c) => {
     }
   } else {
     // Legacy shared app (personal org)
-    const legacyFly = new FlyClient(c.env.FLY_API_TOKEN_LEGACY, c.env.FLY_APP);
+    const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
     if (tenant.fly_machine_id) {
       try {
         await legacyFly.destroyMachine(tenant.fly_machine_id);
@@ -165,7 +165,7 @@ admin.patch("/tenants/:team_id/resize", async (c) => {
   // If tenant has an active machine, resize it via Fly API
   if (tenant.status === "active" && tenant.fly_machine_id && tenant.fly_app_name) {
     const sharedImage = `registry.fly.io/${c.env.FLY_APP}:latest`;
-    const tenantFly = new FlyClient(c.env.FLY_API_TOKEN, tenant.fly_app_name, sharedImage);
+    const tenantFly = new FlyClient(c.env.FLY_API_TOKEN_VERA, tenant.fly_app_name, sharedImage);
     const guest: GuestConfig = {
       cpu_kind: "shared",
       cpus: newCpus ?? 2,
@@ -393,7 +393,7 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
   }
 
   // 1. Destroy old machine + volume on shared app (personal org)
-  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN_LEGACY, c.env.FLY_APP);
+  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
   if (tenant.fly_machine_id) {
     try { await legacyFly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
   }
