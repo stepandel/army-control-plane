@@ -274,7 +274,7 @@ export class FlyClient {
         },
         autostart: true,
         autostop: "stop",
-        min_machines_running: 0,
+        min_machines_running: 1,
       },
     ];
   }
