@@ -366,69 +366,58 @@ admin.post("/tenants/:team_id/push-labels", async (c) => {
   }
 });
 
-/** POST /admin/tenants/migrate-to-per-app — migrate all legacy tenants from shared app to per-tenant apps */
-admin.post("/tenants/migrate-to-per-app", async (c) => {
-  const dryRun = c.req.query("dry_run") === "true";
+/** GET /admin/tenants/legacy — list tenants still on the shared app */
+admin.get("/tenants/legacy", async (c) => {
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
-
-  // Find all active tenants still on the shared app
   const legacyTenants = await sql`
-    SELECT id, name, fly_app_name, fly_machine_id, fly_volume_id
+    SELECT id, name, status, fly_app_name, fly_machine_id
     FROM tenants
     WHERE status = 'active' AND fly_app_name = ${c.env.FLY_APP}
   `;
+  return c.json({ count: legacyTenants.length, tenants: legacyTenants });
+});
 
-  if (dryRun) {
-    return c.json({
-      dry_run: true,
-      count: legacyTenants.length,
-      tenants: legacyTenants.map((t) => ({ id: t.id, name: t.name })),
-    });
+/** POST /admin/tenants/:team_id/migrate-to-per-app — migrate a single legacy tenant to per-tenant app */
+admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
+  const teamId = c.req.param("team_id");
+  const sql = getDb(c.env);
+  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
+
+  const [tenant] = await sql`
+    SELECT id, name, fly_app_name, fly_machine_id, fly_volume_id
+    FROM tenants WHERE id = ${teamId}
+  `;
+  if (!tenant) return c.json({ error: "Not found" }, 404);
+  if (tenant.fly_app_name !== c.env.FLY_APP) {
+    return c.json({ error: "Tenant is not on the shared app — already migrated or never provisioned" }, 400);
   }
 
-  const results: { tenant_id: string; name: string; status: "migrated" | "failed"; error?: string }[] = [];
-
-  // Sequential migration to avoid Fly API rate limits
-  for (const tenant of legacyTenants) {
-    try {
-      // 1. Destroy old machine + volume on shared app
-      if (tenant.fly_machine_id) {
-        try { await fly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
-      }
-      if (tenant.fly_volume_id) {
-        try { await fly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
-      }
-
-      // 2. Mark old deployment as stopped
-      await sql`
-        UPDATE deployments SET status = 'stopped', finished_at = now()
-        WHERE tenant_id = ${tenant.id} AND status IN ('deploying', 'running')
-      `;
-
-      // 3. Reset tenant to pending so provisionTenant can run
-      await sql`
-        UPDATE tenants
-        SET status = 'pending', fly_machine_id = NULL, fly_volume_id = NULL,
-            fly_app_name = NULL, instance_url = NULL, updated_at = now()
-        WHERE id = ${tenant.id}
-      `;
-
-      // 4. Reprovision under per-tenant app
-      await provisionTenant(c.env, tenant.id);
-
-      results.push({ tenant_id: tenant.id, name: tenant.name, status: "migrated" });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`Migration failed for ${tenant.id}:`, message);
-      results.push({ tenant_id: tenant.id, name: tenant.name, status: "failed", error: message });
-    }
+  // 1. Destroy old machine + volume on shared app
+  if (tenant.fly_machine_id) {
+    try { await fly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
+  }
+  if (tenant.fly_volume_id) {
+    try { await fly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
   }
 
-  const migrated = results.filter((r) => r.status === "migrated").length;
-  const failed = results.filter((r) => r.status === "failed").length;
+  // 2. Mark old deployment as stopped
+  await sql`
+    UPDATE deployments SET status = 'stopped', finished_at = now()
+    WHERE tenant_id = ${teamId} AND status IN ('deploying', 'running')
+  `;
 
-  return c.json({ total: results.length, migrated, failed, results });
+  // 3. Reset tenant to pending so provisionTenant can run
+  await sql`
+    UPDATE tenants
+    SET status = 'pending', fly_machine_id = NULL, fly_volume_id = NULL,
+        fly_app_name = NULL, instance_url = NULL, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  // 4. Provision under per-tenant app
+  await provisionTenant(c.env, teamId);
+
+  return c.json({ tenant_id: teamId, name: tenant.name, status: "migrated" });
 });
 
 export default admin;
