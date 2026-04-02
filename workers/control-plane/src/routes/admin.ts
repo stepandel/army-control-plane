@@ -4,7 +4,7 @@ import { getDb } from "../db/client";
 import { FlyClient, type GuestConfig } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
 import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
-import { provisionTenant } from "../lib/provision";
+import { provisionTenant, reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
@@ -60,7 +60,7 @@ admin.delete("/tenants/:team_id", async (c) => {
 
   // Destroy Fly resources: per-tenant app or legacy machine+volume
   if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
-    // Per-tenant app: delete the whole app (cascades to machines+volumes+IPs)
+    // Per-tenant app: delete the app (cascades to machines+volumes+IPs) — bucket is kept
     try {
       await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
@@ -105,61 +105,22 @@ admin.delete("/tenants/:team_id", async (c) => {
   return c.json({ team_id: teamId, status: "destroyed" });
 });
 
-/** POST /admin/tenants/:team_id/reprovision — destroy + recreate machine/app */
+/** POST /admin/tenants/:team_id/reprovision — destroy machine+volume, recreate in same app */
 admin.post("/tenants/:team_id/reprovision", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
-  const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
+  const [tenant] = await sql`SELECT id, status, fly_app_name FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // Destroy old Fly resources: per-tenant app or legacy machine+volume
-  if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
-    try {
-      await fly.deleteApp(tenant.fly_app_name);
-    } catch (err) {
-      console.error(`Fly app deletion failed for ${teamId}:`, err);
-    }
-  } else {
-    if (tenant.fly_machine_id) {
-      try {
-        await fly.destroyMachine(tenant.fly_machine_id);
-      } catch (err) {
-        console.error(`Fly machine cleanup failed for ${teamId}:`, err);
-      }
-    }
-    if (tenant.fly_volume_id) {
-      try {
-        await fly.deleteVolume(tenant.fly_volume_id);
-      } catch (err) {
-        console.error(`Fly volume cleanup failed for ${teamId}:`, err);
-      }
-    }
-  }
+  // Legacy tenants without a per-tenant app need full provisioning
+  const handler = tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP
+    ? reprovisionTenant
+    : provisionTenant;
 
-  // Mark old deployment as stopped
-  await sql`
-    UPDATE deployments SET status = 'stopped', finished_at = now()
-    WHERE tenant_id = ${teamId} AND status IN ('deploying', 'running')
-  `;
-
-  // Reset tenant to pending so provision can run
-  await sql`
-    UPDATE tenants
-    SET status = 'pending', fly_machine_id = NULL, fly_volume_id = NULL, fly_app_name = NULL, instance_url = NULL, updated_at = now()
-    WHERE id = ${teamId}
-  `;
-
-  // Remove old KV routes
-  for (const p of PLATFORMS) {
-    await c.env.ROUTING_TABLE.delete(`${p}:${teamId}`);
-  }
-
-  // Trigger provisioning (fire-and-forget)
   c.executionCtx.waitUntil(
-    provisionTenant(c.env, teamId).catch((err) =>
+    handler(c.env, teamId).catch((err) =>
       console.error(`Reprovisioning failed for ${teamId}:`, err),
     ),
   );
