@@ -23,7 +23,7 @@ function generateAppName(tenantId: string): string {
  */
 export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
   const sql = getDb(env);
-  const fly = new FlyClient(env.FLY_API_TOKEN, env.FLY_APP);
+  const fly = new FlyClient(env.FLY_API_TOKEN_VERA, env.FLY_APP);
   const sharedImage = `registry.fly.io/${env.FLY_APP}:latest`;
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${tenantId}`;
@@ -48,7 +48,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     await fly.createTigrisBucket(appName, env.FLY_ORG, appName);
 
     // 4. Create volume + machine
-    const tenantFly = new FlyClient(env.FLY_API_TOKEN, appName, sharedImage);
+    const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
     const { machine, volume, instanceUrl } = await createMachineForTenant(
       env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest,
     );
@@ -91,7 +91,7 @@ export async function reprovisionTenant(env: ControlPlaneEnv, tenantId: string) 
   if (!tenant.fly_app_name) throw new Error(`Tenant ${tenantId} has no Fly app — use provisionTenant instead`);
 
   const appName = tenant.fly_app_name as string;
-  const tenantFly = new FlyClient(env.FLY_API_TOKEN, appName, sharedImage);
+  const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
 
   // 1. Destroy old machine + volume (best effort)
   if (tenant.fly_machine_id) {
