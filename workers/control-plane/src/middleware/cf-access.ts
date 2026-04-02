@@ -114,6 +114,17 @@ export const cfAccessGuard = createMiddleware<{
       return;
     }
 
+    // Allow bearer token auth (for CI / programmatic access)
+    const authHeader = c.req.header("authorization");
+    if (authHeader?.startsWith("Bearer ") && c.env.DEPLOY_SECRET) {
+      if (authHeader === `Bearer ${c.env.DEPLOY_SECRET}`) {
+        c.set("accessEmail", "deploy-token");
+        await next();
+        return;
+      }
+      return c.json({ error: "Invalid deploy token" }, 403);
+    }
+
     const token =
       c.req.header("cf-access-jwt-assertion") ??
       getCookie(c.req.raw, "CF_Authorization");

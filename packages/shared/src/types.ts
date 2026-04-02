@@ -41,6 +41,7 @@ export interface ControlPlaneEnv {
   FLY_ORG: string;
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
+  DEPLOY_SECRET: string;
   ANTHROPIC_API_KEY: string;
   BRAVE_API_KEY: string;
   LANGSMITH_TRACING: string;
