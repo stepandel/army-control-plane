@@ -195,6 +195,26 @@ export class FlyClient {
     return data.allocateIpAddress.app.sharedIpAddress;
   }
 
+  /** Create a Tigris storage bucket attached to a Fly app. Credentials are auto-set as app secrets. */
+  async createTigrisBucket(appName: string, orgSlug: string, bucketName: string): Promise<void> {
+    const mutation = `
+      mutation($input: CreateAddOnInput!) {
+        createAddOn(input: $input) {
+          addOn { name }
+        }
+      }
+    `;
+    await this.graphqlRequest(mutation, {
+      input: {
+        type: "tigris",
+        organizationId: orgSlug,
+        name: bucketName,
+        appId: appName,
+        options: { public: false },
+      },
+    });
+  }
+
   /** Allocate a dedicated IPv6 address for an app. */
   async allocateIpV6(appName: string): Promise<{ id: string; address: string; type: string }> {
     const mutation = `
