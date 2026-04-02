@@ -421,42 +421,6 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
   return c.json({ tenant_id: teamId, name: tenant.name, status: "migrated" });
 });
 
-/** POST /admin/tenants/deploy — deploy latest image to all active per-tenant machines */
-admin.post("/tenants/deploy", async (c) => {
-  const image = `registry.fly.io/${c.env.FLY_APP}:latest`;
-  const sql = getDb(c.env);
-
-  const tenants = await sql`
-    SELECT id, name, fly_app_name, fly_machine_id
-    FROM tenants
-    WHERE status = 'active' AND fly_machine_id IS NOT NULL AND fly_app_name IS NOT NULL
-      AND fly_app_name != ${c.env.FLY_APP}
-  `;
-
-  const results: { tenant_id: string; name: string; status: "deployed" | "failed"; error?: string }[] = [];
-
-  for (const tenant of tenants) {
-    try {
-      const tenantFly = new FlyClient(c.env.FLY_API_TOKEN_VERA, tenant.fly_app_name);
-      await tenantFly.deployImage(tenant.fly_machine_id, image);
-      await sql`
-        INSERT INTO deployments (tenant_id, fly_machine_id, image_ref, status)
-        VALUES (${tenant.id}, ${tenant.fly_machine_id}, ${image}, 'running')
-      `;
-      results.push({ tenant_id: tenant.id, name: tenant.name, status: "deployed" });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`Deploy failed for ${tenant.id}:`, message);
-      results.push({ tenant_id: tenant.id, name: tenant.name, status: "failed", error: message });
-    }
-  }
-
-  const deployed = results.filter((r) => r.status === "deployed").length;
-  const failed = results.filter((r) => r.status === "failed").length;
-
-  return c.json({ image, total: results.length, deployed, failed, results });
-});
-
 /** POST /admin/tenants/:team_id/deploy — deploy latest image to a single tenant */
 admin.post("/tenants/:team_id/deploy", async (c) => {
   const teamId = c.req.param("team_id");
