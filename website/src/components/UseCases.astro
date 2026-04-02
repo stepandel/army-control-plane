@@ -63,6 +63,7 @@ const cases = [
 <style>
   .use-cases {
     padding: 5rem 1.5rem;
+    border-top: 1px solid rgba(13, 40, 24, 0.15);
   }
 
   .section-inner {
@@ -94,26 +95,19 @@ const cases = [
   }
 
   .card {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 16px;
     padding: 2rem;
     transition: border-color 0.2s, transform 0.2s;
   }
 
   .card:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-text);
     transform: translateY(-2px);
   }
 
   .card.featured {
     grid-column: 1 / -1;
-    background: linear-gradient(
-      135deg,
-      rgba(108, 92, 231, 0.08),
-      rgba(0, 210, 255, 0.05)
-    );
-    border-color: rgba(108, 92, 231, 0.3);
   }
 
   .card-icon {
@@ -124,7 +118,6 @@ const cases = [
     justify-content: center;
     width: 52px;
     height: 52px;
-    background: rgba(108, 92, 231, 0.1);
     border-radius: 12px;
   }
 

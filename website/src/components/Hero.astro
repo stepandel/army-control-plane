@@ -1,49 +1,68 @@
 ---
+import SlackIcon from "./icons/SlackIcon.astro";
+import GitHubIcon from "./icons/GitHubIcon.astro";
 ---
 
 <header class="hero">
   <div class="hero-inner">
-    <div class="hero-badge">AI Engineering Agent</div>
-    <h1>The AI engineering agent that works while you don't.</h1>
-    <p class="hero-subtitle">
-      Vera is the async AI engineer embedded in Slack, Linear, and GitHub.
-      Delegate a task in a DM — wake up to a merged pull request.
-    </p>
-    <p class="hero-body">
-      Vera is an autonomous AI engineering agent built for teams that ship fast.
-      Unlike IDE copilots that need you at the keyboard, Vera works
-      asynchronously — researching codebases, triaging bugs, writing
-      implementations, and opening pull requests while you focus on what matters.
-      Tell Vera what to build in a Slack DM or assign a Linear ticket. She does
-      the rest.
-    </p>
-    <div class="hero-ctas">
-      <a href="#cta" class="btn btn-primary">Add to Slack</a>
-      <a href="#how-it-works" class="btn btn-secondary">See How It Works ↓</a>
+    <div class="hero-text">
+      <div class="hero-badge">AI Engineering Agent</div>
+      <h1>The AI engineering agent that works while you don't.</h1>
+      <p class="hero-subtitle">
+        Vera is the async AI engineer embedded in Slack, Linear, and GitHub.
+        Delegate a task in a DM. Wake up to a merged pull request.
+      </p>
+      <p class="sr-only">
+        Vera is an autonomous AI engineering agent built for teams that ship fast.
+        Unlike IDE copilots that need you at the keyboard, Vera works
+        asynchronously: researching codebases, triaging bugs, writing
+        implementations, and opening pull requests while you focus on what matters.
+        Tell Vera what to build in a Slack DM or assign a Linear ticket. She does
+        the rest.
+      </p>
+      <div class="hero-ctas">
+        <a href="/onboarding" class="btn btn-primary">Install Vera</a>
+        <a href="#how-it-works" class="btn btn-secondary">See it in action ↓</a>
+      </div>
+    </div>
+
+    <div class="hero-bubbles" aria-hidden="true">
+      <div class="bubble b1"><span class="bubble-label"><span class="b1-big">24/7</span><br><span class="b1-small">async</span></span></div>
+      <div class="bubble b2"><SlackIcon size={22} /></div>
+      <div class="bubble b3"><img src="/linear-logo-dark.svg" alt="" width="22" height="22" /></div>
+      <div class="bubble b4"><GitHubIcon size={22} /></div>
     </div>
   </div>
 </header>
 
 <style>
   .hero {
-    padding: 6rem 1.5rem 4rem;
-    text-align: center;
+    padding: 10rem 1.5rem 10rem;
   }
 
   .hero-inner {
-    max-width: 800px;
+    max-width: var(--max-width);
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .hero-badge {
     display: inline-block;
     padding: 0.35rem 1rem;
-    background: rgba(108, 92, 231, 0.15);
-    border: 1px solid rgba(108, 92, 231, 0.3);
+    border: 1px solid rgba(13, 40, 24, 0.3);
     border-radius: 100px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--color-primary-light);
+    color: var(--color-text);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 1.5rem;
@@ -51,44 +70,35 @@
 
   h1 {
     font-size: clamp(2.25rem, 5vw, 3.5rem);
-    font-weight: 800;
+    font-weight: 500;
     line-height: 1.1;
     letter-spacing: -0.03em;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(
-      135deg,
-      var(--color-text) 0%,
-      var(--color-primary-light) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    margin-bottom: 2.5rem;
+    color: var(--color-text);
   }
 
   .hero-subtitle {
-    font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
     color: var(--color-text-muted);
     line-height: 1.5;
-    margin-bottom: 1.5rem;
-    max-width: 640px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-bottom: 3rem;
   }
 
-  .hero-body {
-    font-size: 1rem;
-    color: var(--color-text-muted);
-    line-height: 1.7;
-    margin-bottom: 2.5rem;
-    max-width: 640px;
-    margin-left: auto;
-    margin-right: auto;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .hero-ctas {
     display: flex;
     gap: 1rem;
-    justify-content: center;
     flex-wrap: wrap;
   }
 
@@ -105,38 +115,83 @@
   }
 
   .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.35);
+    background: var(--color-text);
+    color: var(--color-bg);
   }
 
   .btn-primary:hover {
-    background: var(--color-primary-light);
-    color: white;
+    opacity: 0.85;
+    color: var(--color-bg);
     transform: translateY(-2px);
-    box-shadow: 0 6px 30px rgba(108, 92, 231, 0.5);
   }
 
   .btn-secondary {
     background: transparent;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    border: 1px solid rgba(13, 40, 24, 0.3);
   }
 
   .btn-secondary:hover {
-    color: var(--color-text);
-    border-color: var(--color-text-muted);
+    border-color: var(--color-text);
     transform: translateY(-2px);
   }
+
+  /* Bubbles */
+  .hero-bubbles {
+    position: relative;
+    height: 380px;
+  }
+
+  .bubble {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    background: rgba(255, 255, 255, 0.4);
+    color: var(--color-text);
+    transition: transform 0.3s ease;
+  }
+
+  .bubble:hover {
+    transform: scale(1.08);
+  }
+
+  .bubble-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .b1 { width: 140px; height: 120px; top: 0%;  left: 25%; }
+  .b1 .bubble-label { text-align: center; line-height: 1.6; }
+  .b1-big { font-size: 1.5rem; font-weight: 900; }
+  .b1-small { font-size: 0.75rem; font-weight: 500; }
+  .b2 { width: 64px;  height: 64px;  top: 50%; left: 20%; border-radius: 16px; }
+  .b3 { width: 56px;  height: 56px;  top: 35%; left: 58%; border-radius: 14px; }
+  .b4 { width: 72px;  height: 72px;  top: 60%; left: 62%; border-radius: 18px; }
 
   @media (max-width: 768px) {
     .hero {
       padding: 4rem 1.5rem 3rem;
     }
 
-    .hero-ctas {
-      flex-direction: column;
+    .hero-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-text {
       align-items: center;
+      text-align: center;
+    }
+
+    .hero-ctas {
+      justify-content: center;
+    }
+
+    .hero-bubbles {
+      height: 200px;
     }
 
     .btn {

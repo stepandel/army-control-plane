@@ -1,22 +1,32 @@
 ---
+interface Props {
+  minimal?: boolean;
+}
+
+const { minimal = false } = Astro.props;
 ---
 
 <nav class="nav" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="/" class="nav-logo" aria-label="Agent Army home">
-      <span class="logo-icon">⚡</span>
-      <span class="logo-text">Agent Army</span>
+    <a href="/" class="nav-logo" aria-label="Vera AI home">
+      <span class="logo-text">Vera AI</span>
     </a>
-    <div class="nav-links" id="nav-links">
-      <a href="#how-it-works">How It Works</a>
-      <a href="#use-cases">Use Cases</a>
-      <a href="#integrations">Integrations</a>
-      <a href="#architecture">Architecture</a>
-    </div>
-    <a href="#cta" class="nav-cta">Add to Slack →</a>
-    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
-      <span class="hamburger"></span>
-    </button>
+    {!minimal && (
+      <div class="nav-links" id="nav-links">
+        <a href="#how-it-works">Linear</a>
+        <a href="#github">GitHub</a>
+        <a href="#slack">Slack</a>
+        <a href="#use-cases">Use Cases</a>
+      </div>
+    )}
+    {!minimal && (
+      <a href="/onboarding" class="nav-cta">Install Vera →</a>
+    )}
+    {!minimal && (
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
+        <span class="hamburger"></span>
+      </button>
+    )}
   </div>
 </nav>
 
@@ -44,9 +54,9 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(10, 10, 15, 0.85);
+    background: rgba(240, 237, 232, 0.85);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(13, 40, 24, 0.15);
     padding: 0 1.5rem;
   }
 
@@ -64,7 +74,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-weight: 700;
+    font-weight: 900;
     font-size: 1.125rem;
     color: var(--color-text);
     white-space: nowrap;
@@ -72,10 +82,6 @@
 
   .nav-logo:hover {
     color: var(--color-text);
-  }
-
-  .logo-icon {
-    font-size: 1.5rem;
   }
 
   .nav-links {
@@ -99,18 +105,18 @@
     display: inline-flex;
     align-items: center;
     padding: 0.5rem 1.25rem;
-    background: var(--color-primary);
-    color: white !important;
+    background: var(--color-text);
+    color: var(--color-bg) !important;
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
     white-space: nowrap;
-    transition: background 0.2s, transform 0.2s;
+    transition: opacity 0.2s, transform 0.2s;
   }
 
   .nav-cta:hover {
-    background: var(--color-primary-light);
-    color: white !important;
+    opacity: 0.85;
+    color: var(--color-bg) !important;
     transform: translateY(-1px);
   }
 
