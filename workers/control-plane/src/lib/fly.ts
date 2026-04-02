@@ -339,6 +339,18 @@ export class FlyClient {
   }
 
   /**
+   * Deploy a new image to a machine. Fetches current config and swaps the image,
+   * preserving all other settings (env, mounts, services, guest).
+   */
+  async deployImage(machineId: string, image: string): Promise<MachineResponse> {
+    const current = await this.request<MachineResponse>("GET", `/machines/${machineId}`);
+    const updatedConfig = { ...current.config, image };
+    return this.request<MachineResponse>("POST", `/machines/${machineId}`, {
+      config: updatedConfig,
+    });
+  }
+
+  /**
    * Create a volume + machine together, retrying across regions on capacity errors.
    * Cleans up the volume if machine creation fails in a region before trying the next.
    */
