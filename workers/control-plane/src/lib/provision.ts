@@ -9,6 +9,12 @@ function buildGuest(tenant: Record<string, unknown>): GuestConfig | undefined {
     : undefined;
 }
 
+/** Generate a unique app name: army-{tenantId}-{4 hex chars} */
+function generateAppName(tenantId: string): string {
+  const suffix = crypto.randomUUID().slice(0, 4);
+  return `army-${tenantId.toLowerCase()}-${suffix}`;
+}
+
 /**
  * Provision a brand-new Fly app + machine for a tenant (app-per-tenant model).
  * Creates: Fly app → IPs → Tigris bucket → volume + machine.
@@ -26,7 +32,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
 
   await sql`UPDATE tenants SET status = 'provisioning', updated_at = now() WHERE id = ${tenantId}`;
 
-  const appName = `army-${tenantId.toLowerCase()}`;
+  const appName = generateAppName(tenantId);
   const internalSecret = crypto.randomUUID();
   const guest = buildGuest(tenant);
 
