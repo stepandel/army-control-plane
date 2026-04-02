@@ -53,31 +53,32 @@ admin.get("/tenants/:team_id", async (c) => {
 admin.delete("/tenants/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
   // Destroy Fly resources: per-tenant app or legacy machine+volume
   if (tenant.fly_app_name && tenant.fly_app_name !== c.env.FLY_APP) {
-    // Per-tenant app: delete the app (cascades to machines+volumes+IPs) — bucket is kept
+    // Per-tenant app (vera-ai org): delete the app — bucket is kept
+    const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
     try {
       await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
       console.error(`Fly app deletion failed for ${teamId}:`, err);
     }
   } else {
-    // Legacy shared app: destroy machine + volume individually
+    // Legacy shared app (personal org)
+    const legacyFly = new FlyClient(c.env.FLY_API_TOKEN_LEGACY, c.env.FLY_APP);
     if (tenant.fly_machine_id) {
       try {
-        await fly.destroyMachine(tenant.fly_machine_id);
+        await legacyFly.destroyMachine(tenant.fly_machine_id);
       } catch (err) {
         console.error(`Fly machine cleanup failed for ${teamId}:`, err);
       }
     }
     if (tenant.fly_volume_id) {
       try {
-        await fly.deleteVolume(tenant.fly_volume_id);
+        await legacyFly.deleteVolume(tenant.fly_volume_id);
       } catch (err) {
         console.error(`Fly volume cleanup failed for ${teamId}:`, err);
       }
@@ -381,7 +382,6 @@ admin.get("/tenants/legacy", async (c) => {
 admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
-  const fly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
 
   const [tenant] = await sql`
     SELECT id, name, fly_app_name, fly_machine_id, fly_volume_id
@@ -392,12 +392,13 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
     return c.json({ error: "Tenant is not on the shared app — already migrated or never provisioned" }, 400);
   }
 
-  // 1. Destroy old machine + volume on shared app
+  // 1. Destroy old machine + volume on shared app (personal org)
+  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN_LEGACY, c.env.FLY_APP);
   if (tenant.fly_machine_id) {
-    try { await fly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
+    try { await legacyFly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
   }
   if (tenant.fly_volume_id) {
-    try { await fly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
+    try { await legacyFly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
   }
 
   // 2. Mark old deployment as stopped
