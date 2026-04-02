@@ -1,98 +1,81 @@
 ---
-const stages = [
+import SlackIcon from "./icons/SlackIcon.astro";
+
+const features = [
   {
-    name: "Research",
-    label: "#research",
+    name: "Scheduled workflows",
     description:
-      "Evaluating a problem? Add #research and let Vera scan your codebase, search the web, and propose several solutions tailored to your stack.",
-    screenshot: "/screenshot-research.png",
-    screenshotAlt: "Vera researching a codebase in Linear with the #research label",
+      "Ask Vera to create a morning brief or EOD report. She sets up a scheduled workflow that runs daily and DMs you the results. No cron syntax required.",
+    screenshot: "/screenshot-slack-scheduled.png",
+    screenshotAlt: "Vera creating a scheduled cron workflow in Slack to check email every 5 minutes",
   },
   {
-    name: "Prep & Plan",
-    label: "#prep",
+    name: "Live debugging",
     description:
-      "Created a ticket but didn't flesh out the description? Add #prep and Vera will do the research, understand what you're trying to do, and fill the ticket with actionable insights. If it's a large task, she'll break it into sub-tickets.",
-    screenshot: "/screenshot-prep.png",
-    screenshotAlt: "Vera creating an execution plan with sub-issues in Linear with the #prep label",
+      "Ask Vera to investigate a bug right in Slack. She scans the codebase, traces the root cause, and replies with a detailed analysis in the thread.",
+    screenshot: "/screenshot-slack-debug.png",
+    screenshotAlt: "Vera debugging silent failure vectors in Slack with detailed code analysis",
   },
   {
-    name: "Execute",
-    label: "#execute",
+    name: "Ticket creation",
     description:
-      "Have a feature you want to build but don't have the capacity? Assign to Vera and she'll have a PR ready while you focus on other things.",
-    screenshot: "/screenshot-execute.png",
-    screenshotAlt: "Vera completing a task lifecycle — from prep to PR opened in Linear",
-  },
-  {
-    name: "Triage",
-    label: "#triage",
-    description:
-      "Have a backlog of bugs piling up? Add #triage and assign Vera. She'll investigate root causes, assess impact, and fix them directly or give your team the analysis to act fast.",
-    screenshot: "/screenshot-triage.png",
-    screenshotAlt: "Vera triaging and fixing a bug with results shown in Linear and Slack",
+      "Ask Vera to create a ticket based on your conversation. She structures it into an epic with sub-issues, dependencies, and priorities. Ready to execute.",
+    screenshot: "/screenshot-slack-ticket.png",
+    screenshotAlt: "Vera creating a Linear epic with sub-issues directly from a Slack conversation",
   },
 ];
 ---
 
-<section id="how-it-works" class="how-it-works" aria-labelledby="hiw-heading">
+<section id="slack" class="slack-section" aria-labelledby="slack-heading">
   <div class="section-inner">
     <div class="section-header">
-      <h2 id="hiw-heading">
+      <h2 id="slack-heading">
         <span class="section-wordmark">
-          <img
-            src="/linear-logo-dark.svg"
-            alt=""
-            class="section-logo"
-            width="40"
-            height="40"
-          />
-          <span class="section-wordmark-text">Linear</span>
+          <SlackIcon size={24} class="section-logo" />
+          <span class="section-wordmark-text">Slack</span>
         </span>
       </h2>
     </div>
     <p class="section-intro">
-      Vera ships with prebuilt Linear labels. Add one to a ticket and Vera
-      switches modes instantly, from deep research to prep, execution, and
-      triage.
+      DM Vera in Slack like you would any teammate. Debug live, create tickets,
+      or set up automations. All from a conversation.
     </p>
 
     <div class="book-wrapper">
-      <div class="book-label" aria-hidden="true"><span>Labels</span></div>
-      <div class="book" id="book">
-      {
-        stages.map((stage, i) => (
-          <div
-            class:list={["book-page", { active: i === 0 }]}
-            data-index={i}
-          >
-            <div class="page-spine">
-              <span class="spine-label"><span class="linear-dot"></span>{stage.label}</span>
-            </div>
-            <div class="page-content">
-              <div class="page-text">
-                <span class="linear-label"><span class="linear-dot"></span>{stage.label}</span>
-                <p class="page-desc">{stage.description}</p>
+      <div class="book" id="slack-book">
+        {
+          features.map((feature, i) => (
+            <div
+              class:list={["book-page", { active: i === 0 }]}
+              data-index={i}
+            >
+              <div class="page-spine">
+                <span class="spine-label">{feature.name}</span>
               </div>
-              <div class="page-screenshot">
-                <img src={stage.screenshot} alt={stage.screenshotAlt} loading="lazy" />
+              <div class="page-content">
+                <div class="page-text">
+                  <h3 class="page-name">{feature.name}</h3>
+                  <p class="page-desc">{feature.description}</p>
+                </div>
+                <div class="page-screenshot">
+                  <img src={feature.screenshot} alt={feature.screenshotAlt} loading="lazy" />
+                </div>
               </div>
             </div>
-          </div>
-        ))
-      }
-    </div></div>
+          ))
+        }
+      </div>
+    </div>
   </div>
 </section>
 
 <script>
-  const book = document.getElementById("book");
-  const pages = document.querySelectorAll<HTMLDivElement>(".book-page");
-  const count = pages.length;
+  const book = document.getElementById("slack-book");
+  const pages = book?.querySelectorAll<HTMLDivElement>(".book-page");
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   function activate(index: number) {
-    pages.forEach((p, i) => {
+    pages?.forEach((p, i) => {
       if (i === index) {
         p.classList.add("active");
       } else {
@@ -101,7 +84,7 @@ const stages = [
     });
   }
 
-  pages.forEach((page, i) => {
+  pages?.forEach((page, i) => {
     page.addEventListener("mouseenter", () => {
       if (page.classList.contains("active")) return;
       if (timer) clearTimeout(timer);
@@ -120,7 +103,7 @@ const stages = [
 </script>
 
 <style>
-  .how-it-works {
+  .slack-section {
     padding: 5rem 1.5rem;
     border-top: 1px solid rgba(13, 40, 24, 0.15);
   }
@@ -128,12 +111,6 @@ const stages = [
   .section-inner {
     max-width: var(--max-width);
     margin: 0 auto;
-  }
-
-  .book-wrapper {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
   }
 
   h2 {
@@ -154,20 +131,16 @@ const stages = [
   }
 
   .section-logo {
-    display: block;
-    width: auto;
-    height: 1em;
     flex-shrink: 0;
   }
 
   .section-wordmark {
-    --linear-pill-scale: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.45em;
     padding: 0.3em 0.62em;
-    font-size: calc(2.1rem * var(--linear-pill-scale));
+    font-size: 2.1rem;
     line-height: 1;
     border: 1px solid rgba(13, 40, 24, 0.14);
     border-radius: 999px;
@@ -191,30 +164,11 @@ const stages = [
   .book {
     display: flex;
     flex: 1;
-    height: 540px;
+    height: 480px;
     border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 12px;
     overflow: hidden;
     min-width: 0;
-  }
-
-  .book-label {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0.5rem;
-  }
-
-  .book-label span {
-    writing-mode: vertical-lr;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: rgba(13, 40, 24, 0.4);
   }
 
   .book-page {
@@ -235,7 +189,6 @@ const stages = [
     cursor: default;
   }
 
-  /* Spine — always rendered, fades out when active */
   .page-spine {
     position: absolute;
     inset: 0;
@@ -249,12 +202,6 @@ const stages = [
   }
 
   .spine-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.15rem 0.55rem;
-    border: 1px solid rgba(13, 40, 24, 0.15);
-    border-radius: 100px;
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--color-text);
@@ -267,10 +214,9 @@ const stages = [
     pointer-events: none;
   }
 
-  /* Content — always rendered, fades in when active */
   .page-content {
     display: grid;
-    grid-template-columns: 1fr 1.8fr;
+    grid-template-columns: 1fr 1.4fr;
     gap: 2rem;
     align-items: center;
     padding: 2rem;
@@ -288,30 +234,8 @@ const stages = [
     flex-direction: column;
   }
 
-  .linear-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.15rem 0.55rem;
-    border: 1px solid rgba(13, 40, 24, 0.15);
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--color-text);
-    width: fit-content;
-    margin-bottom: 0.75rem;
-  }
-
-  .linear-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #34D399;
-    flex-shrink: 0;
-  }
-
   .page-name {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 0.75rem;
     color: var(--color-text);
@@ -327,7 +251,7 @@ const stages = [
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid rgba(13, 40, 24, 0.15);
-    max-height: 480px;
+    max-height: 420px;
   }
 
   .page-screenshot img {

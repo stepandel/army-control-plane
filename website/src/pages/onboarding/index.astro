@@ -1,0 +1,137 @@
+---
+export const prerender = false;
+
+import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
+
+const runtime = Astro.locals.runtime;
+const apiBase = runtime.env.API_BASE_URL;
+const slackUrl = `${apiBase}/oauth/slack/install`;
+---
+
+<OnboardingLayout title="Vera — Setup">
+  <h1>Set up your workspace</h1>
+  <p class="subtitle">
+    Connect Slack, Linear, and GitHub to get Vera running in your workspace.
+    Slack is required first — it creates your tenant.
+  </p>
+  <div class="steps">
+    <div class="step active">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Connect Slack</div>
+        <div class="step-desc">Required — creates your workspace</div>
+      </div>
+      <a href={slackUrl} class="btn btn-primary">Install</a>
+    </div>
+    <div class="step disabled">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Connect Linear</div>
+        <div class="step-desc">Issue tracking and project management</div>
+      </div>
+    </div>
+    <div class="step disabled">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Connect GitHub</div>
+        <div class="step-desc">Code repositories and pull requests</div>
+      </div>
+    </div>
+  </div>
+</OnboardingLayout>
+
+<style>
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+    opacity: 0.7;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step {
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .step.active {
+    border-color: rgba(13, 40, 24, 0.4);
+  }
+
+  .step.disabled {
+    opacity: 0.45;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(13, 40, 24, 0.06);
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .step-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .step-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.85;
+    color: var(--color-bg);
+    transform: translateY(-1px);
+  }
+</style>
