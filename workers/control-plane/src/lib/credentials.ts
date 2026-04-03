@@ -2,13 +2,16 @@ import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import type postgres from "postgres";
 import { getDb } from "../db/client";
 import { FlyClient, isLegacyApp } from "./fly";
-import { buildMachineEnv } from "./machine-env";
+import { buildMachineEnv, flattenMachineEnv } from "./machine-env";
 
 /**
- * Push all integration tokens to a tenant's Fly machine as env vars.
- * The machine reboots to pick up the new config.
- * Scopes FlyClient to the tenant's own app (works for both legacy shared-app
- * and new per-tenant-app tenants).
+ * Push all integration tokens to a tenant's Fly machine.
+ *
+ * Per-tenant apps: sensitive values are set as encrypted Fly app secrets,
+ * non-sensitive values go to machine config.env.
+ *
+ * Legacy shared apps: everything goes to config.env (can't set per-tenant
+ * secrets on a shared app).
  */
 export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sql?: postgres.Sql) {
   const db = sql ?? getDb(env);
@@ -19,7 +22,6 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
   if (tenant.status !== "active") throw new Error(`Tenant ${tenantId} not active`);
   if (!tenant.fly_machine_id) throw new Error(`Tenant ${tenantId} has no Fly machine`);
 
-  // Scope FlyClient to the tenant's app (per-tenant or legacy shared)
   const flyToken = isLegacyApp(tenant.fly_app_name) ? env.FLY_API_TOKEN : env.FLY_API_TOKEN_VERA;
   const fly = new FlyClient(flyToken, tenant.fly_app_name, sharedImage);
 
@@ -31,12 +33,19 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
 
   if (tokens.length === 0) throw new Error(`No tokens to push for ${tenantId}`);
 
-  const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production);
+  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production);
 
-  await fly.updateMachine(tenant.fly_machine_id, machineEnv, tenant.fly_volume_id);
+  if (isLegacyApp(tenant.fly_app_name)) {
+    // Legacy: everything in config.env (can't use app secrets on shared app)
+    await fly.updateMachine(tenant.fly_machine_id, flattenMachineEnv(envResult), tenant.fly_volume_id);
+  } else {
+    // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
+    await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
+    await fly.updateMachine(tenant.fly_machine_id, envResult.config, tenant.fly_volume_id);
+  }
 
   // Write KV routing entries for all platforms with an external_id
-  const internalSecret = machineEnv.INTERNAL_SECRET;
+  const internalSecret = envResult.secrets.INTERNAL_SECRET;
   const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret, fly_machine_id: tenant.fly_machine_id };
   const platformKeys = await db`
     SELECT DISTINCT platform, external_id FROM integration_tokens

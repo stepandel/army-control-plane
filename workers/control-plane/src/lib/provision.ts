@@ -1,7 +1,7 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient, type GuestConfig } from "./fly";
-import { buildMachineEnv } from "./machine-env";
+import { buildMachineEnv, flattenMachineEnv } from "./machine-env";
 
 function buildGuest(tenant: Record<string, unknown>): GuestConfig | undefined {
   return tenant.memory_mb || tenant.cpus
@@ -160,10 +160,14 @@ async function createMachineForTenant(
     SELECT platform, token_type, access_token
     FROM integration_tokens WHERE tenant_id = ${tenantId}
   `;
-  const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key as string | null, tenant.vera_production as boolean, skipBootMessage);
+  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key as string | null, tenant.vera_production as boolean, skipBootMessage);
 
+  // Set sensitive values as encrypted app secrets (no machines exist yet, so no restart triggered)
+  await fly.setSecrets(appName, secrets);
+
+  // Create machine with only non-sensitive config — secrets are injected automatically at boot
   const volumeName = "anton_state";
-  const { machine, volume } = await fly.createMachineWithVolume(appName, machineEnv, volumeName, 1, guest);
+  const { machine, volume } = await fly.createMachineWithVolume(appName, config, volumeName, 1, guest);
   const instanceUrl = `https://${appName}.fly.dev`;
 
   return { machine, volume, instanceUrl };
