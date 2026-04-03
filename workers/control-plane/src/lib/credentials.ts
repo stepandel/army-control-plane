@@ -3,10 +3,13 @@ import type postgres from "postgres";
 import { getDb } from "../db/client";
 import { FlyClient } from "./fly";
 import { buildMachineEnv } from "./machine-env";
+import { decryptIfEncrypted } from "./crypto";
 
 /**
- * Push all integration tokens to a tenant's Fly machine as env vars.
- * The machine reboots to pick up the new config.
+ * Push all integration tokens to a tenant's Fly machine.
+ *
+ * Sensitive values are set as encrypted Fly app secrets,
+ * non-sensitive values go to machine config.env.
  */
 export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sql?: postgres.Sql) {
   const db = sql ?? getDb(env);
@@ -27,12 +30,25 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
 
   if (tokens.length === 0) throw new Error(`No tokens to push for ${tenantId}`);
 
-  const machineEnv = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production);
+  // Decrypt tokens and anthropic key before building machine env
+  const decryptedTokens = await Promise.all(
+    tokens.map(async (t) => ({
+      ...t,
+      access_token: await decryptIfEncrypted(t.access_token, env.ENCRYPTION_KEY),
+    })),
+  );
+  const anthropicKey = tenant.anthropic_api_key
+    ? await decryptIfEncrypted(tenant.anthropic_api_key, env.ENCRYPTION_KEY)
+    : null;
 
-  await fly.updateMachine(tenant.fly_machine_id, machineEnv, tenant.fly_volume_id);
+  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production);
+
+  // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
+  await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
+  await fly.updateMachine(tenant.fly_machine_id, envResult.config, tenant.fly_volume_id);
 
   // Write KV routing entries for all platforms with an external_id
-  const internalSecret = machineEnv.INTERNAL_SECRET;
+  const internalSecret = envResult.secrets.INTERNAL_SECRET;
   const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret, fly_machine_id: tenant.fly_machine_id };
   const platformKeys = await db`
     SELECT DISTINCT platform, external_id FROM integration_tokens

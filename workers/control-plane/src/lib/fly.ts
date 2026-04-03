@@ -227,6 +227,27 @@ export class FlyClient {
     });
   }
 
+  /**
+   * Set encrypted app-level secrets. These are injected as env vars at boot,
+   * encrypted at rest, and never returned by any API.
+   * Triggers a restart of all machines in the app.
+   */
+  async setSecrets(appName: string, secrets: Record<string, string>): Promise<void> {
+    const mutation = `
+      mutation($input: SetSecretsInput!) {
+        setSecrets(input: $input) {
+          release { id version }
+        }
+      }
+    `;
+    await this.graphqlRequest(mutation, {
+      input: {
+        appId: appName,
+        secrets: Object.entries(secrets).map(([key, value]) => ({ key, value })),
+      },
+    });
+  }
+
   /** Allocate a dedicated IPv6 address for an app. */
   async allocateIpV6(appName: string): Promise<{ id: string; address: string; type: string }> {
     const mutation = `
