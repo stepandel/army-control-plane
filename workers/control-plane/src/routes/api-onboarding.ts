@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { pushCredentials } from "../lib/credentials";
+import { encrypt, decryptIfEncrypted } from "../lib/crypto";
 
 const apiOnboarding = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -52,7 +53,8 @@ apiOnboarding.post("/:team_id/anthropic-key", async (c) => {
   const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Tenant not found" }, 404);
 
-  await sql`UPDATE tenants SET anthropic_api_key = ${body.api_key}, updated_at = now() WHERE id = ${teamId}`;
+  const encApiKey = await encrypt(body.api_key, c.env.ENCRYPTION_KEY);
+  await sql`UPDATE tenants SET anthropic_api_key = ${encApiKey}, updated_at = now() WHERE id = ${teamId}`;
 
   if (tenant.status === "active") {
     c.executionCtx.waitUntil(

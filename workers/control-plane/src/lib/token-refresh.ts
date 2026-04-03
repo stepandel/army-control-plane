@@ -2,6 +2,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import type postgres from "postgres";
 import { getDb } from "../db/client";
 import { pushCredentials } from "./credentials";
+import { encrypt, decryptIfEncrypted } from "./crypto";
 
 /**
  * Refresh a single Linear token using the stored refresh_token.
@@ -30,7 +31,9 @@ export async function refreshLinearToken(
     return false;
   }
 
-  const oldRefreshToken = token.refresh_token;
+  // DB stores encrypted value — keep it for optimistic locking, decrypt for the API call
+  const oldRefreshTokenEncrypted = token.refresh_token;
+  const oldRefreshToken = await decryptIfEncrypted(token.refresh_token, env.ENCRYPTION_KEY);
 
   const resp = await fetch("https://api.linear.app/oauth/token", {
     method: "POST",
@@ -53,7 +56,7 @@ export async function refreshLinearToken(
         SELECT refresh_token FROM integration_tokens
         WHERE tenant_id = ${tenantId} AND platform = 'linear'
       `;
-      if (current?.refresh_token && current.refresh_token !== oldRefreshToken) {
+      if (current?.refresh_token && current.refresh_token !== oldRefreshTokenEncrypted) {
         console.log(`Linear token for ${tenantId} was already refreshed by another process`);
         return true;
       }
@@ -72,18 +75,22 @@ export async function refreshLinearToken(
   const expiresIn = data.expires_in as number | undefined;
   const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
 
+  // Encrypt before persisting
+  const encAccessToken = await encrypt(accessToken, env.ENCRYPTION_KEY);
+  const encRefreshToken = await encrypt(refreshToken, env.ENCRYPTION_KEY);
+
   // Retry DB write — the Linear exchange is irreversible (old refresh token is revoked),
   // so failing to persist the new tokens would lock the tenant out.
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // Optimistic lock: only update if refresh_token hasn't changed (no concurrent refresh)
+      // Optimistic lock: compare against the encrypted value we read from the DB
       const result = await db`
         UPDATE integration_tokens
-        SET access_token = ${accessToken},
-            refresh_token = ${refreshToken},
+        SET access_token = ${encAccessToken},
+            refresh_token = ${encRefreshToken},
             expires_at = ${expiresAt}::timestamptz
         WHERE tenant_id = ${tenantId} AND platform = 'linear'
-          AND refresh_token = ${oldRefreshToken}
+          AND refresh_token = ${oldRefreshTokenEncrypted}
       `;
       if (result.count === 0) {
         console.log(`Linear token for ${tenantId} was already refreshed by another process`);
