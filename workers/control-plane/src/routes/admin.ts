@@ -6,7 +6,7 @@ import { pushCredentials } from "../lib/credentials";
 import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
 import { provisionTenant, reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
-import { decryptIfEncrypted } from "../lib/crypto";
+import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -451,6 +451,85 @@ admin.post("/tenants/:team_id/deploy", async (c) => {
   `;
 
   return c.json({ tenant_id: teamId, image, status: "deployed" });
+});
+
+/**
+ * POST /admin/encrypt-existing-credentials
+ * One-time migration: encrypt all plaintext tokens and anthropic keys in the DB.
+ * Safe to run multiple times — skips already-encrypted values.
+ */
+admin.post("/encrypt-existing-credentials", async (c) => {
+  const sql = getDb(c.env);
+  const key = c.env.ENCRYPTION_KEY;
+
+  // 1. Encrypt integration tokens
+  const tokens = await sql`
+    SELECT id, access_token, refresh_token FROM integration_tokens
+  `;
+
+  let tokensEncrypted = 0;
+  const tokenErrors: { id: string; error: string }[] = [];
+
+  for (const t of tokens) {
+    try {
+      const updates: Record<string, string> = {};
+
+      if (t.access_token && looksLikePlaintext(t.access_token)) {
+        updates.access_token = await encrypt(t.access_token, key);
+      }
+      if (t.refresh_token && looksLikePlaintext(t.refresh_token)) {
+        updates.refresh_token = await encrypt(t.refresh_token, key);
+      }
+
+      if (Object.keys(updates).length > 0) {
+        if (updates.access_token && updates.refresh_token) {
+          await sql`
+            UPDATE integration_tokens
+            SET access_token = ${updates.access_token}, refresh_token = ${updates.refresh_token}
+            WHERE id = ${t.id}
+          `;
+        } else if (updates.access_token) {
+          await sql`
+            UPDATE integration_tokens SET access_token = ${updates.access_token} WHERE id = ${t.id}
+          `;
+        } else if (updates.refresh_token) {
+          await sql`
+            UPDATE integration_tokens SET refresh_token = ${updates.refresh_token} WHERE id = ${t.id}
+          `;
+        }
+        tokensEncrypted++;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      tokenErrors.push({ id: t.id, error: message });
+    }
+  }
+
+  // 2. Encrypt anthropic API keys
+  const tenants = await sql`
+    SELECT id, anthropic_api_key FROM tenants WHERE anthropic_api_key IS NOT NULL
+  `;
+
+  let keysEncrypted = 0;
+  const keyErrors: { id: string; error: string }[] = [];
+
+  for (const t of tenants) {
+    try {
+      if (looksLikePlaintext(t.anthropic_api_key)) {
+        const encrypted = await encrypt(t.anthropic_api_key, key);
+        await sql`UPDATE tenants SET anthropic_api_key = ${encrypted} WHERE id = ${t.id}`;
+        keysEncrypted++;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      keyErrors.push({ id: t.id, error: message });
+    }
+  }
+
+  return c.json({
+    tokens: { total: tokens.length, encrypted: tokensEncrypted, errors: tokenErrors },
+    anthropic_keys: { total: tenants.length, encrypted: keysEncrypted, errors: keyErrors },
+  });
 });
 
 export default admin;
