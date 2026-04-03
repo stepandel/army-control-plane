@@ -203,8 +203,16 @@ export class FlyClient {
     return data.allocateIpAddress.app.sharedIpAddress;
   }
 
+  /** Resolve an org slug (e.g. "vera-ai") to its internal GraphQL node ID. */
+  async resolveOrgId(orgSlug: string): Promise<string> {
+    const query = `query($slug: String!) { organization(slug: $slug) { id } }`;
+    const data = await this.graphqlRequest<{ organization: { id: string } }>(query, { slug: orgSlug });
+    return data.organization.id;
+  }
+
   /** Create a Tigris storage bucket attached to a Fly app. Credentials are auto-set as app secrets. */
   async createTigrisBucket(appName: string, orgSlug: string, bucketName: string): Promise<void> {
+    const orgId = await this.resolveOrgId(orgSlug);
     const mutation = `
       mutation($input: CreateAddOnInput!) {
         createAddOn(input: $input) {
@@ -215,7 +223,7 @@ export class FlyClient {
     await this.graphqlRequest(mutation, {
       input: {
         type: "tigris",
-        organizationId: orgSlug,
+        organizationId: orgId,
         name: bucketName,
         appId: appName,
         options: { public: false },
