@@ -1,8 +1,19 @@
 import type { ControlPlaneEnv } from "@army/shared";
 
+export interface MachineEnvResult {
+  /** Sensitive values — set via Fly app secrets (encrypted, never exposed by API). */
+  secrets: Record<string, string>;
+  /** Non-sensitive values — set via machine config.env (visible in API responses). */
+  config: Record<string, string>;
+}
+
 /**
  * Build the complete env var map for a tenant's Fly machine.
  * Single source of truth — used by both provisionTenant and pushCredentials.
+ *
+ * Returns secrets and config separately so callers can route sensitive values
+ * through Fly app secrets (encrypted at rest) and non-sensitive values through
+ * machine config.env.
  */
 export function buildMachineEnv(
   env: ControlPlaneEnv,
@@ -12,30 +23,40 @@ export function buildMachineEnv(
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
   skipBootMessage?: boolean,
-): Record<string, string> {
-  const machineEnv: Record<string, string> = {
-    TEAM_ID: tenantId,
-    CONTROL_PLANE_URL: env.BASE_URL,
+): MachineEnvResult {
+  const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
     ANTHROPIC_API_KEY: (tenantAnthropicKey && tenantAnthropicKey !== "null") ? tenantAnthropicKey : env.ANTHROPIC_API_KEY,
     BRAVE_API_KEY: env.BRAVE_API_KEY,
-    GITHUB_APP_ID: env.GITHUB_APP_ID,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
-    LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
     LINEAR_CLIENT_SECRET: env.LINEAR_CLIENT_SECRET,
+    LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
+  };
+
+  for (const t of tokens) {
+    const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
+    const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
+    secrets[key] = t.access_token;
+  }
+
+  const config: Record<string, string> = {
+    TEAM_ID: tenantId,
+    CONTROL_PLANE_URL: env.BASE_URL,
+    GITHUB_APP_ID: env.GITHUB_APP_ID,
+    LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
     LANGSMITH_TRACING: env.LANGSMITH_TRACING,
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
-    LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
     ...(skipBootMessage ? { VERA_SKIP_BOOT_MESSAGE: "true" } : {}),
   };
 
-  for (const t of tokens) {
-    // GitHub stores the installation ID (not a token) — name the env var accordingly
-    const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
-    const key = `${t.platform.toUpperCase()}_${t.token_type.toUpperCase()}_${suffix}`;
-    machineEnv[key] = t.access_token;
-  }
+  return { secrets, config };
+}
 
-  return machineEnv;
+/**
+ * Flatten secrets + config into a single env map.
+ * Used as fallback for legacy shared-app tenants where we can't set per-app secrets.
+ */
+export function flattenMachineEnv(result: MachineEnvResult): Record<string, string> {
+  return { ...result.config, ...result.secrets };
 }
