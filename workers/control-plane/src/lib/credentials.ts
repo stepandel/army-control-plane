@@ -1,18 +1,15 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import type postgres from "postgres";
 import { getDb } from "../db/client";
-import { FlyClient, isLegacyApp } from "./fly";
-import { buildMachineEnv, flattenMachineEnv } from "./machine-env";
+import { FlyClient } from "./fly";
+import { buildMachineEnv } from "./machine-env";
 import { decryptIfEncrypted } from "./crypto";
 
 /**
  * Push all integration tokens to a tenant's Fly machine.
  *
- * Per-tenant apps: sensitive values are set as encrypted Fly app secrets,
+ * Sensitive values are set as encrypted Fly app secrets,
  * non-sensitive values go to machine config.env.
- *
- * Legacy shared apps: everything goes to config.env (can't set per-tenant
- * secrets on a shared app).
  */
 export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sql?: postgres.Sql) {
   const db = sql ?? getDb(env);
@@ -23,8 +20,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
   if (tenant.status !== "active") throw new Error(`Tenant ${tenantId} not active`);
   if (!tenant.fly_machine_id) throw new Error(`Tenant ${tenantId} has no Fly machine`);
 
-  const flyToken = isLegacyApp(tenant.fly_app_name) ? env.FLY_API_TOKEN : env.FLY_API_TOKEN_VERA;
-  const fly = new FlyClient(flyToken, tenant.fly_app_name, sharedImage);
+  const fly = new FlyClient(env.FLY_API_TOKEN_VERA, tenant.fly_app_name, sharedImage);
 
   const tokens = await db`
     SELECT platform, token_type, access_token
@@ -47,14 +43,9 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
 
   const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production);
 
-  if (isLegacyApp(tenant.fly_app_name)) {
-    // Legacy: everything in config.env (can't use app secrets on shared app)
-    await fly.updateMachine(tenant.fly_machine_id, flattenMachineEnv(envResult), tenant.fly_volume_id);
-  } else {
-    // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
-    await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
-    await fly.updateMachine(tenant.fly_machine_id, envResult.config, tenant.fly_volume_id);
-  }
+  // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
+  await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
+  await fly.updateMachine(tenant.fly_machine_id, envResult.config, tenant.fly_volume_id);
 
   // Write KV routing entries for all platforms with an external_id
   const internalSecret = envResult.secrets.INTERNAL_SECRET;

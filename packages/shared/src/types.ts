@@ -1,6 +1,6 @@
 // ── KV routing record stored per tenant ──────────────────────────
 export interface TenantRoute {
-  /** Fly machine URL, e.g. "https://pi-agent-images.fly.dev" */
+  /** Fly machine URL, e.g. "https://army-t123-ab12.fly.dev" */
   instance_url: string;
   /** Shared secret for Worker ↔ Fly HMAC verification */
   internal_secret: string;
@@ -36,7 +36,6 @@ export interface ControlPlaneEnv {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   GITHUB_PRIVATE_KEY: string;
-  FLY_API_TOKEN: string;
   FLY_API_TOKEN_VERA: string;
   FLY_APP: string;
   FLY_ORG: string;
