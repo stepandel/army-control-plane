@@ -5,6 +5,7 @@ import { createState, verifyState } from "../lib/oauth-state";
 import { provisionTenant } from "../lib/provision";
 import { pushCredentials } from "../lib/credentials";
 import { provisionLinearLabels } from "../lib/linear-labels";
+import { encrypt } from "../lib/crypto";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -108,11 +109,12 @@ oauth.get("/slack/callback", async (c) => {
   `;
 
   // Upsert bot token (external_id = teamId enables KV routing for Slack)
+  const encBotToken = await encrypt(botToken, c.env.ENCRYPTION_KEY);
   await sql`
     INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, scopes, external_id)
-    VALUES (${teamId}, 'slack', 'bot', ${botToken}, ${scopes}, ${teamId})
+    VALUES (${teamId}, 'slack', 'bot', ${encBotToken}, ${scopes}, ${teamId})
     ON CONFLICT (tenant_id, platform) DO UPDATE
-      SET access_token = ${botToken}, scopes = ${scopes}, external_id = ${teamId}
+      SET access_token = ${encBotToken}, scopes = ${scopes}, external_id = ${teamId}
   `;
 
   // Provision machine (fire-and-forget)
@@ -197,12 +199,14 @@ oauth.get("/linear/callback", async (c) => {
   const linearOrgId = orgData.data?.organization?.id;
   if (!linearOrgId) return c.json({ error: "Failed to fetch Linear organization ID" }, 500);
 
-  // Upsert token with Linear org ID for KV routing
+  // Upsert token with Linear org ID for KV routing (encrypted at rest)
+  const encAccessToken = await encrypt(accessToken, c.env.ENCRYPTION_KEY);
+  const encRefreshToken = refreshToken ? await encrypt(refreshToken, c.env.ENCRYPTION_KEY) : null;
   await sql`
     INSERT INTO integration_tokens (tenant_id, platform, token_type, access_token, refresh_token, scopes, external_id, expires_at)
-    VALUES (${tenantId}, 'linear', 'bot', ${accessToken}, ${refreshToken}, ${scopes}, ${linearOrgId}, ${expiresAt}::timestamptz)
+    VALUES (${tenantId}, 'linear', 'bot', ${encAccessToken}, ${encRefreshToken}, ${scopes}, ${linearOrgId}, ${expiresAt}::timestamptz)
     ON CONFLICT (tenant_id, platform) DO UPDATE
-      SET access_token = ${accessToken}, refresh_token = ${refreshToken}, scopes = ${scopes}, external_id = ${linearOrgId}, expires_at = ${expiresAt}::timestamptz
+      SET access_token = ${encAccessToken}, refresh_token = ${encRefreshToken}, scopes = ${scopes}, external_id = ${linearOrgId}, expires_at = ${expiresAt}::timestamptz
   `;
 
   // Write KV route for linear:<linearOrgId> — the router extracts organizationId from webhooks

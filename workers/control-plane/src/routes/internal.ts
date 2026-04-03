@@ -3,6 +3,7 @@ import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { refreshLinearToken } from "../lib/token-refresh";
 import { pushCredentials } from "../lib/credentials";
+import { decryptIfEncrypted } from "../lib/crypto";
 
 const internal = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -107,13 +108,13 @@ internal.get("/credentials/:team_id", async (c) => {
     WHERE tenant_id = ${teamId}
   `;
 
-  // Group by platform
+  // Decrypt and group by platform
   const credentials: Record<string, unknown[]> = {};
   for (const t of tokens) {
     (credentials[t.platform] ??= []).push({
       token_type: t.token_type,
-      access_token: t.access_token,
-      refresh_token: t.refresh_token,
+      access_token: await decryptIfEncrypted(t.access_token, c.env.ENCRYPTION_KEY),
+      refresh_token: t.refresh_token ? await decryptIfEncrypted(t.refresh_token, c.env.ENCRYPTION_KEY) : null,
       scopes: t.scopes,
       expires_at: t.expires_at,
     });
@@ -153,7 +154,7 @@ internal.post("/refresh-token/:team_id", async (c) => {
 
   return c.json({
     refreshed: true,
-    linear_access_token: token.access_token,
+    linear_access_token: await decryptIfEncrypted(token.access_token, c.env.ENCRYPTION_KEY),
     expires_at: token.expires_at,
   });
 });
