@@ -285,8 +285,7 @@ export class FlyClient {
           hard_limit: 150,
         },
         autostart: true,
-        autostop: "stop",
-        min_machines_running: 1,
+        autostop: "off",
       },
     ];
   }
