@@ -388,12 +388,13 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "Not found" }, 404);
-  if (tenant.fly_app_name !== c.env.FLY_APP) {
+  const LEGACY_SHARED_APPS = [c.env.FLY_APP, "pi-agent-images"];
+  if (!tenant.fly_app_name || !LEGACY_SHARED_APPS.includes(tenant.fly_app_name)) {
     return c.json({ error: "Tenant is not on the shared app — already migrated or never provisioned" }, 400);
   }
 
   // 1. Destroy old machine + volume on shared app (personal org)
-  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, c.env.FLY_APP);
+  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, tenant.fly_app_name);
   if (tenant.fly_machine_id) {
     try { await legacyFly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
   }
