@@ -11,7 +11,6 @@ export function buildMachineEnv(
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
-  skipBootMessage?: boolean,
 ): Record<string, string> {
   const machineEnv: Record<string, string> = {
     TEAM_ID: tenantId,
@@ -27,7 +26,6 @@ export function buildMachineEnv(
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
     LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
-    ...(skipBootMessage ? { VERA_SKIP_BOOT_MESSAGE: "true" } : {}),
   };
 
   for (const t of tokens) {
