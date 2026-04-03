@@ -217,7 +217,12 @@ export class FlyClient {
         organizationId: orgId,
         name: bucketName,
         appId: appName,
-        options: { public: false },
+        primaryRegion: "iad",
+        options: {
+          public: false,
+          accelerate: false,
+          website: { domain_name: "" },
+        },
       },
     });
   }
