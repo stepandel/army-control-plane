@@ -52,7 +52,7 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 - Environment bindings are typed as `RouterEnv` and `ControlPlaneEnv`
 - Secrets are managed via `wrangler secret put`, never committed. Local dev uses `.dev.vars` (gitignored)
 - SQL schema lives in `workers/control-plane/src/db/schema.sql` — run manually against Neon
-- All tenant machines live under a single Fly app (configured via `FLY_APP` in `wrangler.toml`), image derived as `registry.fly.io/${FLY_APP}:latest`
+- Each tenant gets a dedicated Fly app (app-per-tenant model). `FLY_APP` in `wrangler.toml` is used only as the shared image source: `registry.fly.io/${FLY_APP}:latest`
 - Provisioning and credential push are internal functions (`lib/provision.ts`, `lib/credentials.ts`), not HTTP routes
 
 ## Important files

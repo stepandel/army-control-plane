@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
-import { FlyClient, type GuestConfig, isLegacyApp, LEGACY_SHARED_APPS } from "../lib/fly";
+import { FlyClient, type GuestConfig } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
 import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
-import { provisionTenant, reprovisionTenant } from "../lib/provision";
+import { reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
@@ -57,31 +57,13 @@ admin.delete("/tenants/:team_id", async (c) => {
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
-  // Destroy Fly resources: per-tenant app or legacy machine+volume
-  if (tenant.fly_app_name && !isLegacyApp(tenant.fly_app_name)) {
-    // Per-tenant app (vera-ai org): delete the app — bucket is kept
+  // Destroy Fly app (Tigris bucket is kept for data preservation)
+  if (tenant.fly_app_name) {
     const fly = new FlyClient(c.env.FLY_API_TOKEN_VERA, tenant.fly_app_name);
     try {
       await fly.deleteApp(tenant.fly_app_name);
     } catch (err) {
       console.error(`Fly app deletion failed for ${teamId}:`, err);
-    }
-  } else if (tenant.fly_app_name) {
-    // Legacy shared app (personal org)
-    const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, tenant.fly_app_name);
-    if (tenant.fly_machine_id) {
-      try {
-        await legacyFly.destroyMachine(tenant.fly_machine_id);
-      } catch (err) {
-        console.error(`Fly machine cleanup failed for ${teamId}:`, err);
-      }
-    }
-    if (tenant.fly_volume_id) {
-      try {
-        await legacyFly.deleteVolume(tenant.fly_volume_id);
-      } catch (err) {
-        console.error(`Fly volume cleanup failed for ${teamId}:`, err);
-      }
     }
   }
 
@@ -115,13 +97,8 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
-  // Legacy tenants without a per-tenant app need full provisioning
-  const handler = tenant.fly_app_name && !isLegacyApp(tenant.fly_app_name)
-    ? reprovisionTenant
-    : provisionTenant;
-
   c.executionCtx.waitUntil(
-    handler(c.env, teamId).catch((err) =>
+    reprovisionTenant(c.env, teamId).catch((err) =>
       console.error(`Reprovisioning failed for ${teamId}:`, err),
     ),
   );
@@ -164,9 +141,6 @@ admin.patch("/tenants/:team_id/resize", async (c) => {
 
   // If tenant has an active machine, resize it via Fly API
   if (tenant.status === "active" && tenant.fly_machine_id && tenant.fly_app_name) {
-    if (isLegacyApp(tenant.fly_app_name)) {
-      return c.json({ error: "Tenant is on legacy shared app — migrate first" }, 400);
-    }
     const sharedImage = `registry.fly.io/${c.env.FLY_APP}:latest`;
     const tenantFly = new FlyClient(c.env.FLY_API_TOKEN_VERA, tenant.fly_app_name, sharedImage);
     const guest: GuestConfig = {
@@ -370,60 +344,6 @@ admin.post("/tenants/:team_id/push-labels", async (c) => {
   }
 });
 
-/** GET /admin/tenants/legacy — list tenants still on the shared app */
-admin.get("/tenants/legacy", async (c) => {
-  const sql = getDb(c.env);
-  const legacyTenants = await sql`
-    SELECT id, name, status, fly_app_name, fly_machine_id
-    FROM tenants
-    WHERE status = 'active' AND fly_app_name IN ${sql(LEGACY_SHARED_APPS)}
-  `;
-  return c.json({ count: legacyTenants.length, tenants: legacyTenants });
-});
-
-/** POST /admin/tenants/:team_id/migrate-to-per-app — migrate a single legacy tenant to per-tenant app */
-admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
-  const teamId = c.req.param("team_id");
-  const sql = getDb(c.env);
-
-  const [tenant] = await sql`
-    SELECT id, name, fly_app_name, fly_machine_id, fly_volume_id
-    FROM tenants WHERE id = ${teamId}
-  `;
-  if (!tenant) return c.json({ error: "Not found" }, 404);
-  if (!isLegacyApp(tenant.fly_app_name)) {
-    return c.json({ error: "Tenant is not on the shared app — already migrated or never provisioned" }, 400);
-  }
-
-  // 1. Destroy old machine + volume on shared app (personal org)
-  const legacyFly = new FlyClient(c.env.FLY_API_TOKEN, tenant.fly_app_name);
-  if (tenant.fly_machine_id) {
-    try { await legacyFly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
-  }
-  if (tenant.fly_volume_id) {
-    try { await legacyFly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
-  }
-
-  // 2. Mark old deployment as stopped
-  await sql`
-    UPDATE deployments SET status = 'stopped', finished_at = now()
-    WHERE tenant_id = ${teamId} AND status IN ('deploying', 'running')
-  `;
-
-  // 3. Reset tenant to pending so provisionTenant can run
-  await sql`
-    UPDATE tenants
-    SET status = 'pending', fly_machine_id = NULL, fly_volume_id = NULL,
-        fly_app_name = NULL, instance_url = NULL, updated_at = now()
-    WHERE id = ${teamId}
-  `;
-
-  // 4. Provision under per-tenant app (skip boot message during migration)
-  await provisionTenant(c.env, teamId, { skipBootMessage: true });
-
-  return c.json({ tenant_id: teamId, name: tenant.name, status: "migrated" });
-});
-
 /** POST /admin/tenants/:team_id/deploy — deploy latest image to a single tenant */
 admin.post("/tenants/:team_id/deploy", async (c) => {
   const teamId = c.req.param("team_id");
@@ -436,9 +356,6 @@ admin.post("/tenants/:team_id/deploy", async (c) => {
   if (!tenant) return c.json({ error: "Not found" }, 404);
   if (!tenant.fly_machine_id || !tenant.fly_app_name) {
     return c.json({ error: "Tenant has no active machine" }, 400);
-  }
-  if (isLegacyApp(tenant.fly_app_name)) {
-    return c.json({ error: "Tenant is on legacy shared app — migrate first" }, 400);
   }
 
   const tenantFly = new FlyClient(c.env.FLY_API_TOKEN_VERA, tenant.fly_app_name);
