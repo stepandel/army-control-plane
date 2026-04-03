@@ -4,8 +4,8 @@ export interface TenantRoute {
   instance_url: string;
   /** Shared secret for Worker ↔ Fly HMAC verification */
   internal_secret: string;
-  /** Fly machine ID — used with fly-force-instance-id header to pin requests to the correct machine */
-  fly_machine_id: string;
+  /** Fly machine ID — stored for reference, no longer used for routing (app-per-tenant = auto-routing) */
+  fly_machine_id?: string;
 }
 
 // ── Webhook source discriminator ─────────────────────────────────
@@ -37,9 +37,12 @@ export interface ControlPlaneEnv {
   GITHUB_CLIENT_SECRET: string;
   GITHUB_PRIVATE_KEY: string;
   FLY_API_TOKEN: string;
+  FLY_API_TOKEN_VERA: string;
   FLY_APP: string;
+  FLY_ORG: string;
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
+  DEPLOY_SECRET: string;
   ANTHROPIC_API_KEY: string;
   BRAVE_API_KEY: string;
   LANGSMITH_TRACING: string;

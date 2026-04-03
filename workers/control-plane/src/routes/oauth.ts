@@ -97,10 +97,14 @@ oauth.get("/slack/callback", async (c) => {
   const sql = getDb(c.env);
 
   // Upsert tenant — Slack is the primary platform
+  // If tenant was previously destroyed, reset to pending so provisioning can run
   await sql`
     INSERT INTO tenants (id, name, platform, status)
     VALUES (${teamId}, ${teamName}, 'slack', 'pending')
-    ON CONFLICT (id) DO UPDATE SET name = ${teamName}, updated_at = now()
+    ON CONFLICT (id) DO UPDATE
+      SET name = ${teamName},
+          status = CASE WHEN tenants.status = 'destroyed' THEN 'pending' ELSE tenants.status END,
+          updated_at = now()
   `;
 
   // Upsert bot token (external_id = teamId enables KV routing for Slack)

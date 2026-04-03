@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
 import admin from "./routes/admin";
+import deploy from "./routes/deploy";
 import internal from "./routes/internal";
 import apiOnboarding from "./routes/api-onboarding";
 import { cfAccessGuard } from "./middleware/cf-access";
@@ -27,6 +28,7 @@ app.use(
 app.route("/oauth", oauth);
 app.route("/api/onboarding", apiOnboarding);
 app.route("/internal", internal);
+app.route("/deploy", deploy);
 
 // Protected routes — require Cloudflare Access JWT
 app.use("/admin/*", cfAccessGuard);
