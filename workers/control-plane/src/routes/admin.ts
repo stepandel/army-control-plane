@@ -418,8 +418,8 @@ admin.post("/tenants/:team_id/migrate-to-per-app", async (c) => {
     WHERE id = ${teamId}
   `;
 
-  // 4. Provision under per-tenant app
-  await provisionTenant(c.env, teamId);
+  // 4. Provision under per-tenant app (skip boot message during migration)
+  await provisionTenant(c.env, teamId, { skipBootMessage: true });
 
   return c.json({ tenant_id: teamId, name: tenant.name, status: "migrated" });
 });
