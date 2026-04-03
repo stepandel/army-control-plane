@@ -6,6 +6,7 @@ import { pushCredentials } from "../lib/credentials";
 import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
 import { provisionTenant, reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
+import { decryptIfEncrypted } from "../lib/crypto";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -335,7 +336,7 @@ admin.post("/tenants/push-labels", async (c) => {
 
   for (const row of tokens) {
     try {
-      await provisionLinearLabels(row.access_token);
+      await provisionLinearLabels(await decryptIfEncrypted(row.access_token, c.env.ENCRYPTION_KEY));
       results.push({ tenant_id: row.tenant_id, status: "ok" });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -362,7 +363,7 @@ admin.post("/tenants/:team_id/push-labels", async (c) => {
   if (!token) return c.json({ error: "No Linear integration for this tenant" }, 404);
 
   try {
-    await provisionLinearLabels(token.access_token);
+    await provisionLinearLabels(await decryptIfEncrypted(token.access_token, c.env.ENCRYPTION_KEY));
     return c.json({ tenant_id: teamId, status: "ok" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

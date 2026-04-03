@@ -3,6 +3,7 @@ import type postgres from "postgres";
 import { getDb } from "../db/client";
 import { FlyClient, isLegacyApp } from "./fly";
 import { buildMachineEnv, flattenMachineEnv } from "./machine-env";
+import { decryptIfEncrypted } from "./crypto";
 
 /**
  * Push all integration tokens to a tenant's Fly machine.
@@ -33,7 +34,18 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
 
   if (tokens.length === 0) throw new Error(`No tokens to push for ${tenantId}`);
 
-  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), tokens, tenant.anthropic_api_key, tenant.vera_production);
+  // Decrypt tokens and anthropic key before building machine env
+  const decryptedTokens = await Promise.all(
+    tokens.map(async (t) => ({
+      ...t,
+      access_token: await decryptIfEncrypted(t.access_token, env.ENCRYPTION_KEY),
+    })),
+  );
+  const anthropicKey = tenant.anthropic_api_key
+    ? await decryptIfEncrypted(tenant.anthropic_api_key, env.ENCRYPTION_KEY)
+    : null;
+
+  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production);
 
   if (isLegacyApp(tenant.fly_app_name)) {
     // Legacy: everything in config.env (can't use app secrets on shared app)
