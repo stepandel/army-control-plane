@@ -22,7 +22,6 @@ export function buildMachineEnv(
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
-  skipBootMessage?: boolean,
 ): MachineEnvResult {
   const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
@@ -47,7 +46,6 @@ export function buildMachineEnv(
     LANGSMITH_TRACING: env.LANGSMITH_TRACING,
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
-    ...(skipBootMessage ? { VERA_SKIP_BOOT_MESSAGE: "true" } : {}),
   };
 
   return { secrets, config };
@@ -55,7 +53,7 @@ export function buildMachineEnv(
 
 /**
  * Flatten secrets + config into a single env map.
- * Used as fallback for legacy shared-app tenants where we can't set per-app secrets.
+ * Useful for testing or any context where a single map is needed.
  */
 export function flattenMachineEnv(result: MachineEnvResult): Record<string, string> {
   return { ...result.config, ...result.secrets };

@@ -1,7 +1,7 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient, type GuestConfig } from "./fly";
-import { buildMachineEnv, flattenMachineEnv } from "./machine-env";
+import { buildMachineEnv } from "./machine-env";
 import { decryptIfEncrypted } from "./crypto";
 
 function buildGuest(tenant: Record<string, unknown>): GuestConfig | undefined {
@@ -22,7 +22,7 @@ function generateAppName(tenantId: string): string {
  * Updates DB + KV and records deployment.
  * On failure: deletes the app (bucket is kept) and rolls back tenant status.
  */
-export async function provisionTenant(env: ControlPlaneEnv, tenantId: string, opts?: { skipBootMessage?: boolean }) {
+export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
   const sql = getDb(env);
   const fly = new FlyClient(env.FLY_API_TOKEN_VERA, env.FLY_APP);
   const sharedImage = `registry.fly.io/${env.FLY_APP}:latest`;
@@ -51,7 +51,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string, op
     // 4. Create volume + machine
     const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
     const { machine, volume, instanceUrl } = await createMachineForTenant(
-      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest, opts?.skipBootMessage,
+      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest,
     );
 
     // 5. Update tenant record
@@ -155,7 +155,6 @@ async function createMachineForTenant(
   internalSecret: string,
   tenant: Record<string, unknown>,
   guest?: GuestConfig,
-  skipBootMessage?: boolean,
 ) {
   const rawTokens = await sql`
     SELECT platform, token_type, access_token
@@ -170,7 +169,7 @@ async function createMachineForTenant(
   const anthropicKey = tenant.anthropic_api_key
     ? await decryptIfEncrypted(tenant.anthropic_api_key as string, env.ENCRYPTION_KEY)
     : null;
-  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, anthropicKey, tenant.vera_production as boolean, skipBootMessage);
+  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, anthropicKey, tenant.vera_production as boolean);
 
   // Set sensitive values as encrypted app secrets (no machines exist yet, so no restart triggered)
   await fly.setSecrets(appName, secrets);
