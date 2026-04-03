@@ -6,7 +6,7 @@ import { decryptIfEncrypted } from "./crypto";
 
 function buildGuest(tenant: Record<string, unknown>): GuestConfig | undefined {
   return tenant.memory_mb || tenant.cpus
-    ? { cpu_kind: "shared", cpus: (tenant.cpus as number) ?? 2, memory_mb: (tenant.memory_mb as number) ?? 1024 }
+    ? { cpu_kind: "shared", cpus: (tenant.cpus as number) ?? 1, memory_mb: (tenant.memory_mb as number) ?? 1024 }
     : undefined;
 }
 

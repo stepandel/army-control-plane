@@ -12,7 +12,7 @@ const VOLUME_PATH = "/workspace";
 
 const MACHINE_GUEST: GuestConfig = {
   cpu_kind: "shared",
-  cpus: 2,
+  cpus: 1,
   memory_mb: 1024,
 };
 
