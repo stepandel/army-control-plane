@@ -1,7 +1,7 @@
 import type { ControlPlaneEnv, TenantRoute } from "@army/shared";
 import type postgres from "postgres";
 import { getDb } from "../db/client";
-import { FlyClient } from "./fly";
+import { FlyClient, isLegacyApp } from "./fly";
 import { buildMachineEnv } from "./machine-env";
 
 /**
@@ -20,7 +20,8 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
   if (!tenant.fly_machine_id) throw new Error(`Tenant ${tenantId} has no Fly machine`);
 
   // Scope FlyClient to the tenant's app (per-tenant or legacy shared)
-  const fly = new FlyClient(env.FLY_API_TOKEN_VERA, tenant.fly_app_name, sharedImage);
+  const flyToken = isLegacyApp(tenant.fly_app_name) ? env.FLY_API_TOKEN : env.FLY_API_TOKEN_VERA;
+  const fly = new FlyClient(flyToken, tenant.fly_app_name, sharedImage);
 
   const tokens = await db`
     SELECT platform, token_type, access_token

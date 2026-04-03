@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
-import { FlyClient } from "../lib/fly";
+import { FlyClient, LEGACY_SHARED_APPS } from "../lib/fly";
 
 const deploy = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -23,7 +23,7 @@ deploy.post("/", async (c) => {
     SELECT id, name, fly_app_name, fly_machine_id
     FROM tenants
     WHERE status = 'active' AND fly_machine_id IS NOT NULL AND fly_app_name IS NOT NULL
-      AND fly_app_name != ${c.env.FLY_APP}
+      AND fly_app_name NOT IN ${sql(LEGACY_SHARED_APPS)}
   `;
 
   const results: { tenant_id: string; name: string; status: "deployed" | "failed"; error?: string }[] = [];
