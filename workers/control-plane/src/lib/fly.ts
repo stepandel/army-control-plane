@@ -1,6 +1,5 @@
 /**
- * Fly.io Machines API client.
- * Supports both shared-app and app-per-tenant architectures.
+ * Fly.io Machines API client (app-per-tenant architecture).
  * Docs: https://fly.io/docs/machines/api/
  */
 
@@ -16,14 +15,6 @@ const MACHINE_GUEST: GuestConfig = {
   cpus: 2,
   memory_mb: 1024,
 };
-
-/** App names that belong to the legacy shared-app (personal org). */
-export const LEGACY_SHARED_APPS = ["pi-agent-images"];
-
-/** Return true if the tenant's fly_app_name is a legacy shared app (not yet migrated). */
-export function isLegacyApp(flyAppName: string | null | undefined): boolean {
-  return !flyAppName || LEGACY_SHARED_APPS.includes(flyAppName);
-}
 
 /** Machine sizing configuration. */
 export interface GuestConfig {
