@@ -21,7 +21,7 @@ function generateAppName(tenantId: string): string {
  * Updates DB + KV and records deployment.
  * On failure: deletes the app (bucket is kept) and rolls back tenant status.
  */
-export async function provisionTenant(env: ControlPlaneEnv, tenantId: string, opts?: { skipBootMessage?: boolean }) {
+export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
   const sql = getDb(env);
   const fly = new FlyClient(env.FLY_API_TOKEN_VERA, env.FLY_APP);
   const sharedImage = `registry.fly.io/${env.FLY_APP}:latest`;
@@ -50,7 +50,7 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string, op
     // 4. Create volume + machine
     const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
     const { machine, volume, instanceUrl } = await createMachineForTenant(
-      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest, opts?.skipBootMessage,
+      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest,
     );
 
     // 5. Update tenant record
@@ -154,13 +154,12 @@ async function createMachineForTenant(
   internalSecret: string,
   tenant: Record<string, unknown>,
   guest?: GuestConfig,
-  skipBootMessage?: boolean,
 ) {
   const tokens = await sql`
     SELECT platform, token_type, access_token
     FROM integration_tokens WHERE tenant_id = ${tenantId}
   `;
-  const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key as string | null, tenant.vera_production as boolean, skipBootMessage);
+  const machineEnv = buildMachineEnv(env, tenantId, internalSecret, tokens, tenant.anthropic_api_key as string | null, tenant.vera_production as boolean);
 
   const volumeName = "anton_state";
   const { machine, volume } = await fly.createMachineWithVolume(appName, machineEnv, volumeName, 1, guest);
