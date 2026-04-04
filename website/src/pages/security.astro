@@ -33,15 +33,17 @@ import CTAFooter from "../components/CTAFooter.astro";
 
       <div class="security-grid">
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
           <h2>Tenant isolation</h2>
           <p>
-            Each workspace runs on its own dedicated Fly.io machine. There is no
+            Each workspace runs on its own dedicated machine. There is no
             shared runtime between tenants — your code, credentials, and
             execution environment are completely isolated.
           </p>
         </section>
 
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16.5" r="1.5"/></svg>
           <h2>Encrypted credentials</h2>
           <p>
             All OAuth tokens and API keys are encrypted at rest using
@@ -51,6 +53,7 @@ import CTAFooter from "../components/CTAFooter.astro";
         </section>
 
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <h2>Webhook verification</h2>
           <p>
             Every inbound webhook from Linear and GitHub is verified with
@@ -60,25 +63,27 @@ import CTAFooter from "../components/CTAFooter.astro";
         </section>
 
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
           <h2>OAuth CSRF protection</h2>
           <p>
-            All OAuth flows use single-use, time-limited state tokens backed by
-            Cloudflare KV. Tokens expire after 10 minutes and are deleted on
-            first use, preventing replay and cross-site request forgery attacks.
+            All OAuth flows use single-use, time-limited state tokens. Tokens
+            expire after 10 minutes and are deleted on first use, preventing
+            replay and cross-site request forgery attacks.
           </p>
         </section>
 
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           <h2>Zero-trust admin access</h2>
           <p>
-            Administrative operations are protected by Cloudflare Access with
-            identity-provider authentication and application-level JWT
-            verification. No admin endpoint is accessible without passing both
-            layers.
+            Administrative operations are protected by identity-provider
+            authentication and application-level JWT verification. No admin
+            endpoint is accessible without passing both layers.
           </p>
         </section>
 
         <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
           <h2>Slack Socket Mode</h2>
           <p>
             Vera connects to Slack via Socket Mode — outbound WebSocket
@@ -97,50 +102,33 @@ import CTAFooter from "../components/CTAFooter.astro";
           exposed in logs or error messages.
         </p>
 
-        <div class="diagram" aria-label="Key storage architecture diagram showing secrets flowing through three encrypted layers">
-          <!-- Source -->
-          <div class="diagram-node source">
-            <div class="node-icon">OAuth</div>
-            <div class="node-label">Slack, Linear, GitHub</div>
+        <div class="arch-diagram" aria-label="Key storage architecture: three layers from encryption through secrets storage to isolated runtime">
+          <div class="arch-box">
+            <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div class="arch-label">Encryption layer</div>
+            <div class="arch-desc">AES-256-GCM before storage</div>
           </div>
 
-          <div class="diagram-arrow">
-            <div class="arrow-line"></div>
-            <div class="arrow-tag">TLS</div>
+          <div class="arch-connector" aria-hidden="true">
+            <div class="connector-line"></div>
+            <svg class="connector-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
 
-          <!-- Layer 1 -->
-          <div class="diagram-node layer-1">
-            <div class="node-badge">Layer 1</div>
-            <div class="node-title">Encryption layer</div>
-            <div class="node-detail">Credentials are encrypted with AES-256-GCM before storage</div>
-            <div class="node-sub">Plaintext never reaches the database</div>
+          <div class="arch-box">
+            <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <div class="arch-label">Secrets storage</div>
+            <div class="arch-desc">Encrypted at rest, write-only</div>
           </div>
 
-          <div class="diagram-arrow">
-            <div class="arrow-line"></div>
-            <div class="arrow-tag">Encrypted transfer</div>
+          <div class="arch-connector" aria-hidden="true">
+            <div class="connector-line"></div>
+            <svg class="connector-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
 
-          <!-- Layer 2 -->
-          <div class="diagram-node layer-2">
-            <div class="node-badge">Layer 2</div>
-            <div class="node-title">Secrets storage</div>
-            <div class="node-detail">Encrypted at rest, write-only API</div>
-            <div class="node-sub">Secrets cannot be read back once stored</div>
-          </div>
-
-          <div class="diagram-arrow">
-            <div class="arrow-line"></div>
-            <div class="arrow-tag">Injected at boot</div>
-          </div>
-
-          <!-- Layer 3 -->
-          <div class="diagram-node layer-3">
-            <div class="node-badge">Layer 3</div>
-            <div class="node-title">Isolated runtime</div>
-            <div class="node-detail">In-memory only, dedicated process per tenant</div>
-            <div class="node-sub">Never written to disk, never logged, never in error responses</div>
+          <div class="arch-box">
+            <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="18" r="1"/></svg>
+            <div class="arch-label">Isolated runtime</div>
+            <div class="arch-desc">In-memory only, per tenant</div>
           </div>
         </div>
       </section>
@@ -288,6 +276,14 @@ import CTAFooter from "../components/CTAFooter.astro";
     background: rgba(255, 255, 255, 0.3);
   }
 
+  .card-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
   .card h2 {
     font-size: 1.125rem;
     font-weight: 700;
@@ -319,112 +315,61 @@ import CTAFooter from "../components/CTAFooter.astro";
     margin-bottom: 2.5rem;
   }
 
-  .diagram {
+  .arch-diagram {
     display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0;
   }
 
-  .diagram-node {
-    width: 100%;
-    padding: 1.5rem 2rem;
+  .arch-box {
+    flex: 1;
+    padding: 2rem 1.5rem;
     border: 1px solid rgba(13, 40, 24, 0.15);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.35);
     text-align: center;
-    position: relative;
   }
 
-  .diagram-node.source {
-    max-width: 280px;
-    padding: 1.25rem 2rem;
-    background: rgba(255, 255, 255, 0.2);
-    border-style: dashed;
-  }
-
-  .node-icon {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+  .arch-icon {
+    width: 32px;
+    height: 32px;
     color: var(--color-text);
-    margin-bottom: 0.25rem;
+    margin: 0 auto 1rem;
+    opacity: 0.6;
   }
 
-  .node-label {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-  }
-
-  .node-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
+  .arch-label {
+    font-size: 1rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .node-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
     margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
   }
 
-  .node-detail {
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-    line-height: 1.5;
-  }
-
-  .node-sub {
+  .arch-desc {
     font-size: 0.8rem;
     color: var(--color-text-muted);
-    opacity: 0.7;
-    margin-top: 0.25rem;
+    line-height: 1.4;
   }
 
-  .diagram-arrow {
+  .arch-connector {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0;
-    padding: 0.25rem 0;
+    padding: 0 0.25rem;
+    flex-shrink: 0;
   }
 
-  .arrow-line {
-    width: 1px;
-    height: 28px;
-    background: rgba(13, 40, 24, 0.25);
-    position: relative;
+  .connector-line {
+    width: 16px;
+    height: 1px;
+    background: rgba(13, 40, 24, 0.2);
   }
 
-  .arrow-line::after {
-    content: "";
-    position: absolute;
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid rgba(13, 40, 24, 0.25);
-  }
-
-  .arrow-tag {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    opacity: 0.7;
-    padding-top: 0.4rem;
-    letter-spacing: 0.02em;
+  .connector-arrow {
+    width: 14px;
+    height: 14px;
+    color: rgba(13, 40, 24, 0.3);
+    flex-shrink: 0;
   }
 
   .principles {
@@ -585,6 +530,16 @@ import CTAFooter from "../components/CTAFooter.astro";
 
     .security-grid {
       grid-template-columns: 1fr;
+    }
+
+    .arch-diagram {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .arch-connector {
+      transform: rotate(90deg);
+      padding: 0.25rem 0;
     }
   }
 </style>
