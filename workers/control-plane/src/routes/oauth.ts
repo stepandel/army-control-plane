@@ -88,7 +88,7 @@ oauth.get("/slack/callback", async (c) => {
   });
 
   const data = (await resp.json()) as Record<string, unknown>;
-  if (!data.ok) return c.json({ error: "Slack OAuth failed", code: data.error ?? "unknown" }, 400);
+  if (!data.ok) return c.json({ error: "Slack OAuth failed", detail: data }, 400);
 
   const teamId = (data.team as Record<string, string>).id;
   const teamName = (data.team as Record<string, string>).name;
@@ -178,7 +178,7 @@ oauth.get("/linear/callback", async (c) => {
   });
 
   const data = (await resp.json()) as Record<string, unknown>;
-  if (!data.access_token) return c.json({ error: "Linear OAuth failed" }, 400);
+  if (!data.access_token) return c.json({ error: "Linear OAuth failed", detail: data }, 400);
 
   const accessToken = data.access_token as string;
   const refreshToken = (data.refresh_token as string) ?? null;
