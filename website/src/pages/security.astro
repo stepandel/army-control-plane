@@ -23,11 +23,12 @@ import CTAFooter from "../components/CTAFooter.astro";
       <section class="callout">
         <h2>Your code is yours. We never train on it.</h2>
         <p>
-          Vera processes your code to complete engineering tasks — that's it.
           Your source code, prompts, and outputs are never used to train or
-          fine-tune any model, and never used to improve our systems. They are
-          not shared with third parties for training purposes. When a task is
-          complete, code context is discarded from memory.
+          fine-tune any model, and never used to improve our systems.
+          Code context is sent to Anthropic's API for inference — Anthropic's
+          API terms prohibit training on API inputs. No other third party
+          receives your code. When a task is complete, code context is
+          discarded from memory.
         </p>
       </section>
 
