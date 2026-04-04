@@ -161,7 +161,8 @@ import CTAFooter from "../components/CTAFooter.astro";
 
       <section class="data-residency">
         <h2>Data residency</h2>
-        <p>All data is stored and processed in the <strong>United States</strong>.</p>
+        <p>All data is stored and processed in the <strong>United States</strong>.
+          See our full <a href="/subprocessors" class="inline-link">subprocessors list</a> for details on every third-party service.</p>
         <div class="residency-grid">
           <div class="residency-item">
             <h3>Compute</h3>
@@ -441,6 +442,13 @@ import CTAFooter from "../components/CTAFooter.astro";
 
   .principles li strong {
     color: var(--color-text);
+  }
+
+  .inline-link {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .data-residency {

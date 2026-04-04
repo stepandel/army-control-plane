@@ -1,0 +1,233 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import CTAFooter from "../components/CTAFooter.astro";
+---
+
+<Layout
+  title="Subprocessors — Vera AI"
+  description="List of third-party subprocessors that Vera AI uses to deliver its service, including their purpose and data residency."
+>
+  <Nav />
+  <main class="subprocessors">
+    <div class="subprocessors-inner">
+      <header class="subprocessors-header">
+        <div class="subprocessors-badge">Subprocessors</div>
+        <h1>Third-party subprocessors</h1>
+        <p class="subprocessors-subtitle">
+          Vera uses the following third-party services to deliver its product.
+          This page lists each subprocessor, what they do, and where your data
+          is processed.
+        </p>
+        <p class="last-updated">Last updated: April 3, 2026</p>
+      </header>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Subprocessor</th>
+              <th>Purpose</th>
+              <th>Data processed</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">Anthropic</td>
+              <td>LLM inference</td>
+              <td>User prompts, code context</td>
+              <td>US</td>
+            </tr>
+            <tr>
+              <td class="name">Fly.io</td>
+              <td>Tenant compute and secrets</td>
+              <td>Application runtime, encrypted secrets</td>
+              <td>US East</td>
+            </tr>
+            <tr>
+              <td class="name">Neon</td>
+              <td>Database</td>
+              <td>Tenant records, encrypted tokens</td>
+              <td>US East</td>
+            </tr>
+            <tr>
+              <td class="name">Cloudflare</td>
+              <td>Edge compute, KV storage, DNS</td>
+              <td>Routing table, OAuth state, request processing</td>
+              <td>Global edge, US origin</td>
+            </tr>
+            <tr>
+              <td class="name">Tigris</td>
+              <td>Object storage</td>
+              <td>Workspace files</td>
+              <td>US East</td>
+            </tr>
+            <tr>
+              <td class="name">Slack</td>
+              <td>Platform integration</td>
+              <td>Messages, bot tokens</td>
+              <td>US</td>
+            </tr>
+            <tr>
+              <td class="name">Linear</td>
+              <td>Platform integration</td>
+              <td>Issues, comments, OAuth tokens</td>
+              <td>US / EU</td>
+            </tr>
+            <tr>
+              <td class="name">GitHub</td>
+              <td>Platform integration</td>
+              <td>Repositories, pull requests, installation tokens</td>
+              <td>US</td>
+            </tr>
+            <tr>
+              <td class="name">LangSmith</td>
+              <td>Observability and tracing</td>
+              <td>LLM call traces</td>
+              <td>US</td>
+            </tr>
+            <tr>
+              <td class="name">Brave Search</td>
+              <td>Web search</td>
+              <td>Search queries</td>
+              <td>US</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="notice">
+        <p>
+          We will update this page whenever a subprocessor is added or removed.
+          If you have questions about our subprocessors, contact us at
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>.
+        </p>
+      </section>
+    </div>
+  </main>
+  <CTAFooter />
+</Layout>
+
+<style>
+  .subprocessors {
+    padding: 8rem 1.5rem 4rem;
+  }
+
+  .subprocessors-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .subprocessors-header {
+    margin-bottom: 3rem;
+  }
+
+  .subprocessors-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  .subprocessors-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  .last-updated {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    margin-top: 1rem;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 3rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    border-bottom: 2px solid rgba(13, 40, 24, 0.15);
+  }
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text);
+  }
+
+  td {
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    border-bottom: 1px solid rgba(13, 40, 24, 0.08);
+  }
+
+  td.name {
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .notice {
+    padding: 2rem 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .notice p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .notice a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .subprocessors {
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    th, td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+</style>
