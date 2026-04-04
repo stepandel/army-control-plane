@@ -41,7 +41,7 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
     ? await decryptIfEncrypted(tenant.anthropic_api_key, env.ENCRYPTION_KEY)
     : null;
 
-  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production);
+  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production, tenant.telemetry_enabled);
 
   // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
   await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
