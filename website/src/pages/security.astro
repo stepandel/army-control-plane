@@ -71,9 +71,9 @@ import CTAFooter from "../components/CTAFooter.astro";
           <h2>Slack Socket Mode</h2>
           <p>
             Vera connects to Slack via Socket Mode — outbound WebSocket
-            connections from each tenant's machine. No inbound ports are
-            exposed, reducing attack surface. Your Slack data never passes
-            through a shared webhook endpoint.
+            connections only. No inbound ports are exposed, reducing attack
+            surface. Your Slack data never passes through a shared webhook
+            endpoint.
           </p>
         </section>
       </div>
@@ -101,22 +101,22 @@ import CTAFooter from "../components/CTAFooter.astro";
           <!-- Layer 1 -->
           <div class="diagram-node layer-1">
             <div class="node-badge">Layer 1</div>
-            <div class="node-title">Control Plane</div>
-            <div class="node-detail">AES-256-GCM encryption before DB write</div>
-            <div class="node-sub">Cloudflare Worker + Neon Postgres via Hyperdrive</div>
+            <div class="node-title">Encryption layer</div>
+            <div class="node-detail">Credentials are encrypted with AES-256-GCM before storage</div>
+            <div class="node-sub">Plaintext never reaches the database</div>
           </div>
 
           <div class="diagram-arrow">
             <div class="arrow-line"></div>
-            <div class="arrow-tag">Encrypted secrets API</div>
+            <div class="arrow-tag">Encrypted transfer</div>
           </div>
 
           <!-- Layer 2 -->
           <div class="diagram-node layer-2">
             <div class="node-badge">Layer 2</div>
-            <div class="node-title">Fly.io App Secrets</div>
+            <div class="node-title">Secrets storage</div>
             <div class="node-detail">Encrypted at rest, write-only API</div>
-            <div class="node-sub">Never returned by any API endpoint</div>
+            <div class="node-sub">Secrets cannot be read back once stored</div>
           </div>
 
           <div class="diagram-arrow">
@@ -127,8 +127,8 @@ import CTAFooter from "../components/CTAFooter.astro";
           <!-- Layer 3 -->
           <div class="diagram-node layer-3">
             <div class="node-badge">Layer 3</div>
-            <div class="node-title">Tenant Machine</div>
-            <div class="node-detail">In-memory env vars, dedicated process space</div>
+            <div class="node-title">Isolated runtime</div>
+            <div class="node-detail">In-memory only, dedicated process per tenant</div>
             <div class="node-sub">Never written to disk, never logged, never in error responses</div>
           </div>
         </div>
