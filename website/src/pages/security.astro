@@ -1,0 +1,264 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import CTAFooter from "../components/CTAFooter.astro";
+---
+
+<Layout
+  title="Security — Vera AI"
+  description="How Vera protects your code, credentials, and data. Tenant isolation, encrypted secrets, webhook verification, and zero-trust access controls."
+>
+  <Nav />
+  <main class="security">
+    <div class="security-inner">
+      <header class="security-header">
+        <div class="security-badge">Security</div>
+        <h1>Built with security as a first principle</h1>
+        <p class="security-subtitle">
+          Every tenant gets isolated infrastructure, encrypted credentials, and
+          verified communications. Here's how we protect your code and data.
+        </p>
+      </header>
+
+      <div class="security-grid">
+        <section class="card">
+          <h2>Tenant isolation</h2>
+          <p>
+            Each workspace runs on its own dedicated Fly.io machine. There is no
+            shared runtime between tenants — your code, credentials, and
+            execution environment are completely isolated.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Encrypted credentials</h2>
+          <p>
+            All OAuth tokens and API keys are encrypted at rest using
+            AES-256-GCM before being stored. Secrets are injected into your
+            dedicated machine at runtime and never written to disk unencrypted.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Webhook verification</h2>
+          <p>
+            Every inbound webhook from Linear and GitHub is verified with
+            HMAC-SHA256 signatures using constant-time comparison. Requests
+            with invalid or missing signatures are rejected immediately.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>OAuth CSRF protection</h2>
+          <p>
+            All OAuth flows use single-use, time-limited state tokens backed by
+            Cloudflare KV. Tokens expire after 10 minutes and are deleted on
+            first use, preventing replay and cross-site request forgery attacks.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Zero-trust admin access</h2>
+          <p>
+            Administrative operations are protected by Cloudflare Access with
+            identity-provider authentication and application-level JWT
+            verification. No admin endpoint is accessible without passing both
+            layers.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Slack Socket Mode</h2>
+          <p>
+            Vera connects to Slack via Socket Mode — outbound WebSocket
+            connections from each tenant's machine. No inbound ports are
+            exposed, reducing attack surface. Your Slack data never passes
+            through a shared webhook endpoint.
+          </p>
+        </section>
+      </div>
+
+      <section class="principles">
+        <h2>Our security principles</h2>
+        <ul>
+          <li>
+            <strong>No shared secrets.</strong> Each tenant receives unique credentials.
+            Compromise of one tenant's secrets does not affect others.
+          </li>
+          <li>
+            <strong>Secrets never in code.</strong> All sensitive values are stored as
+            encrypted Worker secrets or encrypted database fields — never in
+            source code, config files, or logs.
+          </li>
+          <li>
+            <strong>Minimal surface area.</strong> The router is stateless and
+            intentionally minimal. It verifies, ACKs, and forwards — nothing
+            else.
+          </li>
+          <li>
+            <strong>Defense in depth.</strong> Multiple independent layers protect every
+            path: network-level policies, application-level JWT checks, per-tenant
+            bearer tokens, and HMAC verification.
+          </li>
+        </ul>
+      </section>
+
+      <section class="contact">
+        <h2>Report a vulnerability</h2>
+        <p>
+          If you've found a security issue, please email us at
+          <a href="mailto:security@agent-army.ai">security@agent-army.ai</a>.
+          We take all reports seriously and will respond within 48 hours.
+        </p>
+      </section>
+    </div>
+  </main>
+  <CTAFooter />
+</Layout>
+
+<style>
+  .security {
+    padding: 8rem 1.5rem 4rem;
+  }
+
+  .security-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .security-header {
+    margin-bottom: 4rem;
+  }
+
+  .security-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  .security-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  .security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .card {
+    padding: 2rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .card h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .principles {
+    margin-bottom: 4rem;
+  }
+
+  .principles h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .principles ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .principles li {
+    font-size: 1rem;
+    line-height: 1.6;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--color-text-muted);
+  }
+
+  .principles li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text);
+  }
+
+  .principles li strong {
+    color: var(--color-text);
+  }
+
+  .contact {
+    padding: 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .contact h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .contact a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .security {
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    .security-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
