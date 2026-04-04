@@ -22,6 +22,7 @@ export function buildMachineEnv(
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
+  telemetryEnabled?: boolean,
 ): MachineEnvResult {
   const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
@@ -38,12 +39,14 @@ export function buildMachineEnv(
     secrets[key] = t.access_token;
   }
 
+  const telemetry = telemetryEnabled ?? true;
+
   const config: Record<string, string> = {
     TEAM_ID: tenantId,
     CONTROL_PLANE_URL: env.BASE_URL,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
-    LANGSMITH_TRACING: env.LANGSMITH_TRACING,
+    LANGSMITH_TRACING: telemetry ? env.LANGSMITH_TRACING : "false",
     LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
   };

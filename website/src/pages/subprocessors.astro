@@ -83,7 +83,7 @@ import CTAFooter from "../components/CTAFooter.astro";
             </tr>
             <tr>
               <td class="name">LangSmith</td>
-              <td>Observability and tracing</td>
+              <td>Observability and tracing <span class="opt-out">opt-out available</span></td>
               <td>LLM call traces</td>
               <td>US</td>
             </tr>
@@ -196,6 +196,19 @@ import CTAFooter from "../components/CTAFooter.astro";
     font-weight: 600;
     color: var(--color-text);
     white-space: nowrap;
+  }
+
+  .opt-out {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.2);
+    border-radius: 100px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
   }
 
   tr:last-child td {

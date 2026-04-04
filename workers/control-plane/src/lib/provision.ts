@@ -169,7 +169,7 @@ async function createMachineForTenant(
   const anthropicKey = tenant.anthropic_api_key
     ? await decryptIfEncrypted(tenant.anthropic_api_key as string, env.ENCRYPTION_KEY)
     : null;
-  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, anthropicKey, tenant.vera_production as boolean);
+  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, anthropicKey, tenant.vera_production as boolean, tenant.telemetry_enabled as boolean);
 
   // Set sensitive values as encrypted app secrets (no machines exist yet, so no restart triggered)
   await fly.setSecrets(appName, secrets);

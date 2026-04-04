@@ -12,7 +12,7 @@ apiOnboarding.get("/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
 
-  const [tenant] = await sql`SELECT id, name, status, anthropic_api_key FROM tenants WHERE id = ${teamId}`;
+  const [tenant] = await sql`SELECT id, name, status, anthropic_api_key, telemetry_enabled FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "not_found" }, 404);
 
   const tokens =
@@ -24,6 +24,7 @@ apiOnboarding.get("/:team_id", async (c) => {
       name: tenant.name,
       status: tenant.status,
       has_anthropic_key: !!tenant.anthropic_api_key,
+      telemetry_enabled: tenant.telemetry_enabled,
     },
     integrations: tokens.map((t) => (t as Record<string, string>).platform),
   });
@@ -85,6 +86,36 @@ apiOnboarding.delete("/:team_id/anthropic-key", async (c) => {
   }
 
   return c.json({ success: true, status: "using_default" });
+});
+
+// ─── Telemetry opt-out ────────────────────────────────────────
+
+apiOnboarding.patch("/:team_id/telemetry", async (c) => {
+  const teamId = c.req.param("team_id");
+  const body = await c.req.json<{ enabled: boolean }>();
+
+  if (typeof body.enabled !== "boolean") {
+    return c.json({ error: "Request body must include { enabled: boolean }" }, 400);
+  }
+
+  const sql = getDb(c.env);
+  const [tenant] = await sql`SELECT id, status FROM tenants WHERE id = ${teamId}`;
+  if (!tenant) return c.json({ error: "Tenant not found" }, 404);
+
+  await sql`
+    UPDATE tenants SET telemetry_enabled = ${body.enabled}, updated_at = now()
+    WHERE id = ${teamId}
+  `;
+
+  if (tenant.status === "active") {
+    c.executionCtx.waitUntil(
+      pushCredentials(c.env, teamId).catch((err) =>
+        console.error(`pushCredentials failed after telemetry toggle for ${teamId}:`, err),
+      ),
+    );
+  }
+
+  return c.json({ success: true, telemetry_enabled: body.enabled });
 });
 
 export default apiOnboarding;
