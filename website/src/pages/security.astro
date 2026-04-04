@@ -20,6 +20,17 @@ import CTAFooter from "../components/CTAFooter.astro";
         </p>
       </header>
 
+      <section class="callout">
+        <h2>Your code is yours. We never train on it.</h2>
+        <p>
+          Vera processes your code to complete engineering tasks — that's it.
+          Your source code, prompts, and outputs are never used to train or
+          fine-tune any model. They are not shared with third parties for
+          training purposes. When a task is complete, code context is discarded
+          from memory.
+        </p>
+      </section>
+
       <div class="security-grid">
         <section class="card">
           <h2>Tenant isolation</h2>
@@ -192,6 +203,32 @@ import CTAFooter from "../components/CTAFooter.astro";
           data was affected, the steps we are taking to remediate, and
           recommended actions on your end. We will provide ongoing updates
           until the incident is fully resolved.
+        </p>
+      </section>
+
+      <section class="contact">
+        <h2>Data retention and deletion</h2>
+        <p>
+          We retain tenant data only for as long as your account is active.
+          OAuth tokens are overwritten on refresh and old values are not kept.
+          When you uninstall Vera, your machine is destroyed and all associated
+          credentials are deleted. You can request full data deletion at any
+          time by emailing
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>
+          — we will complete the deletion within 30 days.
+        </p>
+      </section>
+
+      <section class="contact">
+        <h2>Compliance</h2>
+        <p>
+          We are actively pursuing SOC 2 Type II certification. If you need
+          documentation for your security review, contact us at
+          <a href="mailto:security@agent-army.ai">security@agent-army.ai</a>
+          and we will share our current security posture and controls.
+        </p>
+        <p class="policy-link">
+          <a href="/privacy">Privacy Policy</a>
         </p>
       </section>
 
@@ -442,6 +479,38 @@ import CTAFooter from "../components/CTAFooter.astro";
 
   .principles li strong {
     color: var(--color-text);
+  }
+
+  .callout {
+    padding: 2.5rem;
+    border: 2px solid rgba(13, 40, 24, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4rem;
+  }
+
+  .callout h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .callout p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .policy-link {
+    margin-top: 1rem;
+  }
+
+  .policy-link a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .inline-link {
