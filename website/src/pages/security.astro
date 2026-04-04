@@ -78,6 +78,44 @@ import CTAFooter from "../components/CTAFooter.astro";
         </section>
       </div>
 
+      <section class="key-storage">
+        <h2>Key storage architecture</h2>
+        <p class="key-storage-intro">
+          Secrets pass through three layers, each with its own encryption and
+          access controls. At no point are credentials stored in plaintext or
+          exposed in logs or error messages.
+        </p>
+        <div class="layers">
+          <div class="layer">
+            <h3>Layer 1 — Control plane</h3>
+            <p>
+              OAuth tokens and API keys are encrypted with AES-256-GCM before
+              being written to the database. The encryption key is a Cloudflare
+              Worker secret — never committed to code or config. Database
+              connections use TLS via Cloudflare Hyperdrive.
+            </p>
+          </div>
+          <div class="layer">
+            <h3>Layer 2 — Fly.io app secrets</h3>
+            <p>
+              When credentials are pushed to a tenant's machine, sensitive values
+              are set via Fly's encrypted secrets API. Secrets are encrypted at
+              rest, injected as environment variables at boot, and are write-only
+              — they are never returned by any Fly API endpoint.
+            </p>
+          </div>
+          <div class="layer">
+            <h3>Layer 3 — Runtime isolation</h3>
+            <p>
+              Each tenant runs on a dedicated Fly machine with its own process
+              space. Secrets exist only as in-memory environment variables at
+              runtime. They are never written to disk, never logged, and never
+              included in error messages or API responses.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section class="principles">
         <h2>Our security principles</h2>
         <ul>
@@ -192,6 +230,50 @@ import CTAFooter from "../components/CTAFooter.astro";
   }
 
   .card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .key-storage {
+    margin-bottom: 4rem;
+  }
+
+  .key-storage h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .key-storage-intro {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .layer {
+    padding: 1.5rem 2rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .layer h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .layer p {
     font-size: 0.95rem;
     line-height: 1.6;
     color: var(--color-text-muted);
