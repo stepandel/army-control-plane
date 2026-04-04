@@ -48,7 +48,7 @@ export async function refreshLinearToken(
 
   if (!resp.ok) {
     const body = await resp.text();
-    console.error(`Linear token refresh failed for ${tenantId}: ${resp.status} ${body}`);
+    console.error(`Linear token refresh failed for ${tenantId}: ${resp.status}`);
     // If the refresh token was revoked, another process may have already refreshed it.
     // Check if the DB token has changed — if so, the refresh already happened.
     if (resp.status === 400 && body.includes("invalid_grant")) {
