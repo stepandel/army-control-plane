@@ -30,7 +30,7 @@ WEBSITE_URL = "https://army-website.stepandel.workers.dev"
 LANGSMITH_TRACING = "true"
 LANGSMITH_PROJECT = "anton-remote"
 ENABLE_LANGSMITH = "false"
-LANGFUSE_PUBLIC_KEY = ""
+LANGFUSE_PUBLIC_KEY = "pk-lf-8bf97bf2-34de-4532-91d4-724ab7f38feb"
 LANGFUSE_BASE_URL = "https://cloud.langfuse.com"
 
 [triggers]
