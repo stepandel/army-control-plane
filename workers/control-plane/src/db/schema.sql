@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS tenants (
   cpus          INTEGER,                     -- per-tenant CPU override (NULL = default 2)
   vera_production BOOLEAN NOT NULL DEFAULT true, -- VERA_PRODUCTION env var pushed to machine
   tracing_provider TEXT NOT NULL DEFAULT 'langfuse', -- 'langfuse' | 'langsmith' | 'none'
+  stripe_customer_id TEXT,                       -- Stripe customer ID for billing
+  stripe_subscription_id TEXT,                   -- Stripe subscription ID for active subscription
+  subscription_status TEXT NOT NULL DEFAULT 'trialing', -- trialing | active | past_due | canceled | suspended
+  trial_ends_at TIMESTAMPTZ,                     -- when the free trial expires (3 days from signup)
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -44,3 +48,10 @@ CREATE TABLE IF NOT EXISTS deployments (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tokens_tenant_platform ON integration_tokens(tenant_id, platform);
 CREATE INDEX IF NOT EXISTS idx_tokens_tenant ON integration_tokens(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_deployments_tenant ON deployments(tenant_id);
+
+-- Migration: add billing columns to tenants (safe to re-run)
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'trialing';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id);

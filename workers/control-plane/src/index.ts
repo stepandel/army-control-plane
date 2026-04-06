@@ -6,8 +6,11 @@ import admin from "./routes/admin";
 import deploy from "./routes/deploy";
 import internal from "./routes/internal";
 import apiOnboarding from "./routes/api-onboarding";
+import billing from "./routes/billing";
+import stripeWebhook from "./routes/stripe-webhook";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
+import { enforceExpiredTrials } from "./lib/trial";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -27,6 +30,8 @@ app.use(
 // Public routes
 app.route("/oauth", oauth);
 app.route("/api/onboarding", apiOnboarding);
+app.route("/api/onboarding", billing);
+app.route("/stripe/webhook", stripeWebhook);
 app.route("/internal", internal);
 app.route("/deploy", deploy);
 
@@ -38,5 +43,6 @@ export default {
   fetch: app.fetch,
   async scheduled(_event: ScheduledEvent, env: ControlPlaneEnv, _ctx: ExecutionContext) {
     await refreshExpiringTokens(env);
+    await enforceExpiredTrials(env);
   },
 };

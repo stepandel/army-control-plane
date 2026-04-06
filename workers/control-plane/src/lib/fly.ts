@@ -455,6 +455,11 @@ export class FlyClient {
     await this.request<void>("POST", `/machines/${machineId}/stop`);
   }
 
+  /** Start a stopped machine. */
+  async startMachine(machineId: string): Promise<void> {
+    await this.request<void>("POST", `/machines/${machineId}/start`);
+  }
+
   /** Destroy a machine permanently. */
   async destroyMachine(machineId: string): Promise<void> {
     await this.request<void>("DELETE", `/machines/${machineId}?force=true`);
