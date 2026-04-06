@@ -16,6 +16,7 @@ service = "army-control-plane"
 API_BASE_URL = "https://army-control-plane.stepandel.workers.dev"
 SHOW_BYOK = "false"
 
+[observability]
 [observability.logs]
-enabled = false
+enabled = true
 invocation_logs = true
