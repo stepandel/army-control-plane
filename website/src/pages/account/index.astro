@@ -1,0 +1,240 @@
+---
+export const prerender = false;
+
+import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
+import { verifyJwt } from "../../lib/jwt";
+
+const env = Astro.locals.runtime.env;
+const apiBase = env.API_BASE_URL;
+const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
+
+// Verify session
+const cookie = Astro.request.headers.get("cookie");
+const sessionToken = cookie?.match(/(?:^|;\s*)__Host-session=([^;]*)/)?.[1];
+
+if (!sessionToken) {
+  return Astro.redirect("/sign-in");
+}
+
+const session = await verifyJwt(sessionToken, env.SESSION_SECRET);
+if (!session) {
+  return Astro.redirect("/sign-in");
+}
+
+// Fetch tenant data via service binding (forward cookie so sessionGuard sees it)
+const res = await controlPlane.fetch("https://api/api/account/tenant", {
+  headers: { cookie: cookie ?? "" },
+});
+
+if (!res.ok) {
+  return Astro.redirect("/sign-in");
+}
+
+const data = await res.json() as {
+  tenant: {
+    id: string;
+    name: string;
+    status: string;
+    has_anthropic_key: boolean;
+    subscription_status: string;
+    trial_ends_at: string | null;
+    trial_days_remaining: number;
+  };
+  integrations: string[];
+};
+
+const { tenant, integrations } = data;
+const connected = new Set(integrations);
+const isActive = tenant.status === "active";
+
+const linearUrl = `${apiBase}/oauth/linear/install?tenant_id=${tenant.id}`;
+const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
+---
+
+<OnboardingLayout title="Vera — Account">
+  <div class="account">
+    <div class="account-header">
+      <h1>{tenant.name}</h1>
+      <p class="subtitle">Team dashboard</p>
+    </div>
+
+    <nav class="account-nav">
+      <a href="/account" class="active">Overview</a>
+      <a href="/account/billing">Billing</a>
+    </nav>
+
+    <div class="section">
+      <h2>Integrations</h2>
+      <div class="integrations">
+        <div class={`integration ${connected.has("slack") ? "connected" : ""}`}>
+          <span class="name">Slack</span>
+          <span class={`status ${connected.has("slack") ? "ok" : "missing"}`}>
+            {connected.has("slack") ? "Connected" : "Not connected"}
+          </span>
+        </div>
+
+        <div class={`integration ${connected.has("linear") ? "connected" : ""}`}>
+          <span class="name">Linear</span>
+          <span class={`status ${connected.has("linear") ? "ok" : "missing"}`}>
+            {connected.has("linear") ? "Connected" : "Not connected"}
+          </span>
+          {!connected.has("linear") && isActive && (
+            <a href={linearUrl} class="btn btn-sm">Connect</a>
+          )}
+        </div>
+
+        <div class={`integration ${connected.has("github") ? "connected" : ""}`}>
+          <span class="name">GitHub</span>
+          <span class={`status ${connected.has("github") ? "ok" : "missing"}`}>
+            {connected.has("github") ? "Connected" : "Not connected"}
+          </span>
+          {!connected.has("github") && isActive && (
+            <a href={githubUrl} class="btn btn-sm">Connect</a>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Session</h2>
+      <p class="session-info">
+        Signed in as <strong>{session.name ?? session.email ?? session.slack_uid}</strong>
+      </p>
+      <button class="btn btn-danger" id="sign-out-btn">Sign out</button>
+    </div>
+  </div>
+</OnboardingLayout>
+
+<script define:vars={{ apiBase }}>
+  const signOutBtn = document.getElementById("sign-out-btn");
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", async () => {
+      try {
+        await fetch(`${apiBase}/api/account/sign-out`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {}
+      window.location.href = "/sign-in";
+    });
+  }
+</script>
+
+<style>
+  .account-header { margin-bottom: 1.5rem; }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    opacity: 0.6;
+  }
+
+  .account-nav {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid rgba(13, 40, 24, 0.15);
+    margin-bottom: 2rem;
+  }
+
+  .account-nav a {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    margin-bottom: -1px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    border-bottom: 2px solid transparent;
+  }
+
+  .account-nav a:hover { opacity: 0.85; }
+
+  .account-nav a.active {
+    opacity: 1;
+    border-bottom-color: var(--color-text);
+  }
+
+  .section { margin-bottom: 2rem; }
+
+  .section h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .integrations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .integration {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 8px;
+  }
+
+  .integration.connected {
+    border-color: #166534;
+    background: rgba(22, 101, 52, 0.06);
+  }
+
+  .name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex: 1;
+  }
+
+  .status { font-size: 0.8rem; }
+  .status.ok { color: #166534; }
+  .status.missing { opacity: 0.5; }
+
+  .session-info {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .btn-sm {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .btn-sm:hover {
+    opacity: 0.85;
+    color: var(--color-bg);
+  }
+
+  .btn-danger {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  .btn-danger:hover {
+    background: rgba(220, 38, 38, 0.15);
+  }
+</style>
