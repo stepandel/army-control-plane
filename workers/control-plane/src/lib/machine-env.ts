@@ -24,14 +24,21 @@ export function buildMachineEnv(
   veraProduction?: boolean,
   telemetryEnabled?: boolean,
 ): MachineEnvResult {
+  const langsmithEnabled = env.ENABLE_LANGSMITH === "true";
+
   const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
     ANTHROPIC_API_KEY: (tenantAnthropicKey && tenantAnthropicKey !== "null") ? tenantAnthropicKey : env.ANTHROPIC_API_KEY,
     BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
     LINEAR_CLIENT_SECRET: env.LINEAR_CLIENT_SECRET,
-    LANGSMITH_API_KEY: env.LANGSMITH_API_KEY,
+    LANGFUSE_SECRET_KEY: env.LANGFUSE_SECRET_KEY,
   };
+
+  // Only pass LangSmith API key when explicitly opted in
+  if (langsmithEnabled) {
+    secrets.LANGSMITH_API_KEY = env.LANGSMITH_API_KEY;
+  }
 
   for (const t of tokens) {
     const suffix = t.platform === "github" && t.token_type === "installation" ? "ID" : "TOKEN";
@@ -46,10 +53,16 @@ export function buildMachineEnv(
     CONTROL_PLANE_URL: env.BASE_URL,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
-    LANGSMITH_TRACING: telemetry ? env.LANGSMITH_TRACING : "false",
-    LANGSMITH_PROJECT: env.LANGSMITH_PROJECT,
+    LANGFUSE_PUBLIC_KEY: env.LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_BASE_URL: env.LANGFUSE_BASE_URL,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
   };
+
+  // Only pass LangSmith config when explicitly opted in
+  if (langsmithEnabled && telemetry) {
+    config.LANGSMITH_TRACING = env.LANGSMITH_TRACING;
+    config.LANGSMITH_PROJECT = env.LANGSMITH_PROJECT;
+  }
 
   return { secrets, config };
 }

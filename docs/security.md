@@ -165,6 +165,8 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
 | `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |
 | `BRAVE_API_KEY` | Brave Search API key (pushed to tenant machines) |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key for LLM tracing (pushed to tenant machines) |
+| `LANGSMITH_API_KEY` | LangSmith API key — opt-in only when `ENABLE_LANGSMITH=true` (pushed to tenant machines) |
 | `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access JWT validation |
 | `CF_ACCESS_AUD` | Cloudflare Access audience check |
 
