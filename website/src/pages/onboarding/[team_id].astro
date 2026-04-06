@@ -14,7 +14,15 @@ if (!res.ok) {
 }
 
 const data = await res.json() as {
-  tenant: { id: string; name: string; status: string; has_anthropic_key: boolean };
+  tenant: {
+    id: string;
+    name: string;
+    status: string;
+    has_anthropic_key: boolean;
+    subscription_status: string;
+    trial_ends_at: string | null;
+    trial_days_remaining: number;
+  };
   integrations: string[];
 };
 
@@ -22,9 +30,17 @@ const { tenant, integrations } = data;
 const connected = new Set(integrations);
 const isActive = tenant.status === "active";
 const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
+const isSuspended = tenant.status === "suspended";
 const showByok = env.SHOW_BYOK === "true";
 const hasCustomKey = tenant.has_anthropic_key;
 const allDone = connected.has("slack") && connected.has("linear") && connected.has("github");
+
+const subStatus = tenant.subscription_status;
+const isTrialing = subStatus === "trialing";
+const isSubscribed = subStatus === "active";
+const isPastDue = subStatus === "past_due";
+const isCanceled = subStatus === "canceled" || subStatus === "suspended";
+const trialDays = tenant.trial_days_remaining;
 
 const linearUrl = `${apiBase}/oauth/linear/install?tenant_id=${team_id}`;
 const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
@@ -36,113 +52,180 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
     data-api-base={apiBase}
     data-team-id={team_id}
   >
-    <h1>Welcome, {tenant.name}</h1>
-    <p class="subtitle">Connect your tools to finish setting up Vera.</p>
-
-    <div class="steps">
-      <!-- Slack: always connected -->
-      <div class="step connected">
-        <div class="step-number">&#10003;</div>
-        <div class="step-body">
-          <div class="step-title">Slack</div>
-          <div class="step-desc">Connected</div>
+    <!-- Suspended / paywall overlay -->
+    {isSuspended && (
+      <div class="paywall">
+        <div class="paywall-icon">🔒</div>
+        <h1>Your trial has ended</h1>
+        <p class="paywall-desc">
+          Subscribe to continue using Vera for your team.
+        </p>
+        <div class="paywall-price">
+          <span class="price">$30</span>
+          <span class="price-period">/month</span>
         </div>
-        <span class="badge badge-ok">Done</span>
+        <button class="btn btn-subscribe" id="subscribe-btn">
+          Subscribe &rarr;
+        </button>
+        <p class="paywall-note">Cancel anytime. Instant reactivation.</p>
       </div>
+    )}
 
-      <!-- Provisioning -->
-      {isProvisioning && (
-        <div class="step active">
-          <div class="step-number">&#8987;</div>
-          <div class="step-body">
-            <div class="step-title">Provisioning your instance</div>
-            <div class="provisioning">
-              <div class="spinner"></div>
-              Setting up your Fly machine&hellip;
+    <!-- Normal onboarding content (hidden when suspended) -->
+    {!isSuspended && (
+      <Fragment>
+        <h1>Welcome, {tenant.name}</h1>
+        <p class="subtitle">Connect your tools to finish setting up Vera.</p>
+
+        <!-- Billing banner -->
+        {isTrialing && trialDays > 0 && (
+          <div class="billing-banner trial-banner">
+            <div class="banner-content">
+              <span class="banner-icon">⏱</span>
+              <span>
+                {trialDays === 1 ? "1 day" : `${trialDays} days`} left on your free trial
+              </span>
             </div>
+            <button class="btn btn-upgrade" id="upgrade-btn">Upgrade to Pro &rarr;</button>
           </div>
-        </div>
-      )}
+        )}
 
-      <!-- Linear -->
-      <div class={`step ${connected.has("linear") ? "connected" : isActive ? "active" : "disabled"}`}>
-        <div class="step-number">{connected.has("linear") ? "\u2713" : "2"}</div>
-        <div class="step-body">
-          <div class="step-title">Linear</div>
-          <div class="step-desc">
-            {connected.has("linear") ? "Connected" : "Issue tracking and project management"}
-          </div>
-        </div>
-        {connected.has("linear") ? (
-          <span class="badge badge-ok">Done</span>
-        ) : isActive ? (
-          <a href={linearUrl} class="btn btn-primary">Connect</a>
-        ) : null}
-      </div>
-
-      <!-- GitHub -->
-      <div class={`step ${connected.has("github") ? "connected" : isActive ? "active" : "disabled"}`}>
-        <div class="step-number">{connected.has("github") ? "\u2713" : "3"}</div>
-        <div class="step-body">
-          <div class="step-title">GitHub</div>
-          <div class="step-desc">
-            {connected.has("github") ? "Connected" : "Code repositories and pull requests"}
-          </div>
-        </div>
-        {connected.has("github") ? (
-          <span class="badge badge-ok">Done</span>
-        ) : isActive ? (
-          <a href={githubUrl} class="btn btn-primary">Connect</a>
-        ) : null}
-      </div>
-
-      <!-- Anthropic API Key -->
-      {showByok && (
-        <div class={`step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}`}>
-          <div class="step-number">{hasCustomKey ? "\u2713" : "\u2699"}</div>
-          <div class="step-body">
-            <div class="step-title">
-              Anthropic API Key <span class="step-optional">Optional</span>
+        {isTrialing && trialDays === 0 && (
+          <div class="billing-banner warning-banner">
+            <div class="banner-content">
+              <span class="banner-icon">⚠️</span>
+              <span>Your trial expires today</span>
             </div>
-            <div class="step-desc">
-              {hasCustomKey ? (
-                "Custom key configured"
-              ) : (
-                <Fragment>
-                  Using shared key &mdash;{" "}
-                  <a
-                    href="https://console.anthropic.com/settings/keys"
-                    target="_blank"
-                    rel="noopener"
-                    class="link-inline"
-                  >get your key</a>
-                </Fragment>
+            <button class="btn btn-upgrade" id="upgrade-btn">Upgrade now &rarr;</button>
+          </div>
+        )}
+
+        {isSubscribed && (
+          <div class="billing-banner active-banner">
+            <div class="banner-content">
+              <span class="banner-icon">✓</span>
+              <span>Pro plan — active</span>
+            </div>
+            <button class="btn btn-manage" id="manage-billing-btn">Manage billing</button>
+          </div>
+        )}
+
+        {isPastDue && (
+          <div class="billing-banner warning-banner">
+            <div class="banner-content">
+              <span class="banner-icon">⚠️</span>
+              <span>Payment failed — please update your payment method</span>
+            </div>
+            <button class="btn btn-upgrade" id="manage-billing-btn">Update payment &rarr;</button>
+          </div>
+        )}
+
+        <div class="steps">
+          <!-- Slack: always connected -->
+          <div class="step connected">
+            <div class="step-number">&#10003;</div>
+            <div class="step-body">
+              <div class="step-title">Slack</div>
+              <div class="step-desc">Connected</div>
+            </div>
+            <span class="badge badge-ok">Done</span>
+          </div>
+
+          <!-- Provisioning -->
+          {isProvisioning && (
+            <div class="step active">
+              <div class="step-number">&#8987;</div>
+              <div class="step-body">
+                <div class="step-title">Provisioning your instance</div>
+                <div class="provisioning">
+                  <div class="spinner"></div>
+                  Setting up your Fly machine&hellip;
+                </div>
+              </div>
+            </div>
+          )}
+
+          <!-- Linear -->
+          <div class={`step ${connected.has("linear") ? "connected" : isActive ? "active" : "disabled"}`}>
+            <div class="step-number">{connected.has("linear") ? "\u2713" : "2"}</div>
+            <div class="step-body">
+              <div class="step-title">Linear</div>
+              <div class="step-desc">
+                {connected.has("linear") ? "Connected" : "Issue tracking and project management"}
+              </div>
+            </div>
+            {connected.has("linear") ? (
+              <span class="badge badge-ok">Done</span>
+            ) : isActive ? (
+              <a href={linearUrl} class="btn btn-primary">Connect</a>
+            ) : null}
+          </div>
+
+          <!-- GitHub -->
+          <div class={`step ${connected.has("github") ? "connected" : isActive ? "active" : "disabled"}`}>
+            <div class="step-number">{connected.has("github") ? "\u2713" : "3"}</div>
+            <div class="step-body">
+              <div class="step-title">GitHub</div>
+              <div class="step-desc">
+                {connected.has("github") ? "Connected" : "Code repositories and pull requests"}
+              </div>
+            </div>
+            {connected.has("github") ? (
+              <span class="badge badge-ok">Done</span>
+            ) : isActive ? (
+              <a href={githubUrl} class="btn btn-primary">Connect</a>
+            ) : null}
+          </div>
+
+          <!-- Anthropic API Key -->
+          {showByok && (
+            <div class={`step ${hasCustomKey ? "connected" : isActive ? "active" : "disabled"}`}>
+              <div class="step-number">{hasCustomKey ? "\u2713" : "\u2699"}</div>
+              <div class="step-body">
+                <div class="step-title">
+                  Anthropic API Key <span class="step-optional">Optional</span>
+                </div>
+                <div class="step-desc">
+                  {hasCustomKey ? (
+                    "Custom key configured"
+                  ) : (
+                    <Fragment>
+                      Using shared key &mdash;{" "}
+                      <a
+                        href="https://console.anthropic.com/settings/keys"
+                        target="_blank"
+                        rel="noopener"
+                        class="link-inline"
+                      >get your key</a>
+                    </Fragment>
+                  )}
+                </div>
+                {isActive && !hasCustomKey && (
+                  <form class="key-form" id="key-form">
+                    <input
+                      type="password"
+                      class="key-input"
+                      id="anthropic-key"
+                      placeholder="sk-ant-..."
+                      required
+                    />
+                    <button type="submit" class="btn btn-primary">Save</button>
+                  </form>
+                )}
+              </div>
+              {hasCustomKey && (
+                <button class="btn btn-danger" id="remove-key-btn">Reset</button>
               )}
             </div>
-            {isActive && !hasCustomKey && (
-              <form class="key-form" id="key-form">
-                <input
-                  type="password"
-                  class="key-input"
-                  id="anthropic-key"
-                  placeholder="sk-ant-..."
-                  required
-                />
-                <button type="submit" class="btn btn-primary">Save</button>
-              </form>
-            )}
-          </div>
-          {hasCustomKey && (
-            <button class="btn btn-danger" id="remove-key-btn">Reset</button>
           )}
         </div>
-      )}
-    </div>
 
-    {allDone && (
-      <div class="done-banner">
-        All integrations connected &mdash; Vera is ready to go.
-      </div>
+        {allDone && (
+          <div class="done-banner">
+            All integrations connected &mdash; Vera is ready to go.
+          </div>
+        )}
+      </Fragment>
     )}
   </div>
 </OnboardingLayout>
@@ -169,52 +252,96 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
   </script>
 )}
 
-{isActive && (
-  <script>
-    const el = document.getElementById("onboarding-app");
-    const API_BASE = el?.dataset.apiBase ?? "";
-    const TEAM_ID = el?.dataset.teamId ?? "";
+<script>
+  const el = document.getElementById("onboarding-app");
+  const API_BASE = el?.dataset.apiBase ?? "";
+  const TEAM_ID = el?.dataset.teamId ?? "";
 
-    const form = document.getElementById("key-form");
-    if (form) {
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const input = document.getElementById("anthropic-key") as HTMLInputElement;
-        const key = input.value;
-        const res = await fetch(
-          `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ api_key: key }),
-          }
-        );
-        if (res.ok) {
-          location.reload();
-        } else {
-          const d = await res.json();
-          alert(d.error || "Failed to save key");
-        }
-      });
+  // ── Billing: Subscribe / Upgrade ──────────────────────────────
+  async function handleCheckout() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/onboarding/${TEAM_ID}/checkout`,
+        { method: "POST", headers: { "Content-Type": "application/json" } }
+      );
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to create checkout session");
+      }
+    } catch {
+      alert("Failed to connect to billing service");
     }
+  }
 
-    const removeBtn = document.getElementById("remove-key-btn");
-    if (removeBtn) {
-      removeBtn.addEventListener("click", async () => {
-        if (!confirm("Reset to shared key?")) return;
+  const subscribeBtn = document.getElementById("subscribe-btn");
+  if (subscribeBtn) subscribeBtn.addEventListener("click", handleCheckout);
+
+  const upgradeBtn = document.getElementById("upgrade-btn");
+  if (upgradeBtn) upgradeBtn.addEventListener("click", handleCheckout);
+
+  // ── Billing: Manage / Portal ──────────────────────────────────
+  const manageBillingBtn = document.getElementById("manage-billing-btn");
+  if (manageBillingBtn) {
+    manageBillingBtn.addEventListener("click", async () => {
+      try {
         const res = await fetch(
-          `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
-          { method: "DELETE" }
+          `${API_BASE}/api/onboarding/${TEAM_ID}/billing/portal`,
+          { method: "POST", headers: { "Content-Type": "application/json" } }
         );
-        if (res.ok) {
-          location.reload();
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
         } else {
-          alert("Failed to remove key");
+          alert(data.error || "Failed to open billing portal");
         }
-      });
-    }
-  </script>
-)}
+      } catch {
+        alert("Failed to connect to billing service");
+      }
+    });
+  }
+
+  // ── BYOK: Anthropic Key ───────────────────────────────────────
+  const form = document.getElementById("key-form");
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("anthropic-key") as HTMLInputElement;
+      const key = input.value;
+      const res = await fetch(
+        `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ api_key: key }),
+        }
+      );
+      if (res.ok) {
+        location.reload();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to save key");
+      }
+    });
+  }
+
+  const removeBtn = document.getElementById("remove-key-btn");
+  if (removeBtn) {
+    removeBtn.addEventListener("click", async () => {
+      if (!confirm("Reset to shared key?")) return;
+      const res = await fetch(
+        `${API_BASE}/api/onboarding/${TEAM_ID}/anthropic-key`,
+        { method: "DELETE" }
+      );
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert("Failed to remove key");
+      }
+    });
+  }
+</script>
 
 <style>
   h1 {
@@ -227,10 +354,166 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
   .subtitle {
     color: var(--color-text-muted);
     font-size: 0.95rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     line-height: 1.5;
     opacity: 0.7;
   }
+
+  /* ── Paywall (suspended state) ───────────────────────────────── */
+
+  .paywall {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+
+  .paywall-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .paywall h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .paywall-desc {
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .paywall-price {
+    margin-bottom: 1.5rem;
+  }
+
+  .price {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  .price-period {
+    font-size: 1.1rem;
+    opacity: 0.5;
+    font-weight: 500;
+  }
+
+  .btn-subscribe {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 2.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--color-text);
+    color: var(--color-bg);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .btn-subscribe:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .paywall-note {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.4;
+  }
+
+  /* ── Billing banners ─────────────────────────────────────────── */
+
+  .billing-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .banner-icon {
+    font-size: 1rem;
+  }
+
+  .trial-banner {
+    background: rgba(146, 64, 14, 0.06);
+    border: 1px solid rgba(146, 64, 14, 0.2);
+    color: #92400e;
+  }
+
+  .warning-banner {
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: #dc2626;
+  }
+
+  .active-banner {
+    background: rgba(22, 101, 52, 0.06);
+    border: 1px solid rgba(22, 101, 52, 0.2);
+    color: #166534;
+  }
+
+  .btn-upgrade {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--color-text);
+    color: var(--color-bg);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .btn-upgrade:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .btn-manage {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.875rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(22, 101, 52, 0.1);
+    color: #166534;
+    border: 1px solid rgba(22, 101, 52, 0.2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .btn-manage:hover {
+    background: rgba(22, 101, 52, 0.15);
+  }
+
+  /* ── Steps ───────────────────────────────────────────────────── */
 
   .steps {
     display: flex;
