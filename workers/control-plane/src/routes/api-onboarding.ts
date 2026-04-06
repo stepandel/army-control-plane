@@ -12,11 +12,17 @@ apiOnboarding.get("/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
 
-  const [tenant] = await sql`SELECT id, name, status, anthropic_api_key, tracing_provider FROM tenants WHERE id = ${teamId}`;
+  const [tenant] = await sql`SELECT id, name, status, anthropic_api_key, tracing_provider, subscription_status, trial_ends_at FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "not_found" }, 404);
 
   const tokens =
     await sql`SELECT platform FROM integration_tokens WHERE tenant_id = ${teamId}`;
+
+  const now = new Date();
+  const trialEndsAt = tenant.trial_ends_at ? new Date(tenant.trial_ends_at) : null;
+  const trialDaysRemaining = trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   return c.json({
     tenant: {
@@ -25,6 +31,9 @@ apiOnboarding.get("/:team_id", async (c) => {
       status: tenant.status,
       has_anthropic_key: !!tenant.anthropic_api_key,
       tracing_provider: tenant.tracing_provider,
+      subscription_status: tenant.subscription_status,
+      trial_ends_at: tenant.trial_ends_at,
+      trial_days_remaining: trialDaysRemaining,
     },
     integrations: tokens.map((t) => (t as Record<string, string>).platform),
   });

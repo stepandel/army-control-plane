@@ -23,6 +23,7 @@ export function buildMachineEnv(
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
   tracingProvider?: string,
+  subscriptionStatus?: string,
 ): MachineEnvResult {
   const tracing = tracingProvider ?? "langfuse";
 
@@ -52,6 +53,7 @@ export function buildMachineEnv(
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
+    SUBSCRIPTION_STATUS: subscriptionStatus ?? "trialing",
   };
 
   if (tracing === "langfuse") {
