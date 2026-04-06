@@ -6,6 +6,12 @@ export interface TenantRoute {
   internal_secret: string;
   /** Fly machine ID — stored for reference, no longer used for routing (app-per-tenant = auto-routing) */
   fly_machine_id?: string;
+  /** Billing gate — checked by the router before forwarding (optional for backward compat) */
+  subscription_status?: string;
+  /** ISO 8601 — when the free trial ends (only set when subscription_status === "trialing") */
+  trial_ends_at?: string;
+  /** ISO 8601 — past_due grace period deadline (7 days from first failure) */
+  grace_deadline?: string;
 }
 
 // ── Webhook source discriminator ─────────────────────────────────

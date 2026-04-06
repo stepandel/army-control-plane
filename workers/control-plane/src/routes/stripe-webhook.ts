@@ -3,6 +3,9 @@ import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { verifyWebhookSignature } from "../lib/stripe";
 import { FlyClient } from "../lib/fly";
+import { syncBillingToKv } from "../lib/billing-sync";
+
+const GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
 const stripeWebhook = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -108,6 +111,9 @@ stripeWebhook.post("/", async (c) => {
       }
 
       await updateSubscriptionStatus(sql, tenant.id, "active", subscriptionId);
+      // Clear any past_due grace deadline now that we're paid
+      await sql`UPDATE tenants SET grace_deadline = NULL WHERE id = ${tenant.id}`;
+      await syncBillingToKv(c.env, tenant.id, "active", null, null);
 
       // If tenant was suspended, reactivate
       if (tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
@@ -150,6 +156,16 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, newStatus, subscriptionId);
 
+      // Manage grace_deadline alongside status
+      let graceDeadline: string | null = null;
+      if (newStatus === "past_due") {
+        graceDeadline = new Date(Date.now() + GRACE_PERIOD_MS).toISOString();
+        await sql`UPDATE tenants SET grace_deadline = ${graceDeadline}::timestamptz WHERE id = ${tenant.id}`;
+      } else if (newStatus === "active") {
+        await sql`UPDATE tenants SET grace_deadline = NULL WHERE id = ${tenant.id}`;
+      }
+      await syncBillingToKv(c.env, tenant.id, newStatus, undefined, graceDeadline);
+
       // Reactivate if going from suspended → active
       if (newStatus === "active" && tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
         c.executionCtx.waitUntil(
@@ -171,9 +187,10 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, "canceled");
       await sql`
-        UPDATE tenants SET stripe_subscription_id = NULL, updated_at = now()
+        UPDATE tenants SET stripe_subscription_id = NULL, grace_deadline = NULL, updated_at = now()
         WHERE id = ${tenant.id}
       `;
+      await syncBillingToKv(c.env, tenant.id, "canceled", null, null);
 
       // Suspend the tenant — stop their machine
       if (tenant.fly_app_name && tenant.fly_machine_id && tenant.status === "active") {
@@ -195,6 +212,21 @@ stripeWebhook.post("/", async (c) => {
       if (!tenant) break;
 
       await updateSubscriptionStatus(sql, tenant.id, "past_due");
+
+      // Set 7-day grace deadline (only if one isn't already set)
+      const [existing] = await sql`
+        SELECT grace_deadline FROM tenants WHERE id = ${tenant.id}
+      `;
+      let graceDeadline: string;
+      if (existing?.grace_deadline) {
+        graceDeadline = new Date(existing.grace_deadline).toISOString();
+      } else {
+        graceDeadline = new Date(Date.now() + GRACE_PERIOD_MS).toISOString();
+        await sql`
+          UPDATE tenants SET grace_deadline = ${graceDeadline}::timestamptz WHERE id = ${tenant.id}
+        `;
+      }
+      await syncBillingToKv(c.env, tenant.id, "past_due", undefined, graceDeadline);
       break;
     }
 
