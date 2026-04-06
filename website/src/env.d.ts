@@ -5,6 +5,7 @@ type Runtime = import("@astrojs/cloudflare").Runtime<{
   API_BASE_URL: string;
   SHOW_BYOK: string;
   CONTROL_PLANE: { fetch: typeof fetch };
+  SESSION_SECRET: string;
 }>;
 
 declare namespace App {

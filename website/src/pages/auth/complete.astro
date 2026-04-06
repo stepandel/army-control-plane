@@ -1,0 +1,21 @@
+---
+export const prerender = false;
+
+const url = new URL(Astro.request.url);
+const token = url.searchParams.get("token");
+const next = url.searchParams.get("next") || "/account";
+
+if (!token) {
+  return Astro.redirect("/sign-in");
+}
+
+// Set the session cookie and redirect
+const headers = new Headers();
+headers.append(
+  "set-cookie",
+  `__Host-session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 60 * 60}`,
+);
+headers.append("location", next);
+
+return new Response(null, { status: 302, headers });
+---
