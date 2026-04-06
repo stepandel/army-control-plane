@@ -51,4 +51,7 @@ export interface ControlPlaneEnv {
   LANGFUSE_PUBLIC_KEY: string;
   LANGFUSE_BASE_URL: string;
   ENCRYPTION_KEY: string;
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_PRICE_ID: string;
 }
