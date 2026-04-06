@@ -201,13 +201,14 @@ admin.patch("/tenants/:team_id/vera-production", async (c) => {
   return c.json({ team_id: teamId, vera_production: body.enabled });
 });
 
-/** PATCH /admin/tenants/:team_id/telemetry — toggle LangSmith tracing for a tenant */
-admin.patch("/tenants/:team_id/telemetry", async (c) => {
+/** PATCH /admin/tenants/:team_id/tracing-provider — set tracing provider for a tenant */
+admin.patch("/tenants/:team_id/tracing-provider", async (c) => {
   const teamId = c.req.param("team_id");
-  const body = await c.req.json<{ enabled: boolean }>();
+  const body = await c.req.json<{ provider: string }>();
 
-  if (typeof body.enabled !== "boolean") {
-    return c.json({ error: "Request body must include { enabled: boolean }" }, 400);
+  const validProviders = ["langfuse", "langsmith", "none"];
+  if (!validProviders.includes(body.provider)) {
+    return c.json({ error: `provider must be one of: ${validProviders.join(", ")}` }, 400);
   }
 
   const sql = getDb(c.env);
@@ -215,7 +216,7 @@ admin.patch("/tenants/:team_id/telemetry", async (c) => {
   if (!tenant) return c.json({ error: "Not found" }, 404);
 
   await sql`
-    UPDATE tenants SET telemetry_enabled = ${body.enabled}, updated_at = now()
+    UPDATE tenants SET tracing_provider = ${body.provider}, updated_at = now()
     WHERE id = ${teamId}
   `;
 
@@ -224,11 +225,11 @@ admin.patch("/tenants/:team_id/telemetry", async (c) => {
       await pushCredentials(c.env, teamId);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      return c.json({ team_id: teamId, telemetry_enabled: body.enabled, push_error: message }, 200);
+      return c.json({ team_id: teamId, tracing_provider: body.provider, push_error: message }, 200);
     }
   }
 
-  return c.json({ team_id: teamId, telemetry_enabled: body.enabled });
+  return c.json({ team_id: teamId, tracing_provider: body.provider });
 });
 
 /** POST /admin/tenants/push-credentials — push credentials to all active tenants */

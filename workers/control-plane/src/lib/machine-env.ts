@@ -22,9 +22,9 @@ export function buildMachineEnv(
   tokens: readonly Record<string, string>[],
   tenantAnthropicKey?: string | null,
   veraProduction?: boolean,
-  telemetryEnabled?: boolean,
+  tracingProvider?: string,
 ): MachineEnvResult {
-  const langsmithEnabled = env.ENABLE_LANGSMITH === "true";
+  const tracing = tracingProvider ?? "langfuse";
 
   const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
@@ -32,11 +32,11 @@ export function buildMachineEnv(
     BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
     LINEAR_CLIENT_SECRET: env.LINEAR_CLIENT_SECRET,
-    LANGFUSE_SECRET_KEY: env.LANGFUSE_SECRET_KEY,
   };
 
-  // Only pass LangSmith API key when explicitly opted in
-  if (langsmithEnabled) {
+  if (tracing === "langfuse") {
+    secrets.LANGFUSE_SECRET_KEY = env.LANGFUSE_SECRET_KEY;
+  } else if (tracing === "langsmith") {
     secrets.LANGSMITH_API_KEY = env.LANGSMITH_API_KEY;
   }
 
@@ -46,20 +46,18 @@ export function buildMachineEnv(
     secrets[key] = t.access_token;
   }
 
-  const telemetry = telemetryEnabled ?? true;
-
   const config: Record<string, string> = {
     TEAM_ID: tenantId,
     CONTROL_PLANE_URL: env.BASE_URL,
     GITHUB_APP_ID: env.GITHUB_APP_ID,
     LINEAR_CLIENT_ID: env.LINEAR_CLIENT_ID,
-    LANGFUSE_PUBLIC_KEY: env.LANGFUSE_PUBLIC_KEY,
-    LANGFUSE_BASE_URL: env.LANGFUSE_BASE_URL,
     VERA_PRODUCTION: (veraProduction ?? true) ? "true" : "false",
   };
 
-  // Only pass LangSmith config when explicitly opted in
-  if (langsmithEnabled && telemetry) {
+  if (tracing === "langfuse") {
+    config.LANGFUSE_PUBLIC_KEY = env.LANGFUSE_PUBLIC_KEY;
+    config.LANGFUSE_BASE_URL = env.LANGFUSE_BASE_URL;
+  } else if (tracing === "langsmith") {
     config.LANGSMITH_TRACING = env.LANGSMITH_TRACING;
     config.LANGSMITH_PROJECT = env.LANGSMITH_PROJECT;
   }

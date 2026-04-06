@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   memory_mb     INTEGER,                     -- per-tenant memory override (NULL = default 1024)
   cpus          INTEGER,                     -- per-tenant CPU override (NULL = default 2)
   vera_production BOOLEAN NOT NULL DEFAULT true, -- VERA_PRODUCTION env var pushed to machine
-  telemetry_enabled BOOLEAN NOT NULL DEFAULT true, -- controls LANGSMITH_TRACING on tenant machine
+  tracing_provider TEXT NOT NULL DEFAULT 'langfuse', -- 'langfuse' | 'langsmith' | 'none'
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
