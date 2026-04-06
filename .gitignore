@@ -9,3 +9,6 @@ dist/
 
 # Astro generated
 website/.astro/
+
+# Agent state
+.vera/

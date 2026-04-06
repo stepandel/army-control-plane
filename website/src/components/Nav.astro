@@ -21,7 +21,10 @@ const { minimal = false } = Astro.props;
       </div>
     )}
     {!minimal && (
-      <a href="/onboarding" class="nav-cta">Install Vera →</a>
+      <div class="nav-cta-group">
+        <a href="/sign-in" class="nav-signin">Sign in</a>
+        <a href="/onboarding" class="nav-cta">Install Vera →</a>
+      </div>
     )}
     {!minimal && (
       <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
@@ -99,6 +102,24 @@ const { minimal = false } = Astro.props;
   }
 
   .nav-links a:hover {
+    color: var(--color-text);
+  }
+
+  .nav-cta-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-signin {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+
+  .nav-signin:hover {
     color: var(--color-text);
   }
 
