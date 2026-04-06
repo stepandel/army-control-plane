@@ -49,9 +49,23 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tokens_tenant_platform ON integration_toke
 CREATE INDEX IF NOT EXISTS idx_tokens_tenant ON integration_tokens(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_deployments_tenant ON deployments(tenant_id);
 
+CREATE TABLE IF NOT EXISTS users (
+  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  slack_user_id   TEXT NOT NULL,
+  slack_team_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email           TEXT,
+  name            TEXT,
+  avatar_url      TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_slack ON users(slack_team_id, slack_user_id);
+CREATE INDEX IF NOT EXISTS idx_users_team ON users(slack_team_id);
+
 -- Migration: add billing columns to tenants (safe to re-run)
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'trialing';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS grace_deadline TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id);
