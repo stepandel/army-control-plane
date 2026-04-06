@@ -45,12 +45,22 @@ interface MachineConfig {
   image: string;
   env?: Record<string, string>;
   guest: GuestConfig;
+  restart?: { policy: string; max_retries?: number };
   mounts?: Array<{
     volume: string;
     name: string;
     path: string;
   }>;
   services?: ServiceConfig[];
+  checks?: Record<string, {
+    type: string;
+    port: number;
+    method?: string;
+    path?: string;
+    interval: string;
+    timeout: string;
+    grace_period?: string;
+  }>;
   metrics?: {
     port: number;
     path: string;
@@ -326,10 +336,22 @@ export class FlyClient {
         image: this.image,
         env,
         guest: guest ?? MACHINE_GUEST,
+        restart: { policy: "always" },
         ...(volumeId
           ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
           : {}),
         services: this.buildServiceConfig(),
+        checks: {
+          "http-alive": {
+            type: "http",
+            port: 3000,
+            method: "GET",
+            path: "/health",
+            interval: "15s",
+            timeout: "5s",
+            grace_period: "30s",
+          },
+        },
         metrics: { port: 3000, path: "/metrics" },
       },
     };
@@ -349,10 +371,22 @@ export class FlyClient {
         image: this.image,
         env,
         guest: guest ?? MACHINE_GUEST,
+        restart: { policy: "always" },
         ...(volumeId
           ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
           : {}),
         services: this.buildServiceConfig(),
+        checks: {
+          "http-alive": {
+            type: "http",
+            port: 3000,
+            method: "GET",
+            path: "/health",
+            interval: "15s",
+            timeout: "5s",
+            grace_period: "30s",
+          },
+        },
         metrics: { port: 3000, path: "/metrics" },
       },
     });
