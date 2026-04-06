@@ -1,6 +1,7 @@
 import type { RouterEnv, WebhookSource } from "@army/shared";
 import { verifyWebhook } from "./verify";
 import { extractTeamId, extractTeamIdFromForm, resolveRoute, forwardToInstance } from "./forward";
+import { isBillingBlocked } from "./billing";
 
 /** Map exact URL path → webhook source */
 function parseRoute(pathname: string): WebhookSource | null {
@@ -40,6 +41,11 @@ export default {
 
       const tenantRoute = await resolveRoute(env, "slack", teamId);
       if (!tenantRoute) return new Response("Tenant not found", { status: 404 });
+
+      if (isBillingBlocked(tenantRoute)) {
+        console.log("[billing-blocked]", { source: "slack-command", teamId });
+        return new Response("", { status: 200 });
+      }
 
       forwardToInstance(ctx, tenantRoute, "slack", rawBody, request.headers, "/slack/commands");
       return new Response("", { status: 200 });
@@ -85,6 +91,12 @@ export default {
     const tenantRoute = await resolveRoute(env, source, teamId);
     if (!tenantRoute) {
       return new Response("Tenant not found", { status: 404 });
+    }
+
+    // ── 3b. Billing gate ────────────────────────────────────────
+    if (isBillingBlocked(tenantRoute)) {
+      console.log("[billing-blocked]", { source, teamId });
+      return new Response("OK", { status: 200 });
     }
 
     // ── 4. ACK + async forward ──────────────────────────────────

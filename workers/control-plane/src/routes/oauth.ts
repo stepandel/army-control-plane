@@ -7,6 +7,7 @@ import { pushCredentials } from "../lib/credentials";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt } from "../lib/crypto";
 import { createCustomer } from "../lib/stripe";
+import { signJwt } from "../lib/jwt";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -95,6 +96,8 @@ oauth.get("/slack/callback", async (c) => {
   const teamName = (data.team as Record<string, string>).name;
   const botToken = data.access_token as string;
   const scopes = (data.scope as string) ?? "";
+  const authedUser = data.authed_user as Record<string, string> | undefined;
+  const slackUserId = authedUser?.id;
 
   const sql = getDb(c.env);
 
@@ -132,12 +135,36 @@ oauth.get("/slack/callback", async (c) => {
       SET access_token = ${encBotToken}, scopes = ${scopes}, external_id = ${teamId}
   `;
 
+  // Upsert user (capture the person who installed)
+  let userId: string | null = null;
+  if (slackUserId) {
+    const [user] = await sql`
+      INSERT INTO users (slack_user_id, slack_team_id)
+      VALUES (${slackUserId}, ${teamId})
+      ON CONFLICT (slack_team_id, slack_user_id)
+      DO UPDATE SET last_login_at = now()
+      RETURNING id
+    `;
+    userId = user.id;
+  }
+
   // Provision machine (fire-and-forget)
   c.executionCtx.waitUntil(
     provisionTenant(c.env, teamId).catch((err) =>
       console.error(`Provisioning failed for ${teamId}:`, err),
     ),
   );
+
+  // Sign session JWT and redirect to website with token handoff
+  if (userId && slackUserId) {
+    const jwt = await signJwt(
+      { sub: userId, team_id: teamId, slack_uid: slackUserId },
+      c.env.SESSION_SECRET,
+    );
+    return c.redirect(
+      `${c.env.WEBSITE_URL}/auth/complete?token=${jwt}&next=/onboarding/${teamId}`,
+    );
+  }
 
   return c.redirect(`${c.env.WEBSITE_URL}/onboarding/${teamId}`);
 });

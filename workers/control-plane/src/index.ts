@@ -2,11 +2,13 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
+import auth from "./routes/auth";
 import admin from "./routes/admin";
 import deploy from "./routes/deploy";
 import internal from "./routes/internal";
 import apiOnboarding from "./routes/api-onboarding";
 import billing from "./routes/billing";
+import account from "./routes/account";
 import stripeWebhook from "./routes/stripe-webhook";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
@@ -17,7 +19,7 @@ const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-// CORS for website → API calls
+// CORS for website → API calls (public onboarding endpoints)
 app.use(
   "/api/onboarding/*",
   cors({
@@ -27,13 +29,29 @@ app.use(
   }),
 );
 
+// CORS for session-authenticated account endpoints — credentials: true is
+// required so the browser sends the __Host-session cookie cross-origin
+app.use(
+  "/api/account/*",
+  cors({
+    origin: (_, c) => c.env.WEBSITE_URL,
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    credentials: true,
+  }),
+);
+
 // Public routes
 app.route("/oauth", oauth);
+app.route("/auth", auth);
 app.route("/api/onboarding", apiOnboarding);
 app.route("/api/onboarding", billing);
 app.route("/stripe/webhook", stripeWebhook);
 app.route("/internal", internal);
 app.route("/deploy", deploy);
+
+// Session-protected account routes
+app.route("/api/account", account);
 
 // Protected routes — require Cloudflare Access JWT
 app.use("/admin/*", cfAccessGuard);
