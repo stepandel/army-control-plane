@@ -10,6 +10,7 @@ import billing from "./routes/billing";
 import stripeWebhook from "./routes/stripe-webhook";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
+import { enforceExpiredTrials } from "./lib/trial";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -42,5 +43,6 @@ export default {
   fetch: app.fetch,
   async scheduled(_event: ScheduledEvent, env: ControlPlaneEnv, _ctx: ExecutionContext) {
     await refreshExpiringTokens(env);
+    await enforceExpiredTrials(env);
   },
 };
