@@ -6,6 +6,7 @@ import admin from "./routes/admin";
 import deploy from "./routes/deploy";
 import internal from "./routes/internal";
 import apiOnboarding from "./routes/api-onboarding";
+import billing from "./routes/billing";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 
@@ -27,6 +28,7 @@ app.use(
 // Public routes
 app.route("/oauth", oauth);
 app.route("/api/onboarding", apiOnboarding);
+app.route("/api/onboarding", billing);
 app.route("/internal", internal);
 app.route("/deploy", deploy);
 

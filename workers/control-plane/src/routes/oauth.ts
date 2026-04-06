@@ -6,6 +6,7 @@ import { provisionTenant } from "../lib/provision";
 import { pushCredentials } from "../lib/credentials";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt } from "../lib/crypto";
+import { createCustomer } from "../lib/stripe";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -97,14 +98,28 @@ oauth.get("/slack/callback", async (c) => {
 
   const sql = getDb(c.env);
 
+  // Create Stripe customer for billing
+  let stripeCustomerId: string | null = null;
+  try {
+    stripeCustomerId = await createCustomer(c.env.STRIPE_SECRET_KEY, teamId, teamName);
+  } catch (err) {
+    console.error(`Stripe customer creation failed for ${teamId}:`, err);
+  }
+
+  // 3-day free trial from now
+  const trialEndsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+
   // Upsert tenant — Slack is the primary platform
   // If tenant was previously destroyed, reset to pending so provisioning can run
   await sql`
-    INSERT INTO tenants (id, name, platform, status)
-    VALUES (${teamId}, ${teamName}, 'slack', 'pending')
+    INSERT INTO tenants (id, name, platform, status, stripe_customer_id, subscription_status, trial_ends_at)
+    VALUES (${teamId}, ${teamName}, 'slack', 'pending', ${stripeCustomerId}, 'trialing', ${trialEndsAt}::timestamptz)
     ON CONFLICT (id) DO UPDATE
       SET name = ${teamName},
           status = CASE WHEN tenants.status = 'destroyed' THEN 'pending' ELSE tenants.status END,
+          stripe_customer_id = COALESCE(tenants.stripe_customer_id, ${stripeCustomerId}),
+          subscription_status = CASE WHEN tenants.status = 'destroyed' THEN 'trialing' ELSE tenants.subscription_status END,
+          trial_ends_at = CASE WHEN tenants.status = 'destroyed' THEN ${trialEndsAt}::timestamptz ELSE tenants.trial_ends_at END,
           updated_at = now()
   `;
 
