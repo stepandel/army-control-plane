@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { ControlPlaneEnv } from "@army/shared";
 import oauth from "./routes/oauth";
+import auth from "./routes/auth";
 import admin from "./routes/admin";
 import deploy from "./routes/deploy";
 import internal from "./routes/internal";
@@ -29,6 +30,7 @@ app.use(
 
 // Public routes
 app.route("/oauth", oauth);
+app.route("/auth", auth);
 app.route("/api/onboarding", apiOnboarding);
 app.route("/api/onboarding", billing);
 app.route("/stripe/webhook", stripeWebhook);
