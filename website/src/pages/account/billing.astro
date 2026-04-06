@@ -1,0 +1,255 @@
+---
+export const prerender = false;
+
+import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
+import { verifyJwt } from "../../lib/jwt";
+
+const env = Astro.locals.runtime.env;
+const apiBase = env.API_BASE_URL;
+const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
+
+// Verify session
+const cookie = Astro.request.headers.get("cookie");
+const sessionToken = cookie?.match(/(?:^|;\s*)__Host-session=([^;]*)/)?.[1];
+
+if (!sessionToken) {
+  return Astro.redirect("/sign-in");
+}
+
+const session = await verifyJwt(sessionToken, env.SESSION_SECRET);
+if (!session) {
+  return Astro.redirect("/sign-in");
+}
+
+// Fetch billing data via service binding
+const res = await controlPlane.fetch("https://api/api/account/billing", {
+  headers: { cookie: cookie ?? "" },
+});
+
+if (!res.ok) {
+  return Astro.redirect("/sign-in");
+}
+
+const billing = await res.json() as {
+  subscription_status: string;
+  trial_ends_at: string | null;
+  trial_days_remaining: number;
+  has_payment_method: boolean;
+};
+
+const billingResult = new URL(Astro.request.url).searchParams.get("billing");
+const isTrialing = billing.subscription_status === "trialing";
+const isActive = billing.subscription_status === "active";
+const isPastDue = billing.subscription_status === "past_due";
+const isCanceled =
+  billing.subscription_status === "canceled" ||
+  billing.subscription_status === "suspended";
+---
+
+<OnboardingLayout title="Vera — Billing">
+  <div class="account">
+    <div class="account-header">
+      <h1>Billing</h1>
+    </div>
+
+    <nav class="account-nav">
+      <a href="/account">Overview</a>
+      <a href="/account/billing" class="active">Billing</a>
+    </nav>
+
+    {billingResult === "success" && (
+      <div class="banner success-banner">✓ Subscription activated successfully!</div>
+    )}
+
+    {billingResult === "canceled" && (
+      <div class="banner info-banner">Checkout canceled — no charges were made.</div>
+    )}
+
+    <div class="billing-card">
+      {isTrialing && (
+        <Fragment>
+          <div class="plan-name">Free Trial</div>
+          <div class="plan-detail">
+            {billing.trial_days_remaining > 0
+              ? `${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} remaining`
+              : "Expires today"}
+          </div>
+          <button class="btn btn-primary" id="checkout-btn">Upgrade to Pro — $30/mo</button>
+        </Fragment>
+      )}
+
+      {isActive && (
+        <Fragment>
+          <div class="plan-name">Pro Plan</div>
+          <div class="plan-detail active-detail">✓ Active — $30/month</div>
+          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
+        </Fragment>
+      )}
+
+      {isPastDue && (
+        <Fragment>
+          <div class="plan-name">Pro Plan</div>
+          <div class="plan-detail warning-detail">⚠️ Payment failed — please update your payment method</div>
+          <button class="btn btn-primary" id="portal-btn">Update payment method</button>
+        </Fragment>
+      )}
+
+      {isCanceled && (
+        <Fragment>
+          <div class="plan-name">No Active Plan</div>
+          <div class="plan-detail">Your subscription has been canceled. Subscribe to reactivate Vera.</div>
+          <button class="btn btn-primary" id="checkout-btn">Subscribe — $30/mo</button>
+        </Fragment>
+      )}
+    </div>
+  </div>
+</OnboardingLayout>
+
+<script define:vars={{ apiBase }}>
+  async function handleCheckout() {
+    try {
+      const res = await fetch(`${apiBase}/api/account/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to create checkout session");
+      }
+    } catch {
+      alert("Failed to connect to billing service");
+    }
+  }
+
+  async function handlePortal() {
+    try {
+      const res = await fetch(`${apiBase}/api/account/billing/portal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to open billing portal");
+      }
+    } catch {
+      alert("Failed to connect to billing service");
+    }
+  }
+
+  document.getElementById("checkout-btn")?.addEventListener("click", handleCheckout);
+  document.getElementById("portal-btn")?.addEventListener("click", handlePortal);
+</script>
+
+<style>
+  .account-header { margin-bottom: 1.5rem; }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .account-nav {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid rgba(13, 40, 24, 0.15);
+    margin-bottom: 2rem;
+  }
+
+  .account-nav a {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    margin-bottom: -1px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    border-bottom: 2px solid transparent;
+  }
+
+  .account-nav a:hover { opacity: 0.85; }
+
+  .account-nav a.active {
+    opacity: 1;
+    border-bottom-color: var(--color-text);
+  }
+
+  .banner {
+    padding: 0.875rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .success-banner {
+    background: rgba(22, 101, 52, 0.06);
+    border: 1px solid rgba(22, 101, 52, 0.2);
+    color: #166534;
+  }
+
+  .info-banner {
+    background: rgba(13, 40, 24, 0.04);
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    color: var(--color-text);
+  }
+
+  .billing-card {
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .plan-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .plan-detail {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .active-detail { color: #166534; opacity: 1; }
+  .warning-detail { color: #991b1b; opacity: 1; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    color: var(--color-text);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-text);
+  }
+</style>
