@@ -1,12 +1,7 @@
 name: Deploy Website
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "website/**"
-      - "pnpm-lock.yaml"
-  workflow_dispatch:
+  workflow_dispatch: # manual-only — Cloudflare handles automatic deploys
 
 jobs:
   deploy:
