@@ -15,3 +15,6 @@ service = "army-control-plane"
 [vars]
 API_BASE_URL = "https://army-control-plane.stepandel.workers.dev"
 SHOW_BYOK = "false"
+
+[observability]
+enabled = false
