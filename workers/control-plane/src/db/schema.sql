@@ -67,4 +67,5 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'trialing';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS grace_deadline TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id);

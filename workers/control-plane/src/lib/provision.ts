@@ -196,11 +196,25 @@ async function recordDeploymentAndRoutes(
     VALUES (${tenantId}, ${machineId}, ${imageRef}, 'running')
   `;
 
+  // Pull billing fields so the router can gate forwarding without a DB hit
+  const [billing] = await sql`
+    SELECT subscription_status, trial_ends_at, grace_deadline
+    FROM tenants WHERE id = ${tenantId}
+  `;
+
+  const route: TenantRoute = {
+    instance_url: instanceUrl,
+    internal_secret: internalSecret,
+    fly_machine_id: machineId,
+    subscription_status: (billing?.subscription_status as string) ?? "trialing",
+    ...(billing?.trial_ends_at && { trial_ends_at: new Date(billing.trial_ends_at as string).toISOString() }),
+    ...(billing?.grace_deadline && { grace_deadline: new Date(billing.grace_deadline as string).toISOString() }),
+  };
+
   const webhookPlatforms = await sql`
     SELECT DISTINCT platform, external_id FROM integration_tokens
     WHERE tenant_id = ${tenantId} AND external_id IS NOT NULL
   `;
-  const route: TenantRoute = { instance_url: instanceUrl, internal_secret: internalSecret, fly_machine_id: machineId };
 
   for (const { platform, external_id } of webhookPlatforms) {
     await env.ROUTING_TABLE.put(`${platform}:${external_id}`, JSON.stringify(route));

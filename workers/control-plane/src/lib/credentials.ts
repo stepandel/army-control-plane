@@ -47,9 +47,17 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
   await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
   await fly.updateMachine(tenant.fly_machine_id, envResult.config, tenant.fly_volume_id);
 
-  // Write KV routing entries for all platforms with an external_id
+  // Write KV routing entries for all platforms with an external_id.
+  // Include billing fields so the router can gate forwarding without a DB hit.
   const internalSecret = envResult.secrets.INTERNAL_SECRET;
-  const route: TenantRoute = { instance_url: tenant.instance_url, internal_secret: internalSecret, fly_machine_id: tenant.fly_machine_id };
+  const route: TenantRoute = {
+    instance_url: tenant.instance_url,
+    internal_secret: internalSecret,
+    fly_machine_id: tenant.fly_machine_id,
+    subscription_status: (tenant.subscription_status as string) ?? "trialing",
+    ...(tenant.trial_ends_at && { trial_ends_at: new Date(tenant.trial_ends_at as string).toISOString() }),
+    ...(tenant.grace_deadline && { grace_deadline: new Date(tenant.grace_deadline as string).toISOString() }),
+  };
   const platformKeys = await db`
     SELECT DISTINCT platform, external_id FROM integration_tokens
     WHERE tenant_id = ${tenantId} AND external_id IS NOT NULL
