@@ -64,3 +64,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_slack ON users(slack_team_id, slack_
 CREATE INDEX IF NOT EXISTS idx_users_team ON users(slack_team_id);
 
 CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id);
+
+-- ── System settings ─────────────────────────────────────────────
+-- Single-row-per-key store for runtime-tunable knobs (e.g. default_trial_days).
+CREATE TABLE IF NOT EXISTS system_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ── Promo codes ─────────────────────────────────────────────────
+-- Catalog of redeemable codes. `code` is canonical UPPERCASE.
+CREATE TABLE IF NOT EXISTS promo_codes (
+  code            TEXT PRIMARY KEY,
+  kind            TEXT NOT NULL,                     -- 'extend_trial' (only kind for now)
+  extend_days     INTEGER NOT NULL,                  -- days added to trial from now()
+  valid_until     TIMESTAMPTZ,                       -- optional expiry of the code itself
+  max_redemptions INTEGER,                           -- optional global cap (NULL = unlimited)
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Per-tenant redemption ledger — unique index enforces one redemption per (tenant, code).
+CREATE TABLE IF NOT EXISTS promo_redemptions (
+  id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  code        TEXT NOT NULL REFERENCES promo_codes(code),
+  tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  redeemed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_promo_redemptions_tenant_code
+  ON promo_redemptions(tenant_id, code);
