@@ -3,6 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { createState, verifyState } from "../lib/oauth-state";
 import { signJwt } from "../lib/jwt";
+import { createCustomer } from "../lib/stripe";
 
 const auth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -82,9 +83,33 @@ auth.get("/slack/callback", async (c) => {
   const sql = getDb(c.env);
 
   // Verify the team has installed the app (tenant exists)
-  const [tenant] = await sql`SELECT id FROM tenants WHERE id = ${slackTeamId}`;
+  const [tenant] = await sql`
+    SELECT id, name, stripe_customer_id FROM tenants WHERE id = ${slackTeamId}
+  `;
   if (!tenant) {
     return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=team_not_found`);
+  }
+
+  // Backfill Stripe customer if missing — covers tenants installed before
+  // STRIPE_SECRET_KEY was configured (or any prior createCustomer failure).
+  // The conditional UPDATE makes this idempotent across concurrent sign-ins;
+  // a lost race may leave an orphan customer in Stripe, which is harmless.
+  if (!tenant.stripe_customer_id) {
+    try {
+      const stripeCustomerId = await createCustomer(
+        c.env.STRIPE_SECRET_KEY,
+        tenant.id,
+        tenant.name,
+      );
+      await sql`
+        UPDATE tenants
+        SET stripe_customer_id = ${stripeCustomerId}, updated_at = now()
+        WHERE id = ${tenant.id} AND stripe_customer_id IS NULL
+      `;
+    } catch (err) {
+      console.error(`Stripe customer backfill failed for ${tenant.id}:`, err);
+      // Continue — sign-in still succeeds; billing routes will surface the issue.
+    }
   }
 
   // Upsert user — sign-in flow may be the first time we capture profile data
