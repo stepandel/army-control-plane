@@ -65,6 +65,7 @@ For the full picture, see [`docs/architecture.md`](docs/architecture.md).
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | System design, data flows, key decisions |
 | [`docs/security.md`](docs/security.md) | Route protection model, secrets inventory |
+| [`docs/privacy.md`](docs/privacy.md) | Privacy controls mapped to SOC 2 (P1–P8) |
 | [`docs/migrations.md`](docs/migrations.md) | Authoring and running database migrations |
 | [`docs/monitoring.md`](docs/monitoring.md) | Alerts, dashboards, on-call hooks |
 | [`docs/tracing.md`](docs/tracing.md) | Distributed tracing setup |
