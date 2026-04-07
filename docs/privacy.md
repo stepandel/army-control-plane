@@ -94,9 +94,8 @@ It is **not** used for training models, analytics on identifiable users, marketi
 | OAuth tokens (`integration_tokens`) | Lifetime of the tenant; cascaded on tenant row delete; old refresh tokens overwritten on rotation | `ON DELETE CASCADE`; `lib/token-refresh.ts` overwrites in place |
 | `tenants` rows after `status = destroyed` | **Retained indefinitely** today (status flag only — no scheduled cleanup job exists in this repo). A retention window + purge job is **TBD** and should be added before audit. | n/a |
 | Conversation snapshots and execution logs (tenant Fly volume + Tigris S3) | **7 days** | Tenant runtime — not the control plane. See public privacy notice §4. |
-| Cron run history | 50 most recent runs per cron job | Tenant runtime |
-| Workflow run history | 100 most recent runs | Tenant runtime |
 | Active session registry | Pruned after 24 hours of inactivity | Tenant runtime |
+| Langfuse traces | **Up to 30 days** (Langfuse Cloud Hobby plan) | Langfuse Cloud — re-pin if the plan changes |
 | Cloudflare Worker request logs | Provider default — **TBD** if Logpush is configured |
 | Neon Postgres PITR window | Per Neon plan — **TBD** |
 | Fly.io machine logs | Provider default — **TBD** |
