@@ -152,7 +152,11 @@ stripeWebhook.post("/", async (c) => {
       // future Unix timestamp. The Billing Portal uses this directly without
       // flipping cancel_at_period_end, so don't gate on that flag.
       const cancelAtUnix = typeof obj.cancel_at === "number" ? obj.cancel_at : null;
-      if (cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000)) {
+      const willPersistCancel = !!(cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000));
+      console.log(
+        `subscription.updated tenant=${tenant.id} status=${stripeStatus} cancel_at=${cancelAtUnix} cap=${obj.cancel_at_period_end} persist=${willPersistCancel}`,
+      );
+      if (willPersistCancel && cancelAtUnix) {
         const cancelAtIso = new Date(cancelAtUnix * 1000).toISOString();
         await sql`
           UPDATE tenants SET cancel_at = ${cancelAtIso}::timestamptz WHERE id = ${tenant.id}
