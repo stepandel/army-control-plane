@@ -1,0 +1,112 @@
+# Grafana Cloud alert rule — volume nearing capacity.
+#
+# Fires warning when a tenant Fly volume's used percent crosses 85% for 10
+# minutes. Note: tenant volumes are configured with Fly's auto-extend feature
+# at extend_threshold_percent=80 → add_size_gb=1 up to size_gb_limit=10 (see
+# workers/control-plane/src/lib/fly.ts:18-21). So 85% indicates either (a)
+# auto-extend just fired and the new free space hasn't shown up yet — in which
+# case the alert self-resolves after ~1 eval period — or (b) the tenant has
+# hit the 10GB limit and is actually running out of disk, which is the case we
+# want to know about.
+#
+# We warn rather than crit because Fly's auto-extend handles the routine case.
+# A persistent 85%+ for >10min means limit-hit and requires a manual bump.
+#
+# See docs/monitoring.md for the full alert inventory.
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: tenant-volume
+    folder: Army Ops
+    interval: 1m
+    rules:
+      - uid: army-volume-nearing-cap
+        title: Tenant volume nearing capacity
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: fly-prometheus
+            model:
+              editorMode: code
+              expr: fly_volume_used_percent{app=~"army-t.*"}
+              instant: false
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: last
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "Volume nearing capacity on {{ $labels.app }}"
+          description: |
+            fly_volume_used_percent for app {{ $labels.app }} has been above
+            85% for 10+ minutes (current: {{ $values.B }}%). Volumes auto-extend
+            at 80% up to a 10GB limit — if this alert persists, the volume has
+            hit the limit. Inspect via the tenant-detail dashboard, then either
+            clean up large files on the tenant workspace or manually grow the
+            volume via flyctl:
+
+              flyctl volumes extend <volume_id> -a {{ $labels.app }} --size <new_gb>
+          runbook_url: https://github.com/stepandel/army-control-plane/blob/main/docs/monitoring.md#volume-nearing-cap
+        labels:
+          severity: warning
+          source: fly-prometheus
+        isPaused: false

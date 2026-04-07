@@ -1,0 +1,109 @@
+# Grafana Cloud alert rule — OOM / memory pressure on a tenant machine.
+#
+# Fires critical when a tenant Fly machine's available memory drops below 10%
+# for 5 consecutive minutes. Complements the machine_down alert fired by
+# lib/health-check.ts — that one catches the aftermath of an OOM kill (the
+# machine restart), this one fires *before* the kill so ops has a chance to
+# intervene (or at least have context when the crash_loop alert follows).
+#
+# Import via Grafana UI: Alerting → Alert rules → Import (YAML / Terraform),
+# or via grafanacloud-cli / provisioning API. See docs/monitoring.md.
+#
+# Label `severity: critical` + the configured Slack contact point routes this
+# to the same #ops-alerts channel used by lib/alerts.ts from ARM-112, so every
+# ops signal lands in one place.
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: tenant-memory
+    folder: Army Ops
+    interval: 1m
+    rules:
+      - uid: army-oom-pressure
+        title: Tenant machine OOM pressure
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: fly-prometheus
+            model:
+              editorMode: code
+              expr: fly_instance_memory_mem_available_percent{app=~"army-t.*"}
+              instant: false
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: last
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 10
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "OOM pressure on {{ $labels.app }}"
+          description: |
+            fly_instance_memory_mem_available_percent for app {{ $labels.app }}
+            has been below 10% for 5+ minutes (current: {{ $values.B }}%). A
+            machine OOM kill is imminent. Inspect the agent on this tenant
+            and consider resizing via `PATCH /admin/tenants/{{ $labels.app }}/resize`
+            (note: $labels.app is the Fly app name, not the tenant ID — map
+            it to a tenant via /admin/tenants).
+          runbook_url: https://github.com/stepandel/army-control-plane/blob/main/docs/monitoring.md#oom-pressure
+        labels:
+          severity: critical
+          source: fly-prometheus
+        isPaused: false

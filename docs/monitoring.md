@@ -190,6 +190,73 @@ Each alert type has a manual reproduction. **Use a non-prod tenant only.**
 
 Fly's Machines API handles ~1 req/sec per token. With the current `*/5` cadence and one `GET /machines/:id` per active tenant, we make `N` requests every 5 min — well under the limit at 100+ tenants. If we hit limits later, swap the per-tenant loop for a single `listMachines()` call per distinct app.
 
+## Grafana Cloud — dashboards & Fly Prometheus alerts
+
+Fly scrapes every tenant machine's `/metrics` on port 3000 automatically (we wire `metrics: { port: 3000, path: "/metrics" }` in `FlyClient.createMachine`) and stores the data in its managed Prometheus (VictoriaMetrics under the hood). Grafana Cloud queries that Prometheus on demand — there's no `remote_read` so Grafana can't continuously sync the metrics into its own TSDB, but that's fine for dashboards and 5-min-evaluation alert rules.
+
+The visualization + threshold-alert layer lives under `workers/control-plane/grafana/` (see that folder's README for the exact file list).
+
+### Alert rule inventory
+
+| Rule | Severity | Expression | For | File |
+|------|----------|------------|-----|------|
+| OOM pressure | critical | `fly_instance_memory_mem_available_percent{app=~"army-t.*"} < 10` | 5m | `grafana/alerts/oom-pressure.yaml` |
+| Memory spike | warning | `fly_instance_memory_mem_used_percent{app=~"army-t.*"} > 90` | 10m | `grafana/alerts/memory-spike.yaml` |
+| Volume nearing cap | warning | `fly_volume_used_percent{app=~"army-t.*"} > 85` | 10m | `grafana/alerts/volume-nearing-cap.yaml` |
+
+All three label the alert `severity: {critical,warning}` and `source: fly-prometheus`. A single Grafana contact point routes any alert with these labels to the same Slack incoming webhook that `lib/alerts.ts` uses (from ARM-112), so every ops signal lands in one channel.
+
+### Fly Prometheus query API — key facts
+
+- Endpoint: `https://api.fly.io/prometheus/vera-ai/api/v1/query` (org slug is `FLY_ORG` from `wrangler.toml` — `vera-ai`)
+- Auth: `Authorization: Bearer <token>` where `<token>` is a **read-only** Fly access token. Create with `flyctl tokens create readonly --org vera-ai --expiry 8760h`. **Do not** reuse `FLY_API_TOKEN_VERA` — that token can create / destroy machines and should never live inside a dashboard data source.
+- Supports all standard Prometheus HTTP query endpoints except `/api/v1/read` (no `remote_read`).
+- Per-tenant label is `app` — every tenant gets their own Fly app whose name follows the pattern `army-t<teamId>-<rand>`, so `{app=~"army-t.*"}` scopes any query to tenant apps and excludes the control plane / builder apps.
+
+### Setup — first-time install (human operator, one-time)
+
+1. **Create a Grafana Cloud account** at <https://grafana.com/auth/sign-up/create-user>. The free tier (10k series, 14 days retention) handles our load at current tenant counts. Stack name: `vera`.
+2. **Create a read-only Fly access token:**
+   ```sh
+   flyctl tokens create readonly --org vera-ai --expiry 8760h
+   ```
+   Copy the output. This is the only place it's ever shown.
+3. **Add the Prometheus data source in Grafana:**
+   - Navigate: Grafana → Connections → Data sources → Add new data source → Prometheus.
+   - **Name:** `Fly Prometheus`
+   - **UID:** `fly-prometheus` ← must match exactly; committed dashboards and alert rules reference this UID.
+   - **URL:** `https://api.fly.io/prometheus/vera-ai`
+   - **Authentication:** No authentication.
+   - **Custom HTTP Headers:** add one header `Authorization` with value `Bearer <your-read-only-token>`.
+   - Click *Save & test*. You should see "Successfully queried the Prometheus API."
+4. **Import the dashboards:**
+   - For each of `fleet-overview.json`, `tenant-detail.json`, `deployments.json`:
+     - Grafana → Dashboards → New → Import → Upload JSON file.
+     - When prompted for the data source, pick "Fly Prometheus" (UID `fly-prometheus`).
+     - Click *Import*.
+   - All three dashboards should render live data within seconds. If panels show "No data", double-check the data source UID.
+5. **Create the Slack contact point:**
+   - Grafana → Alerting → Contact points → Add contact point.
+   - **Name:** `slack-ops-alerts`
+   - **Type:** Slack (or "Webhook" if you'd rather re-use the exact same URL from ARM-112 with no Slack-specific formatting).
+   - **URL:** the same `ALERT_SLACK_WEBHOOK_URL` you set via `wrangler secret put` in ARM-112. This is the only way to guarantee all alerts land in one channel.
+   - Save, then click "Test" — a sample message should arrive in Slack.
+6. **Import the alert rules:**
+   - For each `grafana/alerts/*.yaml`, import via *Alerting → Alert rules → New alert rule → Import YAML* (or use `grafana-cli admin import` if you have CLI access).
+   - After import, open each rule and set its **notification policy** to route the `source=fly-prometheus` label to the `slack-ops-alerts` contact point you just created. (Alternatively, add a global notification policy that matches `source=fly-prometheus` at the top level.)
+   - The rules should evaluate every 1 min and show "Normal" state initially.
+
+### Smoke-test procedure
+
+1. **Dashboard load** — open `Army — Fleet Overview`. Panels should populate within ~10s of the default 1m refresh. If every panel is empty, the data source UID is wrong or the Fly token has expired.
+2. **Per-tenant drilldown** — open `Army — Tenant Detail`. Use the `$app` variable dropdown at the top to pick any tenant's app. All panels should re-render scoped to that app.
+3. **Slack contact point** — in Grafana Alerting → Contact points, click "Test" on `slack-ops-alerts`. A Grafana test message should appear in the same Slack channel as `POST /admin/alerts/test` from ARM-112.
+4. **Trip an alert intentionally** — temporarily edit the OOM rule's threshold from `< 10` to `< 99`, save, wait 5 min. You should see:
+   - The rule's state transition to Firing in Grafana → Alerting → Alert rules
+   - A Slack message arriving in the ops channel with the color/severity from the rule labels
+   - Revert the threshold to `< 10` and wait for the rule to return to Normal.
+5. **Same for the volume rule** — set `> 85` to `> 0.1`, wait, observe, revert.
+
 ## Silencing an alert
 
 There's no UI silencing today. Two options:
