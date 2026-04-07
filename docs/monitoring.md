@@ -190,6 +190,60 @@ Each alert type has a manual reproduction. **Use a non-prod tenant only.**
 
 Fly's Machines API handles ~1 req/sec per token. With the current `*/5` cadence and one `GET /machines/:id` per active tenant, we make `N` requests every 5 min — well under the limit at 100+ tenants. If we hit limits later, swap the per-tenant loop for a single `listMachines()` call per distinct app.
 
+## Langfuse polling worker
+
+`workers/control-plane/src/lib/langfuse-alerts.ts` runs on the same `*/5` cron as the Fly health-check job. It catches LLM-layer failure modes that infrastructure metrics can't see — tool calls throwing, models refusing, cost runaway.
+
+We poll rather than use webhooks because Langfuse webhooks today only fire on prompt-version events, not trace/error-level events. Refs: [discussion #10147](https://github.com/orgs/langfuse/discussions/10147), [discussion #3997](https://github.com/orgs/langfuse/discussions/3997). When trace-level webhooks ship on Langfuse's roadmap, this poller can be swapped for a webhook receiver without changing `sendAlert`.
+
+### Alert types
+
+| Alert | Severity | Trigger condition | Dedupe key |
+|-------|----------|-------------------|------------|
+| `langfuse_errors` | warning | ≥1 ERROR-level observation for a tenant in the last **5 min** | `langfuse_errors:<tenant_id>` |
+| `langfuse_cost` (warning) | warning | tenant `sum(totalCost) > $5` in the last **60 min** | `langfuse_cost:<tenant_id>:warning` |
+| `langfuse_cost` (critical) | critical | tenant `sum(totalCost) > $20` in the last **60 min** | `langfuse_cost:<tenant_id>:critical` |
+
+The tenant discriminator inside Langfuse is the `userId` field — the tracer on tenant machines sets it to the tenant `team_id` (see `docs/tracing.md`). Observations without a `userId` are skipped (nothing to page on).
+
+### Tuning the thresholds
+
+Thresholds are constants at the top of `lib/langfuse-alerts.ts`:
+
+```ts
+const WINDOW_MIN = 5;          // error scan window
+const COST_WINDOW_MIN = 60;    // cost scan window
+const COST_WARNING_USD = 5;    // warning at $5/h per tenant
+const COST_CRITICAL_USD = 20;  // critical at $20/h per tenant
+```
+
+Edit and redeploy. The separate-dedupe-key-per-severity design means a tenant crossing warning then critical still pages once for each level (not silently at the warning).
+
+### Triggering a one-shot run
+
+```sh
+# Default thresholds from the source
+curl -X POST https://army-control-plane.stepandel.workers.dev/admin/langfuse-alerts/run \
+  -H 'cf-access-client-id: ...' -H 'cf-access-client-secret: ...' \
+  -H 'content-type: application/json' \
+  -d '{}'
+# → {"errorTenants":0,"costBreaches":0,"alertsFired":0}
+
+# Force a cost alert by lowering the threshold (smoke test)
+curl -X POST https://army-control-plane.stepandel.workers.dev/admin/langfuse-alerts/run \
+  -H 'cf-access-client-id: ...' -H 'cf-access-client-secret: ...' \
+  -H 'content-type: application/json' \
+  -d '{"costWarningUsd": 0.001, "costCriticalUsd": 100}'
+```
+
+### Smoke-test procedure
+
+1. **No errors / no cost** — call the one-shot admin endpoint with default thresholds on a healthy fleet. Response should be all zeros; no Slack messages. One summary log line: `langfuse check: 0 error tenants, 0 cost breaches, 0 alerts fired`.
+2. **Errors present** — in a non-prod tenant, force a failing tool execution (e.g. set an invalid Linear token via `UPDATE integration_tokens SET access_token = 'bad' WHERE tenant_id = '<test>' AND platform = 'linear'`). Trigger an agent run; the next agent action will emit ERROR observations. Within 1 cron cycle (≤5 min), one `langfuse_errors` alert fires with the tenant ID and up to 3 sample status messages.
+3. **Cost threshold** — call the admin endpoint with a low `costWarningUsd` override (e.g. `0.001`) against a tenant with any recent Langfuse activity. The `langfuse_cost` alert fires at severity `warning`.
+4. **Dedupe** — call the admin endpoint twice in a row with the same thresholds. The second call logs `alert suppressed (dedupe)` and no duplicate Slack message arrives.
+5. **Langfuse API down** — if the Langfuse HTTP API returns 5xx or the fetch errors out, the poller logs the failure and returns a summary with `skippedReason` set. It does **not** fire any alert on its own — infra outages get caught by the Fly health-check job instead.
+
 ## Grafana Cloud — dashboards & Fly Prometheus alerts
 
 Fly scrapes every tenant machine's `/metrics` on port 3000 automatically (we wire `metrics: { port: 3000, path: "/metrics" }` in `FlyClient.createMachine`) and stores the data in its managed Prometheus (VictoriaMetrics under the hood). Grafana Cloud queries that Prometheus on demand — there's no `remote_read` so Grafana can't continuously sync the metrics into its own TSDB, but that's fine for dashboards and 5-min-evaluation alert rules.
