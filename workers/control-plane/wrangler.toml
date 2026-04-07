@@ -16,23 +16,15 @@ binding = "OAUTH_STATE"
 id = "bb010975d56049d28fb61a1b3d627950"
 preview_id = "1dea428553cf47e181da9ac16ce1351f"
 
-# Ops alert dedupe + health-check bookkeeping.
-#
-# TODO(ops): create the namespace and uncomment the binding below to re-enable
-# alert dedupe. While this is commented out, sendAlert() and the health-check
-# cron will still send alerts — they just won't suppress repeats. The runtime
-# code paths are guarded with `if (!env.ALERT_STATE)` no-ops, so the binding
-# is safe to add or remove without code changes.
-#
-#   cd workers/control-plane
-#   wrangler kv namespace create ALERT_STATE
-#   wrangler kv namespace create ALERT_STATE --preview
-#   # paste the returned ids below, then uncomment the [[kv_namespaces]] block
-#
-# [[kv_namespaces]]
-# binding = "ALERT_STATE"
-# id = "<paste production id>"
-# preview_id = "<paste preview id>"
+# Ops alert dedupe + health-check bookkeeping. Backs sendAlert() dedupe in
+# lib/alerts.ts and the consecutive-bad-check counter in lib/health-check.ts.
+# Runtime code in both files is guarded with `if (env.ALERT_STATE)` so the
+# binding is safe to remove in an emergency — dedupe becomes a no-op and the
+# unreachable detector falls back to first-bad-state alerting.
+[[kv_namespaces]]
+binding = "ALERT_STATE"
+id = "6e15f30fdb7c4c0d8d62a61467eb14f9"
+preview_id = "bbb117423b4a42d4866249a9c020b1dc"
 
 [[hyperdrive]]
 binding = "DB"
