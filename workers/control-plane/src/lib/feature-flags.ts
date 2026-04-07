@@ -13,9 +13,7 @@ const DEFAULT_YEARLY_PLAN_ENABLED = true;
  *   INSERT INTO system_settings (key, value) VALUES ('yearly_plan_enabled', 'false')
  *   ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now();
  */
-export async function getYearlyPlanEnabled(
-  envOrSql: ControlPlaneEnv | Sql,
-): Promise<boolean> {
+export async function getYearlyPlanEnabled(envOrSql: ControlPlaneEnv | Sql): Promise<boolean> {
   try {
     const sql = isSqlClient(envOrSql) ? envOrSql : getDb(envOrSql);
     const [row] = await sql`

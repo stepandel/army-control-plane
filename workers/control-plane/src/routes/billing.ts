@@ -65,7 +65,8 @@ billing.post("/:team_id/checkout", async (c) => {
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
-  if (!tenant.stripe_customer_id) return c.json({ error: "No billing account — contact support" }, 400);
+  if (!tenant.stripe_customer_id)
+    return c.json({ error: "No billing account — contact support" }, 400);
   if (tenant.subscription_status === "active") return c.json({ error: "Already subscribed" }, 400);
 
   const successUrl = `${c.env.WEBSITE_URL}/onboarding/${teamId}?billing=success`;
@@ -73,8 +74,7 @@ billing.post("/:team_id/checkout", async (c) => {
   const trialEnd = tenant.trial_ends_at
     ? Math.floor(new Date(tenant.trial_ends_at).getTime() / 1000)
     : undefined;
-  const priceId =
-    plan === "yearly" ? c.env.STRIPE_PRICE_ID_YEARLY : c.env.STRIPE_PRICE_ID_MONTHLY;
+  const priceId = plan === "yearly" ? c.env.STRIPE_PRICE_ID_YEARLY : c.env.STRIPE_PRICE_ID_MONTHLY;
 
   const checkoutUrl = await createCheckoutSession(
     c.env.STRIPE_SECRET_KEY,

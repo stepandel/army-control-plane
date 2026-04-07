@@ -41,7 +41,16 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
     ? await decryptIfEncrypted(tenant.anthropic_api_key, env.ENCRYPTION_KEY)
     : null;
 
-  const envResult = buildMachineEnv(env, tenantId, crypto.randomUUID(), decryptedTokens, anthropicKey, tenant.vera_production, tenant.tracing_provider, tenant.subscription_status);
+  const envResult = buildMachineEnv(
+    env,
+    tenantId,
+    crypto.randomUUID(),
+    decryptedTokens,
+    anthropicKey,
+    tenant.vera_production,
+    tenant.tracing_provider,
+    tenant.subscription_status,
+  );
 
   // Per-tenant app: secrets are encrypted, config.env has only non-sensitive values
   await fly.setSecrets(tenant.fly_app_name, envResult.secrets);
@@ -55,8 +64,12 @@ export async function pushCredentials(env: ControlPlaneEnv, tenantId: string, sq
     internal_secret: internalSecret,
     fly_machine_id: tenant.fly_machine_id,
     subscription_status: (tenant.subscription_status as string) ?? "trialing",
-    ...(tenant.trial_ends_at && { trial_ends_at: new Date(tenant.trial_ends_at as string).toISOString() }),
-    ...(tenant.grace_deadline && { grace_deadline: new Date(tenant.grace_deadline as string).toISOString() }),
+    ...(tenant.trial_ends_at && {
+      trial_ends_at: new Date(tenant.trial_ends_at as string).toISOString(),
+    }),
+    ...(tenant.grace_deadline && {
+      grace_deadline: new Date(tenant.grace_deadline as string).toISOString(),
+    }),
   };
   const platformKeys = await db`
     SELECT DISTINCT platform, external_id FROM integration_tokens

@@ -77,7 +77,8 @@ internal.post("/register", async (c) => {
   };
 
   // Update KV routing table for all connected platforms
-  const tokens = await sql`SELECT DISTINCT platform FROM integration_tokens WHERE tenant_id = ${body.team_id}`;
+  const tokens =
+    await sql`SELECT DISTINCT platform FROM integration_tokens WHERE tenant_id = ${body.team_id}`;
   for (const { platform } of tokens) {
     await c.env.ROUTING_TABLE.put(`${platform}:${body.team_id}`, JSON.stringify(route));
   }
@@ -111,10 +112,14 @@ internal.get("/credentials/:team_id", async (c) => {
   // Decrypt and group by platform
   const credentials: Record<string, unknown[]> = {};
   for (const t of tokens) {
-    (credentials[t.platform] ??= []).push({
+    const bucket = credentials[t.platform] ?? [];
+    credentials[t.platform] = bucket;
+    bucket.push({
       token_type: t.token_type,
       access_token: await decryptIfEncrypted(t.access_token, c.env.ENCRYPTION_KEY),
-      refresh_token: t.refresh_token ? await decryptIfEncrypted(t.refresh_token, c.env.ENCRYPTION_KEY) : null,
+      refresh_token: t.refresh_token
+        ? await decryptIfEncrypted(t.refresh_token, c.env.ENCRYPTION_KEY)
+        : null,
       scopes: t.scopes,
       expires_at: t.expires_at,
     });

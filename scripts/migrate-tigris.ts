@@ -47,16 +47,19 @@ import postgres from "postgres";
 
 const OLD_BUCKET = process.env.OLD_BUCKET ?? "long-rain-9729";
 const ENDPOINT = process.env.AWS_ENDPOINT_URL_S3 ?? "https://fly.storage.tigris.dev";
-const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!DATABASE_URL) {
-  console.error("DATABASE_URL is required");
-  process.exit(1);
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`${name} is required`);
+    process.exit(1);
+  }
+  return value;
 }
-if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-  console.error("AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required");
-  process.exit(1);
-}
+
+const DATABASE_URL = requireEnv("DATABASE_URL");
+const AWS_ACCESS_KEY_ID = requireEnv("AWS_ACCESS_KEY_ID");
+const AWS_SECRET_ACCESS_KEY = requireEnv("AWS_SECRET_ACCESS_KEY");
 
 const args = process.argv.slice(2);
 const execute = args.includes("--execute");
@@ -64,7 +67,9 @@ const tenantFilter = args.includes("--tenant") ? args[args.indexOf("--tenant") +
 
 // Separate credentials for source bucket (optional)
 const sourceKey = args.includes("--source-key") ? args[args.indexOf("--source-key") + 1] : null;
-const sourceSecret = args.includes("--source-secret") ? args[args.indexOf("--source-secret") + 1] : null;
+const sourceSecret = args.includes("--source-secret")
+  ? args[args.indexOf("--source-secret") + 1]
+  : null;
 
 // S3 client for destination (per-tenant buckets) — uses default AWS_* credentials
 const destS3 = new S3Client({
@@ -72,20 +77,21 @@ const destS3 = new S3Client({
   region: "auto",
   forcePathStyle: true,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
 
 // S3 client for source (old shared bucket) — uses separate credentials if provided
-const sourceS3 = sourceKey && sourceSecret
-  ? new S3Client({
-      endpoint: ENDPOINT,
-      region: "auto",
-      forcePathStyle: true,
-      credentials: { accessKeyId: sourceKey, secretAccessKey: sourceSecret },
-    })
-  : destS3;
+const sourceS3 =
+  sourceKey && sourceSecret
+    ? new S3Client({
+        endpoint: ENDPOINT,
+        region: "auto",
+        forcePathStyle: true,
+        credentials: { accessKeyId: sourceKey, secretAccessKey: sourceSecret },
+      })
+    : destS3;
 
 // ── Helpers ─────────────────────────────────────────────────────
 
@@ -168,7 +174,7 @@ async function main() {
   console.log(`Source bucket "${OLD_BUCKET}" ✓`);
 
   // 2. Get tenant → bucket mappings from database
-  const sql = postgres(DATABASE_URL!);
+  const sql = postgres(DATABASE_URL);
 
   try {
     const query = tenantFilter
@@ -199,7 +205,9 @@ async function main() {
       const destExists = await bucketExists(destS3, destBucket);
       if (!destExists) {
         console.log(`   SKIP: destination bucket "${destBucket}" does not exist or not accessible`);
-        console.log(`   Fix:  fly ext storage destroy ${destBucket} -a ${destBucket}  # remove broken add-on`);
+        console.log(
+          `   Fix:  fly ext storage destroy ${destBucket} -a ${destBucket}  # remove broken add-on`,
+        );
         console.log(`         fly storage create -a ${destBucket} -n ${destBucket} -o <org>`);
         totalSkipped++;
         continue;
@@ -249,7 +257,9 @@ async function main() {
     // Summary
     console.log(`\n${"=".repeat(60)}`);
     if (execute) {
-      console.log(`Migration complete: ${totalCopied} copied, ${totalFailed} failed, ${totalSkipped} skipped`);
+      console.log(
+        `Migration complete: ${totalCopied} copied, ${totalFailed} failed, ${totalSkipped} skipped`,
+      );
     } else {
       console.log(`Dry run complete. Use --execute to apply.`);
     }
