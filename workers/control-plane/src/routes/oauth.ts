@@ -8,6 +8,7 @@ import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt } from "../lib/crypto";
 import { createCustomer } from "../lib/stripe";
 import { signJwt } from "../lib/jwt";
+import { getDefaultTrialDays } from "../lib/trial-config";
 
 const oauth = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -109,8 +110,9 @@ oauth.get("/slack/callback", async (c) => {
     console.error(`Stripe customer creation failed for ${teamId}:`, err);
   }
 
-  // 3-day free trial from now
-  const trialEndsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+  // Free trial from now — length is configurable via system_settings.default_trial_days
+  const trialDays = await getDefaultTrialDays(sql);
+  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
   // Upsert tenant — Slack is the primary platform
   // If tenant was previously destroyed, reset to pending so provisioning can run
