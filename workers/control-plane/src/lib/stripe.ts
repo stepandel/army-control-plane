@@ -22,6 +22,22 @@ function stripeRequest(
   });
 }
 
+// ── Subscriptions ────────────────────────────────────────────────
+
+/** Fetch a subscription by ID. Returns the raw object so callers can pull
+ * whatever fields they need (plan, current_period_end, cancel_at, etc). */
+export async function getSubscription(
+  secretKey: string,
+  subscriptionId: string,
+): Promise<Record<string, unknown>> {
+  const resp = await stripeRequest(secretKey, "GET", `/subscriptions/${subscriptionId}`);
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Stripe getSubscription failed: ${resp.status} ${err}`);
+  }
+  return (await resp.json()) as Record<string, unknown>;
+}
+
 // ── Customers ────────────────────────────────────────────────────
 
 export async function createCustomer(

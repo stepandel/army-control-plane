@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
-import { verifyWebhookSignature } from "../lib/stripe";
+import { verifyWebhookSignature, getSubscription } from "../lib/stripe";
 import { FlyClient } from "../lib/fly";
 import { syncBillingToKv } from "../lib/billing-sync";
 import { reactivateTenant } from "../lib/tenant-reactivate";
@@ -45,6 +45,51 @@ async function updateSubscriptionStatus(
       WHERE id = ${tenantId}
     `;
   }
+}
+
+/** Pull plan info, current period end, and cancel_at off a Stripe subscription
+ * object and persist them onto the tenant row. Used by both `subscription.updated`
+ * and `checkout.session.completed` (the latter fetches the sub via API to avoid
+ * the race between checkout completion and the first subscription.updated). */
+async function persistSubscriptionFields(
+  sql: ReturnType<typeof getDb>,
+  tenantId: string,
+  sub: Record<string, unknown>,
+) {
+  // current_period_end may live at the top level (legacy) or on the first
+  // subscription item (flexible billing mode).
+  let cpeUnix: number | null = null;
+  if (typeof sub.current_period_end === "number") {
+    cpeUnix = sub.current_period_end;
+  } else {
+    const items = sub.items as { data?: Array<Record<string, unknown>> } | undefined;
+    const first = items?.data?.[0];
+    if (first && typeof first.current_period_end === "number") {
+      cpeUnix = first.current_period_end;
+    }
+  }
+
+  const plan = sub.plan as { interval?: unknown; amount?: unknown } | undefined;
+  const planInterval = plan && typeof plan.interval === "string" ? plan.interval : null;
+  const planAmount = plan && typeof plan.amount === "number" ? plan.amount : null;
+
+  const cancelAtUnix = typeof sub.cancel_at === "number" ? sub.cancel_at : null;
+  const cancelAtIso =
+    cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000)
+      ? new Date(cancelAtUnix * 1000).toISOString()
+      : null;
+
+  const cpeIso = cpeUnix ? new Date(cpeUnix * 1000).toISOString() : null;
+
+  await sql`
+    UPDATE tenants
+    SET current_period_end = ${cpeIso}::timestamptz,
+        plan_interval = ${planInterval},
+        plan_amount_cents = ${planAmount},
+        cancel_at = ${cancelAtIso}::timestamptz,
+        updated_at = now()
+    WHERE id = ${tenantId}
+  `;
 }
 
 async function suspendTenant(env: ControlPlaneEnv, tenantId: string, flyAppName: string, flyMachineId: string) {
@@ -106,6 +151,19 @@ stripeWebhook.post("/", async (c) => {
       `;
       await syncBillingToKv(c.env, tenant.id, "active", null, null);
 
+      // Hydrate plan + period fields immediately by fetching the subscription.
+      // The corresponding customer.subscription.updated event arrives shortly
+      // after, but Stripe redirects the user to our success URL the moment
+      // checkout closes — so the dashboard would otherwise show "Active" with
+      // no plan label or next billing date until that race resolves.
+      try {
+        const sub = await getSubscription(c.env.STRIPE_SECRET_KEY, subscriptionId);
+        await persistSubscriptionFields(sql, tenant.id, sub);
+      } catch (err) {
+        console.error(`Failed to hydrate subscription fields for ${tenant.id}:`, err);
+        // Non-fatal — the next subscription.updated webhook will fill them in.
+      }
+
       // If tenant was suspended, reactivate
       if (tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
         c.executionCtx.waitUntil(
@@ -147,53 +205,10 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, newStatus, subscriptionId);
 
-      // Track scheduled cancellation. Stripe leaves status="active" while a
-      // cancellation is pending; the reliable signal is `cancel_at` being a
-      // future Unix timestamp. The Billing Portal uses this directly without
-      // flipping cancel_at_period_end, so don't gate on that flag.
-      const cancelAtUnix = typeof obj.cancel_at === "number" ? obj.cancel_at : null;
-      if (cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000)) {
-        const cancelAtIso = new Date(cancelAtUnix * 1000).toISOString();
-        await sql`
-          UPDATE tenants SET cancel_at = ${cancelAtIso}::timestamptz WHERE id = ${tenant.id}
-        `;
-      } else {
-        // User undid the cancellation, or there was never one — make sure cancel_at is clear.
-        await sql`UPDATE tenants SET cancel_at = NULL WHERE id = ${tenant.id}`;
-      }
-
-      // Track next billing date. In Stripe's flexible billing mode the period
-      // lives on the subscription item, not the top-level subscription, so
-      // check both shapes.
-      let cpeUnix: number | null = null;
-      if (typeof obj.current_period_end === "number") {
-        cpeUnix = obj.current_period_end;
-      } else {
-        const items = obj.items as { data?: Array<Record<string, unknown>> } | undefined;
-        const first = items?.data?.[0];
-        if (first && typeof first.current_period_end === "number") {
-          cpeUnix = first.current_period_end;
-        }
-      }
-      if (cpeUnix) {
-        const cpeIso = new Date(cpeUnix * 1000).toISOString();
-        await sql`
-          UPDATE tenants SET current_period_end = ${cpeIso}::timestamptz WHERE id = ${tenant.id}
-        `;
-      }
-
-      // Track plan interval + amount so the dashboard can show the correct
-      // price even for grandfathered subscribers on retired prices.
-      const plan = obj.plan as { interval?: unknown; amount?: unknown } | undefined;
-      const planInterval = plan && typeof plan.interval === "string" ? plan.interval : null;
-      const planAmount = plan && typeof plan.amount === "number" ? plan.amount : null;
-      if (planInterval && planAmount !== null) {
-        await sql`
-          UPDATE tenants
-          SET plan_interval = ${planInterval}, plan_amount_cents = ${planAmount}
-          WHERE id = ${tenant.id}
-        `;
-      }
+      // Persist plan, current_period_end, and cancel_at directly from the
+      // subscription payload. (Stripe leaves status="active" when a cancel
+      // is scheduled, so cancel_at is the only signal we get.)
+      await persistSubscriptionFields(sql, tenant.id, obj);
 
       // Manage grace_deadline alongside status
       let graceDeadline: string | null = null;
