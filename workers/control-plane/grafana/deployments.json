@@ -1,0 +1,192 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Deployment activity and state transitions across tenant Fly apps. Combines fly_instance_up (for uptime / deploy gaps) with changes() to surface recent restarts.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Fleet Overview",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/army-fleet-overview"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Tenant Detail",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/army-tenant-detail"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Current up/down state per tenant app. Up = 1, Down = 0. Sorted.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "index": 0, "text": "DOWN" } }, "type": "value" },
+            { "options": { "1": { "color": "green", "index": 1, "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (app) (fly_instance_up{app=~\"army-t.*\"})",
+          "legendFormat": "{{ app }}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Tenant app state",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Number of fly_instance_up transitions in the last 1h per tenant. High values = crash-loop or repeated redeploys. Complement to the crash_loop alert from the health-check worker.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 6 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "sum by (app) (changes(fly_instance_up{app=~\"army-t.*\"}[1h]))",
+          "legendFormat": "{{ app }}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "State transitions — last 1h",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "fly_instance_up over time for the full fleet. Gaps indicate scrape failures or downtime.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "max by (app) (fly_instance_up{app=~\"army-t.*\"})",
+          "legendFormat": "{{ app }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tenant uptime — timeline",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "tags": ["army", "tenants", "deployments"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Army — Deployments",
+  "uid": "army-deployments",
+  "version": 1,
+  "weekStart": ""
+}

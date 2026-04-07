@@ -1,0 +1,379 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Fleet-wide view of tenant Fly machines — health, CPU, memory, disk, concurrency. Scope: all apps matching the regex 'army-t.*'.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Count of tenant apps currently reporting metrics to Fly Prometheus.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "count(count by (app) (fly_instance_up{app=~\"army-t.*\"}))",
+          "legendFormat": "tenant apps",
+          "range": false,
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Active tenant apps",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Unhealthy = at least one machine in the app reporting fly_instance_up == 0 in the last 5 min.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "count(count by (app) (fly_instance_up{app=~\"army-t.*\"} == 0))",
+          "legendFormat": "unhealthy",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Unhealthy tenant apps",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Highest memory-used % across all tenant machines right now. >90% = memory_spike warning.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "max(fly_instance_memory_mem_used_percent{app=~\"army-t.*\"})",
+          "legendFormat": "max memory %",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Peak fleet memory %",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Highest volume-used % across all tenant machines right now. >85% = volume_nearing_cap warning.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "max(fly_volume_used_percent{app=~\"army-t.*\"})",
+          "legendFormat": "max volume %",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Peak fleet volume %",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Memory used % over time, one line per tenant app. Sorted descending at query time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent",
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "topk(10, fly_instance_memory_mem_used_percent{app=~\"army-t.*\"})",
+          "legendFormat": "{{ app }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory used % — top 10 tenants",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Volume used % over time, one line per tenant app.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent",
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "topk(10, fly_volume_used_percent{app=~\"army-t.*\"})",
+          "legendFormat": "{{ app }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Volume used % — top 10 tenants",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "Concurrent requests in flight, summed across the fleet. Sudden drop to 0 usually means routing failure; sudden spike means incident.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "sum(fly_app_concurrency_requests{app=~\"army-t.*\"})",
+          "legendFormat": "fleet concurrency",
+          "refId": "A"
+        }
+      ],
+      "title": "Fleet concurrent requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+      "description": "CPU utilization (rate over 5m) aggregated per tenant. Top 10 by recent max.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "fly-prometheus" },
+          "editorMode": "code",
+          "expr": "topk(10, sum by (app) (rate(fly_instance_cpu_total{app=~\"army-t.*\"}[5m])) / sum by (app) (fly_instance_cpu_count{app=~\"army-t.*\"}))",
+          "legendFormat": "{{ app }}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU utilization — top 10 tenants",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "tags": ["army", "tenants", "fleet"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Army — Fleet Overview",
+  "uid": "army-fleet-overview",
+  "version": 1,
+  "weekStart": ""
+}
