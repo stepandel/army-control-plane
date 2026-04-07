@@ -34,6 +34,7 @@ const billing = await res.json() as {
   trial_ends_at: string | null;
   trial_days_remaining: number;
   cancel_at: string | null;
+  current_period_end: string | null;
   has_payment_method: boolean;
 };
 
@@ -47,12 +48,17 @@ const isCanceled =
 
 // Cancellation scheduled — Stripe leaves status="active" until the period ends.
 const isScheduledCancel = isActive && !!billing.cancel_at;
-const cancelAtFormatted = billing.cancel_at
-  ? new Date(billing.cancel_at).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const cancelAtFormatted = billing.cancel_at ? formatDate(billing.cancel_at) : null;
+const nextBillingFormatted = billing.current_period_end
+  ? formatDate(billing.current_period_end)
   : null;
 ---
 
@@ -92,6 +98,9 @@ const cancelAtFormatted = billing.cancel_at
         <Fragment>
           <div class="plan-name">Pro Plan</div>
           <div class="plan-detail active-detail">✓ Active — $30/month</div>
+          {nextBillingFormatted && (
+            <div class="plan-meta">Next billing on {nextBillingFormatted}</div>
+          )}
           <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
         </Fragment>
       )}
@@ -291,6 +300,14 @@ const cancelAtFormatted = billing.cancel_at
 
   .active-detail { color: #166534; opacity: 1; }
   .warning-detail { color: #991b1b; opacity: 1; }
+
+  .plan-meta {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    opacity: 0.75;
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+  }
 
   .btn {
     display: inline-flex;
