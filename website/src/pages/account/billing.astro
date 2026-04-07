@@ -102,6 +102,23 @@ const isCanceled =
         </Fragment>
       )}
     </div>
+
+    <div class="promo-card">
+      <label for="promo-code">Have a promo code?</label>
+      <form id="promo-form">
+        <input
+          type="text"
+          id="promo-code"
+          name="promo-code"
+          placeholder="FRIEND2026"
+          autocapitalize="characters"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="submit" class="btn btn-secondary">Apply</button>
+      </form>
+      <p id="promo-msg" class="promo-msg" hidden></p>
+    </div>
   </div>
 </OnboardingLayout>
 
@@ -144,6 +161,44 @@ const isCanceled =
 
   document.getElementById("checkout-btn")?.addEventListener("click", handleCheckout);
   document.getElementById("portal-btn")?.addEventListener("click", handlePortal);
+
+  document.getElementById("promo-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = /** @type {HTMLInputElement | null} */ (document.getElementById("promo-code"));
+    const msg = document.getElementById("promo-msg");
+    if (!input || !msg) return;
+
+    const code = input.value.trim();
+    if (!code) return;
+
+    msg.hidden = true;
+    msg.textContent = "";
+    msg.className = "promo-msg";
+
+    try {
+      const res = await fetch(`${apiBase}/api/account/promo-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = "✓ Code applied — refreshing…";
+        msg.className = "promo-msg success";
+        msg.hidden = false;
+        setTimeout(() => location.reload(), 800);
+      } else {
+        msg.textContent = data.error || "Failed to apply code";
+        msg.className = "promo-msg error";
+        msg.hidden = false;
+      }
+    } catch {
+      msg.textContent = "Network error — try again";
+      msg.className = "promo-msg error";
+      msg.hidden = false;
+    }
+  });
 </script>
 
 <style>
@@ -252,4 +307,55 @@ const isCanceled =
   .btn-secondary:hover {
     border-color: var(--color-text);
   }
+
+  .promo-card {
+    margin-top: 1.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .promo-card label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.625rem;
+    color: var(--color-text);
+  }
+
+  #promo-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  #promo-form input {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    text-transform: uppercase;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  #promo-form input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    text-transform: uppercase;
+  }
+
+  #promo-form input:focus {
+    outline: none;
+    border-color: var(--color-text);
+  }
+
+  .promo-msg {
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .promo-msg.success { color: #166534; }
+  .promo-msg.error { color: #991b1b; }
 </style>

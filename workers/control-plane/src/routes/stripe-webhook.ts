@@ -4,6 +4,7 @@ import { getDb } from "../db/client";
 import { verifyWebhookSignature } from "../lib/stripe";
 import { FlyClient } from "../lib/fly";
 import { syncBillingToKv } from "../lib/billing-sync";
+import { reactivateTenant } from "../lib/tenant-reactivate";
 
 const GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -44,18 +45,6 @@ async function updateSubscriptionStatus(
       WHERE id = ${tenantId}
     `;
   }
-}
-
-async function reactivateTenant(env: ControlPlaneEnv, tenantId: string, flyAppName: string, flyMachineId: string) {
-  const sql = getDb(env);
-  // Update tenant status back to active
-  await sql`
-    UPDATE tenants SET status = 'active', updated_at = now()
-    WHERE id = ${tenantId}
-  `;
-  // Start the Fly machine
-  const fly = new FlyClient(env.FLY_API_TOKEN_VERA, flyAppName);
-  await fly.startMachine(flyMachineId);
 }
 
 async function suspendTenant(env: ControlPlaneEnv, tenantId: string, flyAppName: string, flyMachineId: string) {
