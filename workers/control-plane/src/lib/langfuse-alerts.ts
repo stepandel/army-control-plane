@@ -145,7 +145,9 @@ export async function runLangfuseAlertChecks(
       try {
         const samples = errors
           .slice(0, ERROR_SAMPLE_COUNT)
-          .map((e) => `• \`${e.name ?? "?"}\`: ${(e.statusMessage ?? "(no message)").slice(0, 200)}`)
+          .map(
+            (e) => `• \`${e.name ?? "?"}\`: ${(e.statusMessage ?? "(no message)").slice(0, 200)}`,
+          )
           .join("\n");
         const result = await sendAlert(env, {
           severity: "warning",

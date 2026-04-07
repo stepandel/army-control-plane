@@ -61,11 +61,13 @@ export async function runHealthChecks(env: ControlPlaneEnv): Promise<HealthCheck
 
   try {
     // ── 1. Fly machine health ────────────────────────────────────────
-    const tenants = await sql<{
-      id: string;
-      fly_app_name: string;
-      fly_machine_id: string;
-    }[]>`
+    const tenants = await sql<
+      {
+        id: string;
+        fly_app_name: string;
+        fly_machine_id: string;
+      }[]
+    >`
       SELECT id, fly_app_name, fly_machine_id
       FROM tenants
       WHERE status = 'active'

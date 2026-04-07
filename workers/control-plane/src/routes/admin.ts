@@ -534,7 +534,10 @@ admin.post("/alerts/test", async (c) => {
   if (!body.body || typeof body.body !== "string") {
     return c.json({ error: "body is required (string)" }, 400);
   }
-  if (body.dedupeTtlSec !== undefined && (typeof body.dedupeTtlSec !== "number" || body.dedupeTtlSec < 1)) {
+  if (
+    body.dedupeTtlSec !== undefined &&
+    (typeof body.dedupeTtlSec !== "number" || body.dedupeTtlSec < 1)
+  ) {
     return c.json({ error: "dedupeTtlSec must be a positive number" }, 400);
   }
 
