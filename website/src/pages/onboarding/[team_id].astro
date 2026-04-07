@@ -60,13 +60,14 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
         <p class="paywall-desc">
           Subscribe to continue using Vera for your team.
         </p>
-        <div class="paywall-price">
-          <span class="price">$30</span>
-          <span class="price-period">/month</span>
+        <div class="paywall-buttons">
+          <button class="btn btn-subscribe" data-plan="monthly">
+            Monthly &mdash; $50/mo
+          </button>
+          <button class="btn btn-subscribe" data-plan="yearly">
+            Yearly &mdash; $500/yr <span class="badge-save">Save $100</span>
+          </button>
         </div>
-        <button class="btn btn-subscribe" id="subscribe-btn">
-          Subscribe &rarr;
-        </button>
         <p class="paywall-note">Cancel anytime. Instant reactivation.</p>
       </div>
     )}
@@ -86,7 +87,12 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
                 {trialDays === 1 ? "1 day" : `${trialDays} days`} left on your free trial
               </span>
             </div>
-            <button class="btn btn-upgrade" id="upgrade-btn">Upgrade to Pro &rarr;</button>
+            <div class="banner-buttons">
+              <button class="btn btn-upgrade" data-plan="monthly">$50/mo</button>
+              <button class="btn btn-upgrade" data-plan="yearly">
+                $500/yr <span class="badge-save">Save $100</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -96,7 +102,12 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
               <span class="banner-icon">⚠️</span>
               <span>Your trial expires today</span>
             </div>
-            <button class="btn btn-upgrade" id="upgrade-btn">Upgrade now &rarr;</button>
+            <div class="banner-buttons">
+              <button class="btn btn-upgrade" data-plan="monthly">$50/mo</button>
+              <button class="btn btn-upgrade" data-plan="yearly">
+                $500/yr <span class="badge-save">Save $100</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -258,11 +269,15 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
   const TEAM_ID = el?.dataset.teamId ?? "";
 
   // ── Billing: Subscribe / Upgrade ──────────────────────────────
-  async function handleCheckout() {
+  async function handleCheckout(plan) {
     try {
       const res = await fetch(
         `${API_BASE}/api/onboarding/${TEAM_ID}/checkout`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        }
       );
       const data = await res.json();
       if (data.url) {
@@ -275,11 +290,12 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
     }
   }
 
-  const subscribeBtn = document.getElementById("subscribe-btn");
-  if (subscribeBtn) subscribeBtn.addEventListener("click", handleCheckout);
-
-  const upgradeBtn = document.getElementById("upgrade-btn");
-  if (upgradeBtn) upgradeBtn.addEventListener("click", handleCheckout);
+  document.querySelectorAll("[data-plan]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const plan = btn.getAttribute("data-plan");
+      if (plan === "monthly" || plan === "yearly") handleCheckout(plan);
+    });
+  });
 
   // ── Billing: Manage / Portal ──────────────────────────────────
   const manageBillingBtn = document.getElementById("manage-billing-btn");
@@ -384,20 +400,29 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
     line-height: 1.5;
   }
 
-  .paywall-price {
-    margin-bottom: 1.5rem;
+  .paywall-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
   }
 
-  .price {
-    font-size: 3rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+  .badge-save {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
 
-  .price-period {
-    font-size: 1.1rem;
-    opacity: 0.5;
-    font-weight: 500;
+  .banner-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .btn-subscribe {
