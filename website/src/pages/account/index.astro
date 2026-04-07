@@ -110,9 +110,8 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
   if (signOutBtn) {
     signOutBtn.addEventListener("click", async () => {
       try {
-        await fetch(`${apiBase}/api/account/sign-out`, {
+        await fetch(`/api/account/sign-out`, {
           method: "POST",
-          credentials: "include",
         });
       } catch {}
       window.location.href = "/sign-in";

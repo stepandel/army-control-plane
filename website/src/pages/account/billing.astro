@@ -5,7 +5,6 @@ import OnboardingLayout from "../../layouts/OnboardingLayout.astro";
 import { verifyJwt } from "../../lib/jwt";
 
 const env = Astro.locals.runtime.env;
-const apiBase = env.API_BASE_URL;
 const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
 
 // Verify session
@@ -122,13 +121,12 @@ const isCanceled =
   </div>
 </OnboardingLayout>
 
-<script define:vars={{ apiBase }}>
+<script>
   async function handleCheckout() {
     try {
-      const res = await fetch(`${apiBase}/api/account/checkout`, {
+      const res = await fetch(`/api/account/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
       });
       const data = await res.json();
       if (data.url) {
@@ -143,10 +141,9 @@ const isCanceled =
 
   async function handlePortal() {
     try {
-      const res = await fetch(`${apiBase}/api/account/billing/portal`, {
+      const res = await fetch(`/api/account/billing/portal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
       });
       const data = await res.json();
       if (data.url) {
@@ -176,10 +173,9 @@ const isCanceled =
     msg.className = "promo-msg";
 
     try {
-      const res = await fetch(`${apiBase}/api/account/promo-code`, {
+      const res = await fetch(`/api/account/promo-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ code }),
       });
       const data = await res.json();
