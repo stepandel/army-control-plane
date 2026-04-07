@@ -100,8 +100,10 @@ stripeWebhook.post("/", async (c) => {
       }
 
       await updateSubscriptionStatus(sql, tenant.id, "active", subscriptionId);
-      // Clear any past_due grace deadline now that we're paid
-      await sql`UPDATE tenants SET grace_deadline = NULL WHERE id = ${tenant.id}`;
+      // Clear past_due grace deadline + any prior scheduled cancellation
+      await sql`
+        UPDATE tenants SET grace_deadline = NULL, cancel_at = NULL WHERE id = ${tenant.id}
+      `;
       await syncBillingToKv(c.env, tenant.id, "active", null, null);
 
       // If tenant was suspended, reactivate
@@ -145,6 +147,20 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, newStatus, subscriptionId);
 
+      // Track scheduled cancel-at-period-end. Stripe leaves status="active" while
+      // a cancellation is pending, so the only signal is cancel_at_period_end.
+      const cancelAtPeriodEnd = obj.cancel_at_period_end === true;
+      const cancelAtUnix = typeof obj.cancel_at === "number" ? obj.cancel_at : null;
+      if (cancelAtPeriodEnd && cancelAtUnix) {
+        const cancelAtIso = new Date(cancelAtUnix * 1000).toISOString();
+        await sql`
+          UPDATE tenants SET cancel_at = ${cancelAtIso}::timestamptz WHERE id = ${tenant.id}
+        `;
+      } else {
+        // User undid the cancellation, or there was never one — make sure cancel_at is clear.
+        await sql`UPDATE tenants SET cancel_at = NULL WHERE id = ${tenant.id}`;
+      }
+
       // Manage grace_deadline alongside status
       let graceDeadline: string | null = null;
       if (newStatus === "past_due") {
@@ -176,7 +192,11 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, "canceled");
       await sql`
-        UPDATE tenants SET stripe_subscription_id = NULL, grace_deadline = NULL, updated_at = now()
+        UPDATE tenants
+        SET stripe_subscription_id = NULL,
+            grace_deadline = NULL,
+            cancel_at = NULL,
+            updated_at = now()
         WHERE id = ${tenant.id}
       `;
       await syncBillingToKv(c.env, tenant.id, "canceled", null, null);
