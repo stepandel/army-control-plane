@@ -7,6 +7,9 @@ import { refreshLinearToken } from "../lib/token-refresh";
 import { reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
+import { sendAlert, type AlertSeverity } from "../lib/alerts";
+import { runHealthChecks } from "../lib/health-check";
+import { runLangfuseAlertChecks } from "../lib/langfuse-alerts";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -498,6 +501,97 @@ admin.post("/encrypt-existing-credentials", async (c) => {
     tokens: { total: tokens.length, encrypted: tokensEncrypted, errors: tokenErrors },
     anthropic_keys: { total: tenants.length, encrypted: keysEncrypted, errors: keyErrors },
   });
+});
+
+/**
+ * POST /admin/alerts/test — fire a real ops alert through `lib/alerts.ts`.
+ *
+ * Body: `{ severity, title, body, dedupeKey?, dedupeTtlSec? }`.
+ * Used for verifying the Slack hookup end-to-end after deploy. Hits the same
+ * code path as production alerts — including dedupe.
+ */
+admin.post("/alerts/test", async (c) => {
+  let body: {
+    severity?: string;
+    title?: string;
+    body?: string;
+    dedupeKey?: string;
+    dedupeTtlSec?: number;
+  };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const validSeverities: AlertSeverity[] = ["info", "warning", "critical"];
+  if (!body.severity || !validSeverities.includes(body.severity as AlertSeverity)) {
+    return c.json({ error: `severity must be one of: ${validSeverities.join(", ")}` }, 400);
+  }
+  if (!body.title || typeof body.title !== "string") {
+    return c.json({ error: "title is required (string)" }, 400);
+  }
+  if (!body.body || typeof body.body !== "string") {
+    return c.json({ error: "body is required (string)" }, 400);
+  }
+  if (body.dedupeTtlSec !== undefined && (typeof body.dedupeTtlSec !== "number" || body.dedupeTtlSec < 1)) {
+    return c.json({ error: "dedupeTtlSec must be a positive number" }, 400);
+  }
+
+  const result = await sendAlert(c.env, {
+    severity: body.severity as AlertSeverity,
+    title: body.title,
+    body: body.body,
+    dedupeKey: body.dedupeKey,
+    dedupeTtlSec: body.dedupeTtlSec,
+  });
+
+  return c.json(result);
+});
+
+/**
+ * POST /admin/health-checks/run — one-shot trigger for the fleet health-check
+ * job without waiting for the 5-minute cron. Same code path, so any alert
+ * fired is real and hits Slack (respecting dedupe).
+ */
+admin.post("/health-checks/run", async (c) => {
+  const summary = await runHealthChecks(c.env);
+  return c.json(summary);
+});
+
+/**
+ * POST /admin/langfuse-alerts/run — one-shot trigger for the Langfuse
+ * polling job without waiting for the cron. Supports optional threshold
+ * overrides in the body so you can lower them to force a cost alert during
+ * smoke testing:
+ *
+ *   { "costWarningUsd": 0.001, "costCriticalUsd": 100 }
+ */
+admin.post("/langfuse-alerts/run", async (c) => {
+  let body: { costWarningUsd?: unknown; costCriticalUsd?: unknown } = {};
+  try {
+    const raw = await c.req.text();
+    if (raw.length > 0) body = JSON.parse(raw);
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const opts: { costWarningUsd?: number; costCriticalUsd?: number } = {};
+  if (body.costWarningUsd !== undefined) {
+    if (typeof body.costWarningUsd !== "number" || body.costWarningUsd < 0) {
+      return c.json({ error: "costWarningUsd must be a non-negative number" }, 400);
+    }
+    opts.costWarningUsd = body.costWarningUsd;
+  }
+  if (body.costCriticalUsd !== undefined) {
+    if (typeof body.costCriticalUsd !== "number" || body.costCriticalUsd < 0) {
+      return c.json({ error: "costCriticalUsd must be a non-negative number" }, 400);
+    }
+    opts.costCriticalUsd = body.costCriticalUsd;
+  }
+
+  const summary = await runLangfuseAlertChecks(c.env, opts);
+  return c.json(summary);
 });
 
 export default admin;

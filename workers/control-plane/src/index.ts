@@ -13,6 +13,8 @@ import stripeWebhook from "./routes/stripe-webhook";
 import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 import { enforceExpiredTrials } from "./lib/trial";
+import { runHealthChecks } from "./lib/health-check";
+import { runLangfuseAlertChecks } from "./lib/langfuse-alerts";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -59,8 +61,37 @@ app.route("/admin", admin);
 
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, env: ControlPlaneEnv, _ctx: ExecutionContext) {
-    await refreshExpiringTokens(env);
-    await enforceExpiredTrials(env);
+  /**
+   * Cron dispatcher. Multiple schedules are declared in `wrangler.toml`
+   * `[triggers] crons`; CF Workers delivers them all to this single handler,
+   * so we route by `event.cron` to run the right job for each tick.
+   *
+   * Schedules:
+   *   - every 30 minutes — Linear token refresh + expired-trial enforcement
+   *   - every  5 minutes — fleet health checks (Fly state + token symptoms)
+   */
+  async scheduled(event: ScheduledEvent, env: ControlPlaneEnv, _ctx: ExecutionContext) {
+    switch (event.cron) {
+      case "*/30 * * * *": {
+        await refreshExpiringTokens(env);
+        await enforceExpiredTrials(env);
+        return;
+      }
+      case "*/5 * * * *": {
+        // Two independent jobs share this trigger. Run them sequentially —
+        // each has its own try/catch inside, so one failing never blocks the
+        // other.
+        await runHealthChecks(env);
+        await runLangfuseAlertChecks(env);
+        return;
+      }
+      default: {
+        // Unknown schedule — log and fall back to the legacy behavior so we
+        // never silently drop a tick after someone edits wrangler.toml.
+        console.warn(`scheduled: unknown cron "${event.cron}", running default job set`);
+        await refreshExpiringTokens(env);
+        await enforceExpiredTrials(env);
+      }
+    }
   },
 };
