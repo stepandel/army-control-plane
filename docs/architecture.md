@@ -132,7 +132,7 @@ Three tables, accessed only by the Control Plane Worker:
 - Links to tenant via `tenant_id`
 - Tracks Fly machine ID, image ref, status, timestamps
 
-Schema: `workers/control-plane/src/db/schema.sql`
+Schema is managed via dbmate migrations in `workers/control-plane/db/migrations/` (applied automatically by `.github/workflows/migrate.yml` on merge to `main`). A current-state reference snapshot lives at `workers/control-plane/src/db/schema.sql`. See `docs/migrations.md` for authoring and running migrations.
 
 ## Data flows
 
