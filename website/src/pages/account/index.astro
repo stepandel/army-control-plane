@@ -102,6 +102,19 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
       </p>
       <button class="btn btn-danger" id="sign-out-btn">Sign out</button>
     </div>
+
+    <div class="section">
+      <h2>Support</h2>
+      <p class="support-info">
+        Need help? Join our
+        <a
+          href="https://chat.whatsapp.com/E7hLu1fFPmZHltJ5opcwFI?mode=gi_t"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="support-link"
+        >WhatsApp support group →</a>
+      </p>
+    </div>
   </div>
 </OnboardingLayout>
 
@@ -201,6 +214,20 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
     margin-bottom: 1rem;
     opacity: 0.7;
   }
+
+  .support-info {
+    font-size: 0.875rem;
+    opacity: 0.7;
+  }
+
+  .support-link {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .support-link:hover { opacity: 0.75; }
 
   .btn {
     display: inline-flex;
