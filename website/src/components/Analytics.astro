@@ -1,0 +1,29 @@
+---
+// Cloudflare Web Analytics beacon.
+//
+// Tracks pageviews, referrers, and core web vitals for the Vera landing
+// page and onboarding portal. Privacy-first, no cookies, no consent banner
+// required.
+//
+// Configured in Cloudflare dashboard → Web Analytics. Allowed hostnames
+// (configured alongside the token) should include:
+//   - army-website.stepandel.workers.dev  (current prod, pre-DNS-cutover)
+//   - agent-army.ai                       (future prod, post ARM-80)
+//
+// The beacon is only injected in production builds so local `astro dev`
+// traffic doesn't generate noise. CF would ignore `localhost` hits anyway
+// (not an allowed hostname) but gating keeps the network tab quiet.
+const isProd = import.meta.env.PROD;
+const CF_BEACON_TOKEN = "c991126b28954c359cfd64aff7924ae2";
+---
+
+{
+  isProd && (
+    <script
+      is:inline
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
+    />
+  )
+}
