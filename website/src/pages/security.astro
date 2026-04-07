@@ -24,10 +24,11 @@ import CTAFooter from "../components/CTAFooter.astro";
         <h2>Your code is yours. We never train on it.</h2>
         <p>
           Your source code, prompts, and outputs are never used to train or
-          fine-tune any AI model — by us or any third party. Code is held in
-          memory only for the duration of your session. Any context not cleared
-          by the agent automatically is purged within 24 hours. No repository
-          data is retained beyond what's needed to complete the work you assign.
+          fine-tune any AI model — by us or any third party. Conversation
+          snapshots and execution logs are scrubbed of secrets and PII before
+          storage and automatically deleted after <strong>7 days</strong>. See
+          our <a href="/privacy" class="inline-link">privacy notice</a> for the
+          full breakdown of what we collect and how long we keep it.
         </p>
       </section>
 
@@ -90,6 +91,18 @@ import CTAFooter from "../components/CTAFooter.astro";
             connections only. No inbound ports are exposed, reducing attack
             surface. Your Slack data never passes through a shared webhook
             endpoint.
+          </p>
+        </section>
+
+        <section class="card">
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 .9-4.5 4.4 1 6.7L12 17l-5.5 3 1-6.7L3 8.9 9 8z"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <h2>Secrets &amp; PII redaction</h2>
+          <p>
+            Every conversation snapshot and log line passes through a central
+            scrubber before storage. API keys, JWTs, connection strings,
+            emails, credit cards, and SSNs are redacted; large tool outputs
+            are summarized to byte counts. Nothing is sent to our
+            observability vendors or written to disk in raw form.
           </p>
         </section>
       </div>
@@ -197,13 +210,16 @@ import CTAFooter from "../components/CTAFooter.astro";
       <section class="contact">
         <h2>Data retention and deletion</h2>
         <p>
-          We retain tenant data only for as long as your account is active.
-          OAuth tokens are overwritten on refresh and old values are not kept.
-          When you uninstall Vera, your machine is destroyed and all associated
+          Conversation snapshots and execution logs are retained for
+          <strong>7 days</strong>, then automatically deleted from both the
+          tenant Fly volume and our Tigris object storage. OAuth tokens are
+          overwritten on refresh and old values are not kept. When you
+          uninstall Vera, your machine is destroyed and all associated
           credentials are deleted. You can request full data deletion at any
           time by emailing
           <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>
-          — we will complete the deletion within 30 days.
+          — we will complete the deletion within 30 days. See the
+          <a href="/privacy">privacy notice</a> for the full retention table.
         </p>
       </section>
 

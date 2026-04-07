@@ -1,0 +1,729 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import CTAFooter from "../components/CTAFooter.astro";
+---
+
+<Layout
+  title="Privacy — Vera AI"
+  description="How Vera AI collects, uses, stores, and protects your data. What we log, what we redact, how long we keep it, and who can access it."
+>
+  <Nav />
+  <main class="privacy">
+    <div class="privacy-inner">
+      <header class="privacy-header">
+        <div class="privacy-badge">Privacy</div>
+        <h1>What Vera knows about you</h1>
+        <p class="privacy-subtitle">
+          Plain-English description of what data Vera collects, why we collect
+          it, how long we keep it, who can see it, and how to ask us to
+          delete it.
+        </p>
+        <p class="last-updated">Last updated: April 6, 2026</p>
+      </header>
+
+      <section class="callout">
+        <h2>The short version</h2>
+        <ul class="callout-list">
+          <li>
+            Vera is an LLM-based coding agent. To answer your prompts we send
+            your conversation content to <strong>Anthropic</strong> (the model
+            provider) and store observability data with <strong>Langfuse</strong>
+            and on our own infrastructure.
+          </li>
+          <li>
+            We <strong>redact</strong> known secrets and common personal
+            identifiers (API keys, JWTs, database connection strings, email
+            addresses, credit-card numbers, SSNs) before any conversation
+            content is written to disk or sent to an observability vendor.
+          </li>
+          <li>
+            We retain conversation snapshots and execution logs for
+            <strong>7 days</strong>, then delete them from both local disk and
+            our object storage.
+          </li>
+          <li>
+            We do <strong>not</strong> sell your data, use it to train models,
+            or share it with advertisers.
+          </li>
+          <li>
+            You can request full deletion at any time by emailing
+            <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>.
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>1. What we collect</h2>
+        <p class="section-intro">
+          Three categories of data: conversation content, integration
+          metadata, and operational telemetry.
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <h3>Conversation data</h3>
+            <ul>
+              <li>Prompts you send Vera through Slack, Linear, GitHub, or the CLI</li>
+              <li>Vera's replies, including intermediate reasoning</li>
+              <li>Tool calls Vera makes (read file, run bash, search web, query Linear, etc.) and their results</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Integration metadata</h3>
+            <ul>
+              <li><strong>Slack:</strong> workspace, channel, thread timestamp, author user ID</li>
+              <li><strong>Linear:</strong> organization, issue identifier, issue title, comment author</li>
+              <li><strong>GitHub:</strong> repository, PR/issue number, comment author, comment type</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Operational telemetry</h3>
+            <ul>
+              <li>Token usage and computed cost per turn</li>
+              <li>Tool execution latencies</li>
+              <li>Session lifecycle events (start, end, retry, compaction)</li>
+              <li>Scrubbed error messages and stack traces</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>What we don't collect</h3>
+            <ul>
+              <li>Payment card data — handled directly by our payment processor</li>
+              <li>Cookies, device IDs, browser fingerprints</li>
+              <li>Biometric or location data</li>
+              <li>Anything used to train or fine-tune models</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>2. Why we collect it</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Purpose</th>
+                <th>Data used</th>
+                <th>Legal basis (GDPR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Run the agent and respond to your prompts</td>
+                <td>Conversation data, integration metadata</td>
+                <td>Performance of a contract</td>
+              </tr>
+              <tr>
+                <td>Crash recovery — resume sessions after a restart</td>
+                <td>Conversation snapshots</td>
+                <td>Legitimate interest (service continuity)</td>
+              </tr>
+              <tr>
+                <td>Debugging and incident response</td>
+                <td>Execution logs, error traces</td>
+                <td>Legitimate interest (operating the service)</td>
+              </tr>
+              <tr>
+                <td>Cost accounting and capacity planning</td>
+                <td>Token usage, latencies</td>
+                <td>Legitimate interest (running the business)</td>
+              </tr>
+              <tr>
+                <td>Security monitoring and abuse prevention</td>
+                <td>Logs, error traces</td>
+                <td>Legitimate interest (security)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="emphasis">
+          We do <strong>not</strong> use your conversation data to train or
+          fine-tune any model.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>3. Who else sees your data</h2>
+        <p>
+          To deliver Vera we share data with a small set of third-party
+          subprocessors — model providers, observability vendors, and platform
+          integrations. Each one is listed with its purpose, the data it
+          receives, and where it's processed on our
+          <a href="/subprocessors" class="inline-link">subprocessors page</a>.
+        </p>
+        <p>
+          We will notify customers at least <strong>30 days</strong> before
+          adding a new subprocessor.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>4. How long we keep it</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Data category</th>
+                <th>Where it lives</th>
+                <th>Retention</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Conversation snapshots (recovery)</td>
+                <td>Tenant Fly volume + Tigris S3</td>
+                <td>7 days</td>
+              </tr>
+              <tr>
+                <td>Session execution logs</td>
+                <td>Tenant Fly volume + Tigris S3</td>
+                <td>7 days</td>
+              </tr>
+              <tr>
+                <td>Cron run history</td>
+                <td>Tenant Fly volume</td>
+                <td>50 most recent runs per cron job</td>
+              </tr>
+              <tr>
+                <td>Workflow run history</td>
+                <td>Tenant Fly volume</td>
+                <td>100 most recent runs</td>
+              </tr>
+              <tr>
+                <td>Active session registry</td>
+                <td>Tenant Fly volume + Tigris S3</td>
+                <td>Pruned after 24 hours of inactivity</td>
+              </tr>
+              <tr>
+                <td>Langfuse traces</td>
+                <td>Langfuse Cloud</td>
+                <td>Per Langfuse plan window</td>
+              </tr>
+              <tr>
+                <td>OAuth tokens (Slack, Linear, GitHub)</td>
+                <td>Encrypted database</td>
+                <td>Lifetime of your account; deleted on uninstall</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          After the retention windows above pass, the data is irrecoverable
+          from our systems. Data held by sub-processors (Slack messages,
+          Linear comments, GitHub PR comments) is governed by those
+          platforms' own policies.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>5. How we protect your data</h2>
+
+        <h3 class="sub-heading">Redaction before storage</h3>
+        <p>
+          Every code path that writes conversation content to disk, object
+          storage, or an observability vendor passes through a central
+          scrubber before serialization. The scrubber redacts:
+        </p>
+        <ul class="redaction-list">
+          <li>Provider API keys (<code>sk-…</code>, <code>xoxb-…</code>, <code>ghp_…</code>, <code>lin_api_…</code>, <code>AKIA…</code>, <code>AIza…</code>)</li>
+          <li>JWTs</li>
+          <li>Database and message-broker connection strings (<code>postgres://</code>, <code>mysql://</code>, <code>mongodb+srv://</code>, <code>redis://</code>, <code>amqp://</code>)</li>
+          <li><code>KEY=value</code> environment-variable assignments where <code>KEY</code> is a known secret name</li>
+          <li><code>Bearer</code> and <code>Basic</code> auth headers</li>
+          <li>Long hex strings (likely tokens or hashes)</li>
+          <li>Email addresses</li>
+          <li>Credit-card-shaped 16-digit numbers</li>
+          <li>US Social Security number patterns</li>
+        </ul>
+        <p>
+          For tools that produce large or sensitive bodies (file reads, bash
+          output, Linear issue bodies, web search results), the scrubber
+          stores only a byte-count summary in traces — never the raw body.
+        </p>
+        <p class="caveat">
+          The scrubber is best-effort and pattern-based. It will not catch
+          every form of sensitive data — free-form names, addresses, and
+          identifiers that don't match a known pattern can pass through.
+          Treat Vera the way you'd treat a chat with a co-worker: don't paste
+          anything you wouldn't want a colleague to see in a debug log.
+        </p>
+
+        <h3 class="sub-heading">Encryption</h3>
+        <p>
+          All network traffic between Vera and sub-processors uses TLS. Tigris
+          encrypts bucket contents at rest. Fly.io volumes are encrypted at
+          rest. OAuth tokens are encrypted with AES-256-GCM before being
+          written to the database — see the
+          <a href="/security" class="inline-link">security page</a> for the
+          full key-storage architecture.
+        </p>
+
+        <h3 class="sub-heading">Tenant isolation</h3>
+        <p>
+          Each workspace runs on its own dedicated machine. There is no
+          shared runtime, shared filesystem, or shared in-memory state
+          between tenants.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>6. Who can access your conversations</h2>
+        <p>
+          Operators of Vera (the Vera AI engineering team) can view full
+          conversation traces in our observability tooling and can access
+          tenant data via cloud provider credentials. This access is governed
+          by our internal access policy and used only for incident response,
+          debugging at customer request, and security investigations.
+        </p>
+        <p>
+          Anthropic, Langfuse, Tigris, and Fly.io employees can access data
+          in their respective systems under their published access policies.
+          See each vendor's trust documentation for details.
+        </p>
+        <p>
+          We are working toward a tighter posture — per-tenant observability
+          isolation, formal break-glass procedures with customer notification,
+          and an in-product audit log of who viewed which conversation. If
+          your organization requires any of these as a precondition for
+          adoption, please reach out at
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>
+          and we'll work with you on a path.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>7. Your rights</h2>
+        <p>
+          Depending on where you are located, you may have the following
+          rights regarding your personal data:
+        </p>
+        <ul class="rights-list">
+          <li><strong>Access</strong> — request a copy of the data we hold about you</li>
+          <li><strong>Rectification</strong> — correct inaccurate data</li>
+          <li><strong>Erasure</strong> — request that we delete your data</li>
+          <li><strong>Restriction</strong> — request that we limit how we process your data</li>
+          <li><strong>Portability</strong> — request your data in a machine-readable format</li>
+          <li><strong>Objection</strong> — object to processing based on legitimate interests</li>
+        </ul>
+        <p>
+          To exercise any of these rights, email
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>.
+          We complete deletion requests within <strong>30 days</strong>.
+        </p>
+        <p class="caveat">
+          We can only delete data we still hold. Conversation snapshots and
+          logs older than 7 days have already been removed automatically.
+          Data held by Slack, Linear, or GitHub is governed by those
+          platforms' own policies — we can delete what Vera stores about an
+          interaction, but not the original Slack message or Linear comment.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>8. International data transfers</h2>
+        <p>
+          Vera is operated from the United States. If you are located outside
+          the United States, your data may be transferred to, and processed
+          in, the United States. Where required, we rely on Standard
+          Contractual Clauses with our sub-processors for transfers from the
+          EEA, UK, and Switzerland.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>9. Children's data</h2>
+        <p>
+          Vera is not directed to children under 16. We do not knowingly
+          collect personal data from children under 16. If you believe a
+          child has used Vera, please email
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>
+          and we will delete the relevant data.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>10. Changes to this notice</h2>
+        <p>
+          We will update this notice when our practices change. Material
+          changes will be communicated through Vera's integration channels
+          and through the project's changelog. The <strong>Last updated</strong>
+          date at the top of this page reflects the most recent revision.
+        </p>
+      </section>
+
+      <section class="contact">
+        <h2>Contact</h2>
+        <p>
+          For privacy questions, deletion requests, or anything else covered
+          on this page, email
+          <a href="mailto:privacy@agent-army.ai">privacy@agent-army.ai</a>.
+          For security vulnerability reports, email
+          <a href="mailto:security@agent-army.ai">security@agent-army.ai</a>.
+        </p>
+      </section>
+    </div>
+  </main>
+  <CTAFooter />
+</Layout>
+
+<style>
+  .privacy {
+    padding: 8rem 1.5rem 4rem;
+  }
+
+  .privacy-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .privacy-header {
+    margin-bottom: 4rem;
+  }
+
+  .privacy-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  .privacy-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  .last-updated {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    margin-top: 1rem;
+  }
+
+  .callout {
+    padding: 2.5rem;
+    border: 2px solid rgba(13, 40, 24, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4rem;
+  }
+
+  .callout h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .callout-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .callout-list li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    padding-left: 1.5rem;
+    position: relative;
+  }
+
+  .callout-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text);
+  }
+
+  .callout-list strong,
+  .callout-list a {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .callout-list a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .section {
+    margin-bottom: 3.5rem;
+  }
+
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section > p {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .section > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .section .section-intro {
+    margin-bottom: 1.5rem;
+  }
+
+  .section .sub-heading {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
+  .section a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .inline-link {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  .card {
+    padding: 1.75rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .card li {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .card li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+  }
+
+  .card strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    border-bottom: 2px solid rgba(13, 40, 24, 0.15);
+  }
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text);
+  }
+
+  td {
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    border-bottom: 1px solid rgba(13, 40, 24, 0.08);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .emphasis {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+  }
+
+  .emphasis strong {
+    color: var(--color-text);
+  }
+
+  .redaction-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .redaction-list li {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    position: relative;
+  }
+
+  .redaction-list li::before {
+    content: "✕";
+    position: absolute;
+    left: -1.5rem;
+    color: var(--color-text);
+    opacity: 0.5;
+    font-size: 0.85rem;
+  }
+
+  .redaction-list code {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0.1rem 0.35rem;
+    background: rgba(13, 40, 24, 0.06);
+    border-radius: 4px;
+  }
+
+  .rights-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .rights-list li {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    position: relative;
+  }
+
+  .rights-list li::before {
+    content: "→";
+    position: absolute;
+    left: -1.5rem;
+    color: var(--color-text);
+    opacity: 0.5;
+  }
+
+  .rights-list strong {
+    color: var(--color-text);
+  }
+
+  .caveat {
+    font-size: 0.9rem !important;
+    color: var(--color-text-muted);
+    padding: 1rem 1.25rem;
+    border-left: 3px solid rgba(13, 40, 24, 0.2);
+    background: rgba(13, 40, 24, 0.03);
+    margin-top: 1rem !important;
+  }
+
+  .contact {
+    padding: 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .contact h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .contact a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .privacy {
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    .card-grid {
+      grid-template-columns: 1fr;
+    }
+
+    th,
+    td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+</style>
