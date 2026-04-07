@@ -24,9 +24,10 @@ const data = await res.json() as {
     trial_days_remaining: number;
   };
   integrations: string[];
+  yearly_plan_enabled: boolean;
 };
 
-const { tenant, integrations } = data;
+const { tenant, integrations, yearly_plan_enabled: yearlyPlanEnabled } = data;
 const connected = new Set(integrations);
 const isActive = tenant.status === "active";
 const isProvisioning = tenant.status === "pending" || tenant.status === "provisioning";
@@ -64,9 +65,11 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
           <button class="btn btn-subscribe" data-plan="monthly">
             Monthly &mdash; $50/mo
           </button>
-          <button class="btn btn-subscribe" data-plan="yearly">
-            Yearly &mdash; $500/yr <span class="badge-save">Save $100</span>
-          </button>
+          {yearlyPlanEnabled && (
+            <button class="btn btn-subscribe" data-plan="yearly">
+              Yearly &mdash; $500/yr <span class="badge-save">Save $100</span>
+            </button>
+          )}
         </div>
         <p class="paywall-note">Cancel anytime. Instant reactivation.</p>
       </div>
@@ -89,9 +92,11 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
             </div>
             <div class="banner-buttons">
               <button class="btn btn-upgrade" data-plan="monthly">$50/mo</button>
-              <button class="btn btn-upgrade" data-plan="yearly">
-                $500/yr <span class="badge-save">Save $100</span>
-              </button>
+              {yearlyPlanEnabled && (
+                <button class="btn btn-upgrade" data-plan="yearly">
+                  $500/yr <span class="badge-save">Save $100</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -104,9 +109,11 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
             </div>
             <div class="banner-buttons">
               <button class="btn btn-upgrade" data-plan="monthly">$50/mo</button>
-              <button class="btn btn-upgrade" data-plan="yearly">
-                $500/yr <span class="badge-save">Save $100</span>
-              </button>
+              {yearlyPlanEnabled && (
+                <button class="btn btn-upgrade" data-plan="yearly">
+                  $500/yr <span class="badge-save">Save $100</span>
+                </button>
+              )}
             </div>
           </div>
         )}
