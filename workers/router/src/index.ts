@@ -78,7 +78,9 @@ export default {
             headers: { "content-type": "application/json" },
           });
         }
-      } catch { /* not JSON — continue to normal flow */ }
+      } catch {
+        /* not JSON — continue to normal flow */
+      }
     }
 
     // ── 2. Extract team identifier ──────────────────────────────

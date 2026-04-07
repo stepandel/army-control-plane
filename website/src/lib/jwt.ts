@@ -36,10 +36,7 @@ async function importKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-export async function verifyJwt(
-  token: string,
-  secret: string,
-): Promise<SessionPayload | null> {
+export async function verifyJwt(token: string, secret: string): Promise<SessionPayload | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
@@ -49,12 +46,7 @@ export async function verifyJwt(
   try {
     const key = await importKey(secret);
     const sigBytes = base64UrlDecode(signature);
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      sigBytes,
-      ENCODER.encode(signingInput),
-    );
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, ENCODER.encode(signingInput));
     if (!valid) return null;
 
     const payload: SessionPayload = JSON.parse(DECODER.decode(base64UrlDecode(body)));

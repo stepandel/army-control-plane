@@ -11,10 +11,7 @@ interface StateData {
 const STATE_TTL_SECONDS = 600; // 10 minutes
 
 /** Create a random state token, store it in KV with a 10-minute TTL. */
-export async function createState(
-  kv: KVNamespace,
-  tenantId?: string,
-): Promise<string> {
+export async function createState(kv: KVNamespace, tenantId?: string): Promise<string> {
   const token = crypto.randomUUID();
   const data: StateData = { ...(tenantId && { tenantId }) };
 

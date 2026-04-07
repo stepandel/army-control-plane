@@ -105,37 +105,29 @@ async function verifyAccessJwt(
 export const cfAccessGuard = createMiddleware<{
   Bindings: ControlPlaneEnv;
   Variables: { accessEmail: string };
-}>(
-  async (c, next) => {
-    // Skip auth in local dev when CF Access is not configured
-    if (!c.env.CF_ACCESS_TEAM_DOMAIN || !c.env.CF_ACCESS_AUD) {
-      c.set("accessEmail", "local-dev");
-      await next();
-      return;
-    }
-
-    const token =
-      c.req.header("cf-access-jwt-assertion") ??
-      getCookie(c.req.raw, "CF_Authorization");
-
-    if (!token) {
-      return c.json({ error: "Missing Cloudflare Access token" }, 403);
-    }
-
-    const payload = await verifyAccessJwt(
-      token,
-      c.env.CF_ACCESS_TEAM_DOMAIN,
-      c.env.CF_ACCESS_AUD,
-    );
-
-    if (!payload) {
-      return c.json({ error: "Invalid or expired Cloudflare Access token" }, 403);
-    }
-
-    c.set("accessEmail", payload.email ?? payload.sub);
+}>(async (c, next) => {
+  // Skip auth in local dev when CF Access is not configured
+  if (!c.env.CF_ACCESS_TEAM_DOMAIN || !c.env.CF_ACCESS_AUD) {
+    c.set("accessEmail", "local-dev");
     await next();
-  },
-);
+    return;
+  }
+
+  const token = c.req.header("cf-access-jwt-assertion") ?? getCookie(c.req.raw, "CF_Authorization");
+
+  if (!token) {
+    return c.json({ error: "Missing Cloudflare Access token" }, 403);
+  }
+
+  const payload = await verifyAccessJwt(token, c.env.CF_ACCESS_TEAM_DOMAIN, c.env.CF_ACCESS_AUD);
+
+  if (!payload) {
+    return c.json({ error: "Invalid or expired Cloudflare Access token" }, 403);
+  }
+
+  c.set("accessEmail", payload.email ?? payload.sub);
+  await next();
+});
 
 /** Extract a cookie value from a raw Request. */
 function getCookie(req: Request, name: string): string | undefined {

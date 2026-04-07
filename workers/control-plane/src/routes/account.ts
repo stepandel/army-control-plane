@@ -121,7 +121,8 @@ account.post("/checkout", async (c) => {
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
-  if (!tenant.stripe_customer_id) return c.json({ error: "No billing account — contact support" }, 400);
+  if (!tenant.stripe_customer_id)
+    return c.json({ error: "No billing account — contact support" }, 400);
   if (tenant.subscription_status === "active") return c.json({ error: "Already subscribed" }, 400);
 
   const successUrl = `${c.env.WEBSITE_URL}/account/billing?billing=success`;
@@ -129,8 +130,7 @@ account.post("/checkout", async (c) => {
   const trialEnd = tenant.trial_ends_at
     ? Math.floor(new Date(tenant.trial_ends_at).getTime() / 1000)
     : undefined;
-  const priceId =
-    plan === "yearly" ? c.env.STRIPE_PRICE_ID_YEARLY : c.env.STRIPE_PRICE_ID_MONTHLY;
+  const priceId = plan === "yearly" ? c.env.STRIPE_PRICE_ID_YEARLY : c.env.STRIPE_PRICE_ID_MONTHLY;
 
   const checkoutUrl = await createCheckoutSession(
     c.env.STRIPE_SECRET_KEY,
@@ -260,18 +260,9 @@ account.post("/promo-code", async (c) => {
 
   // 6. If suspended with a Fly machine, reactivate it (fire-and-forget so
   //    Fly latency doesn't block the response).
-  if (
-    tenant.status === "suspended" &&
-    tenant.fly_app_name &&
-    tenant.fly_machine_id
-  ) {
+  if (tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
     c.executionCtx.waitUntil(
-      reactivateTenant(
-        c.env,
-        tenant.id,
-        tenant.fly_app_name,
-        tenant.fly_machine_id,
-      ).catch((err) =>
+      reactivateTenant(c.env, tenant.id, tenant.fly_app_name, tenant.fly_machine_id).catch((err) =>
         console.error(`Reactivation failed for ${tenant.id}:`, err),
       ),
     );
@@ -293,10 +284,7 @@ account.post("/promo-code", async (c) => {
 
 /** POST /sign-out — clear the session cookie */
 account.post("/sign-out", (c) => {
-  c.header(
-    "set-cookie",
-    "__Host-session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
-  );
+  c.header("set-cookie", "__Host-session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
   return c.json({ success: true });
 });
 

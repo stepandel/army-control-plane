@@ -27,10 +27,7 @@ function base64UrlEncode(data: Uint8Array): string {
   for (let i = 0; i < data.length; i++) {
     binary += String.fromCharCode(data[i]);
   }
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function base64UrlDecode(str: string): Uint8Array {
@@ -81,10 +78,7 @@ export async function signJwt(
 
 // ── Verify ───────────────────────────────────────────────────────
 
-export async function verifyJwt(
-  token: string,
-  secret: string,
-): Promise<SessionPayload | null> {
+export async function verifyJwt(token: string, secret: string): Promise<SessionPayload | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
@@ -94,12 +88,7 @@ export async function verifyJwt(
   try {
     const key = await importKey(secret);
     const sigBytes = base64UrlDecode(signature);
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      sigBytes,
-      ENCODER.encode(signingInput),
-    );
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, ENCODER.encode(signingInput));
     if (!valid) return null;
 
     const payload: SessionPayload = JSON.parse(DECODER.decode(base64UrlDecode(body)));
