@@ -207,7 +207,7 @@ const activePlanLabel =
 </OnboardingLayout>
 
 <script>
-  async function handleCheckout(plan) {
+  async function handleCheckout(plan: "monthly" | "yearly") {
     try {
       const res = await fetch(`/api/account/checkout`, {
         method: "POST",
@@ -252,7 +252,7 @@ const activePlanLabel =
 
   document.getElementById("promo-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const input = /** @type {HTMLInputElement | null} */ (document.getElementById("promo-code"));
+    const input = document.getElementById("promo-code") as HTMLInputElement | null;
     const msg = document.getElementById("promo-msg");
     if (!input || !msg) return;
 
