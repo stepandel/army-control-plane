@@ -147,11 +147,12 @@ stripeWebhook.post("/", async (c) => {
 
       await updateSubscriptionStatus(sql, tenant.id, newStatus, subscriptionId);
 
-      // Track scheduled cancel-at-period-end. Stripe leaves status="active" while
-      // a cancellation is pending, so the only signal is cancel_at_period_end.
-      const cancelAtPeriodEnd = obj.cancel_at_period_end === true;
+      // Track scheduled cancellation. Stripe leaves status="active" while a
+      // cancellation is pending; the reliable signal is `cancel_at` being a
+      // future Unix timestamp. The Billing Portal uses this directly without
+      // flipping cancel_at_period_end, so don't gate on that flag.
       const cancelAtUnix = typeof obj.cancel_at === "number" ? obj.cancel_at : null;
-      if (cancelAtPeriodEnd && cancelAtUnix) {
+      if (cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000)) {
         const cancelAtIso = new Date(cancelAtUnix * 1000).toISOString();
         await sql`
           UPDATE tenants SET cancel_at = ${cancelAtIso}::timestamptz WHERE id = ${tenant.id}
