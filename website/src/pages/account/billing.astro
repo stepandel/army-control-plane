@@ -33,6 +33,7 @@ const billing = await res.json() as {
   subscription_status: string;
   trial_ends_at: string | null;
   trial_days_remaining: number;
+  cancel_at: string | null;
   has_payment_method: boolean;
 };
 
@@ -43,6 +44,16 @@ const isPastDue = billing.subscription_status === "past_due";
 const isCanceled =
   billing.subscription_status === "canceled" ||
   billing.subscription_status === "suspended";
+
+// Cancellation scheduled — Stripe leaves status="active" until the period ends.
+const isScheduledCancel = isActive && !!billing.cancel_at;
+const cancelAtFormatted = billing.cancel_at
+  ? new Date(billing.cancel_at).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    })
+  : null;
 ---
 
 <OnboardingLayout title="Vera — Billing">
@@ -77,10 +88,20 @@ const isCanceled =
         </Fragment>
       )}
 
-      {isActive && (
+      {isActive && !isScheduledCancel && (
         <Fragment>
           <div class="plan-name">Pro Plan</div>
           <div class="plan-detail active-detail">✓ Active — $30/month</div>
+          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
+        </Fragment>
+      )}
+
+      {isScheduledCancel && (
+        <Fragment>
+          <div class="plan-name">Pro Plan</div>
+          <div class="plan-detail warning-detail">
+            Cancels on {cancelAtFormatted} — you'll keep access until then
+          </div>
           <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
         </Fragment>
       )}

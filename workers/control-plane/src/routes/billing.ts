@@ -11,7 +11,8 @@ billing.get("/:team_id/billing", async (c) => {
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
-    SELECT id, subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id
+    SELECT id, subscription_status, trial_ends_at, cancel_at,
+           stripe_customer_id, stripe_subscription_id
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
@@ -26,6 +27,7 @@ billing.get("/:team_id/billing", async (c) => {
     subscription_status: tenant.subscription_status,
     trial_ends_at: tenant.trial_ends_at,
     trial_days_remaining: trialDaysRemaining,
+    cancel_at: tenant.cancel_at,
     has_payment_method: !!tenant.stripe_subscription_id,
   });
 });
