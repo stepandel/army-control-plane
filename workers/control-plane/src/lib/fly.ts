@@ -10,6 +10,13 @@ const DEFAULT_REGION = REGIONS[0];
 const VOLUME_NAME = "anton_state";
 const VOLUME_PATH = "/workspace";
 
+// Volume auto-extend: grow online from the initial size up to the limit when
+// usage crosses the threshold. Applied in the machine's mount config, not the
+// volume itself — Fly reads these on every machine config update.
+const VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT = 80;
+const VOLUME_AUTO_EXTEND_ADD_GB = 1;
+const VOLUME_SIZE_LIMIT_GB = 10;
+
 const MACHINE_GUEST: GuestConfig = {
   cpu_kind: "shared",
   cpus: 1,
@@ -50,6 +57,9 @@ interface MachineConfig {
     volume: string;
     name: string;
     path: string;
+    extend_threshold_percent?: number;
+    add_size_gb?: number;
+    size_gb_limit?: number;
   }>;
   services?: ServiceConfig[];
   checks?: Record<string, {
@@ -338,7 +348,16 @@ export class FlyClient {
         guest: guest ?? MACHINE_GUEST,
         restart: { policy: "always" },
         ...(volumeId
-          ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
+          ? {
+              mounts: [{
+                volume: volumeId,
+                name: VOLUME_NAME,
+                path: VOLUME_PATH,
+                extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
+                add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
+                size_gb_limit: VOLUME_SIZE_LIMIT_GB,
+              }],
+            }
           : {}),
         services: this.buildServiceConfig(),
         checks: {
@@ -373,7 +392,16 @@ export class FlyClient {
         guest: guest ?? MACHINE_GUEST,
         restart: { policy: "always" },
         ...(volumeId
-          ? { mounts: [{ volume: volumeId, name: VOLUME_NAME, path: VOLUME_PATH }] }
+          ? {
+              mounts: [{
+                volume: volumeId,
+                name: VOLUME_NAME,
+                path: VOLUME_PATH,
+                extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
+                add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
+                size_gb_limit: VOLUME_SIZE_LIMIT_GB,
+              }],
+            }
           : {}),
         services: this.buildServiceConfig(),
         checks: {
