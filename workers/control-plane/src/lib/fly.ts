@@ -17,10 +17,15 @@ const VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT = 80;
 const VOLUME_AUTO_EXTEND_ADD_GB = 1;
 const VOLUME_SIZE_LIMIT_GB = 10;
 
+// Disk-backed swap (root filesystem, not the mounted volume). Absorbs transient
+// memory spikes — e.g., pnpm/npm install resolvers — without OOM-killing the
+// agent process. Consumes equivalent space on the machine's root FS.
+const SWAP_SIZE_MB = 2048;
+
 const MACHINE_GUEST: GuestConfig = {
   cpu_kind: "shared",
   cpus: 1,
-  memory_mb: 1024,
+  memory_mb: 2048,
 };
 
 /** Machine sizing configuration. */
@@ -53,6 +58,7 @@ interface MachineConfig {
   env?: Record<string, string>;
   guest: GuestConfig;
   restart?: { policy: string; max_retries?: number };
+  swap_size_mb?: number;
   mounts?: Array<{
     volume: string;
     name: string;
@@ -347,6 +353,7 @@ export class FlyClient {
         env,
         guest: guest ?? MACHINE_GUEST,
         restart: { policy: "always" },
+        swap_size_mb: SWAP_SIZE_MB,
         ...(volumeId
           ? {
               mounts: [{
@@ -391,6 +398,7 @@ export class FlyClient {
         env,
         guest: guest ?? MACHINE_GUEST,
         restart: { policy: "always" },
+        swap_size_mb: SWAP_SIZE_MB,
         ...(volumeId
           ? {
               mounts: [{
