@@ -73,7 +73,9 @@ export async function sendAlert(
   const dedupeTtlSec = opts.dedupeTtlSec ?? DEFAULT_DEDUPE_TTL_SEC;
 
   // ── 1. Dedupe check (fail-open) ──────────────────────────────
-  if (dedupeKey) {
+  // ALERT_STATE may be unbound (see wrangler.toml). Without it, dedupe is
+  // disabled and every call through proceeds — safer than silently dropping.
+  if (dedupeKey && env.ALERT_STATE) {
     try {
       const seen = await env.ALERT_STATE.get(`dedupe:${dedupeKey}`);
       if (seen) {
@@ -161,7 +163,7 @@ export async function sendAlert(
   }
 
   // ── 5. Persist dedupe key (fail-open) ───────────────────────
-  if (dedupeKey) {
+  if (dedupeKey && env.ALERT_STATE) {
     try {
       await env.ALERT_STATE.put(`dedupe:${dedupeKey}`, "1", {
         expirationTtl: dedupeTtlSec,

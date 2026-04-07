@@ -163,16 +163,23 @@ async function checkMachineHealth(
 
   // ── Unreachable detection ──────────────────────────────────────
   if (machine.state !== "started") {
-    const prev = parseInt((await env.ALERT_STATE.get(badStateKey)) ?? "0", 10);
-    const current = Number.isFinite(prev) ? prev + 1 : 1;
-
-    // Persist the new counter for the next run.
-    try {
-      await env.ALERT_STATE.put(badStateKey, String(current), {
-        expirationTtl: BAD_STATE_COUNTER_TTL_SEC,
-      });
-    } catch (err) {
-      console.warn(`health-check: ALERT_STATE.put failed for ${badStateKey}:`, err);
+    // Without ALERT_STATE we can't count consecutive checks, so fall back to
+    // "alert immediately on any bad state" — noisier but visible. Once the KV
+    // namespace is provisioned (see workers/control-plane/wrangler.toml), the
+    // proper N-consecutive-check gating kicks back in automatically.
+    let current: number;
+    if (env.ALERT_STATE) {
+      const prev = parseInt((await env.ALERT_STATE.get(badStateKey)) ?? "0", 10);
+      current = Number.isFinite(prev) ? prev + 1 : 1;
+      try {
+        await env.ALERT_STATE.put(badStateKey, String(current), {
+          expirationTtl: BAD_STATE_COUNTER_TTL_SEC,
+        });
+      } catch (err) {
+        console.warn(`health-check: ALERT_STATE.put failed for ${badStateKey}:`, err);
+      }
+    } else {
+      current = UNREACHABLE_CONSECUTIVE_CHECKS;
     }
 
     if (current >= UNREACHABLE_CONSECUTIVE_CHECKS) {
@@ -191,7 +198,7 @@ async function checkMachineHealth(
       });
       if (result.delivered) alerts += 1;
     }
-  } else {
+  } else if (env.ALERT_STATE) {
     // Healthy — clear the counter if any.
     try {
       await env.ALERT_STATE.delete(badStateKey);

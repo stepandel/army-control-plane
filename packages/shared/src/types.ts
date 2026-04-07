@@ -30,7 +30,10 @@ export interface ControlPlaneEnv {
   ROUTING_TABLE: KVNamespace;
   OAUTH_STATE: KVNamespace;
   /** Ephemeral alert bookkeeping — dedupe keys (1h TTL) and health-check bad-state counters. */
-  ALERT_STATE: KVNamespace;
+  // Optional: when unbound, alert dedupe and health-check bad-state tracking
+  // are no-ops (alerts still fire, just without suppression). See the TODO in
+  // workers/control-plane/wrangler.toml for how to provision the namespace.
+  ALERT_STATE?: KVNamespace;
   DB: Hyperdrive;
   BASE_URL: string;
   WEBSITE_URL: string;
