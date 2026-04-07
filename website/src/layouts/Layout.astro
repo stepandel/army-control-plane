@@ -16,16 +16,29 @@ const jsonLd = {
       "@type": "Organization",
       "@id": "https://agent-army.ai/#organization",
       name: "Vera AI",
+      legalName: "Arsent LLC",
       url: "https://agent-army.ai",
       logo: {
         "@type": "ImageObject",
         url: "https://agent-army.ai/favicon.svg",
       },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "600 California St",
+        addressLocality: "San Francisco",
+        addressRegion: "CA",
+        addressCountry: "US",
+      },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "support@agent-army.ai",
+      },
       sameAs: [
         "https://github.com/agent-army",
       ],
       description:
-        "Vera AI builds autonomous AI engineering agents. Our flagship product, Vera, is an AI engineering agent embedded in Slack, Linear, and GitHub.",
+        "Vera is an AI engineering agent embedded in Slack, Linear, and GitHub. Vera is a product of Arsent LLC, a Delaware company based in San Francisco.",
     },
     {
       "@type": "SoftwareApplication",
@@ -41,20 +54,23 @@ const jsonLd = {
       offers: [
         {
           "@type": "Offer",
-          name: "BYOK",
-          price: "20.00",
-          priceCurrency: "USD",
-          billingIncrement: "P1M",
-          description: "Bring your own API key. $20/month per seat.",
-        },
-        {
-          "@type": "Offer",
-          name: "Enterprise",
+          name: "Pro Monthly",
           price: "50.00",
           priceCurrency: "USD",
           billingIncrement: "P1M",
           description:
-            "Enterprise plan with dedicated support. Starting at $50/month per seat.",
+            "Pro plan billed monthly. $50 USD/month per workspace. Includes a 3-day free trial.",
+          url: "https://agent-army.ai/pricing",
+        },
+        {
+          "@type": "Offer",
+          name: "Pro Yearly",
+          price: "500.00",
+          priceCurrency: "USD",
+          billingIncrement: "P1Y",
+          description:
+            "Pro plan billed yearly. $500 USD/year per workspace — save $100 vs. monthly. Includes a 3-day free trial.",
+          url: "https://agent-army.ai/pricing",
         },
       ],
       featureList: [

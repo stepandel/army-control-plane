@@ -21,15 +21,21 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <span class="footer-logo">Vera AI</span>
+      <p class="footer-legal">
+        Vera is a product of <strong>Arsent LLC</strong><br />
+        600 California St, San Francisco, CA, USA
+      </p>
     </div>
     <nav class="footer-links" aria-label="Footer navigation">
+      <a href="/pricing">Pricing</a>
       <a href="/security">Security</a>
       <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
       <a href="/subprocessors">Subprocessors</a>
       <a href="mailto:hello@agent-army.ai">Contact</a>
     </nav>
     <p class="footer-copyright">
-      © 2026 Vera AI. All rights reserved. · Built with <a
+      © 2026 Arsent LLC. All rights reserved. · Built with <a
         href="https://claude.com"
         target="_blank"
         rel="noopener noreferrer">Claude</a
@@ -121,8 +127,26 @@
   }
 
   .footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .footer-logo {
     font-weight: 900;
     font-size: 1rem;
+  }
+
+  .footer-legal {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    opacity: 0.85;
+  }
+
+  .footer-legal strong {
+    color: var(--color-text);
+    font-weight: 600;
   }
 
   .footer-links {
