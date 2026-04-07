@@ -36,7 +36,7 @@ billing.post("/:team_id/checkout", async (c) => {
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
-    SELECT id, stripe_customer_id, subscription_status
+    SELECT id, stripe_customer_id, subscription_status, trial_ends_at
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
@@ -45,6 +45,9 @@ billing.post("/:team_id/checkout", async (c) => {
 
   const successUrl = `${c.env.WEBSITE_URL}/onboarding/${teamId}?billing=success`;
   const cancelUrl = `${c.env.WEBSITE_URL}/onboarding/${teamId}?billing=canceled`;
+  const trialEnd = tenant.trial_ends_at
+    ? Math.floor(new Date(tenant.trial_ends_at).getTime() / 1000)
+    : undefined;
 
   const checkoutUrl = await createCheckoutSession(
     c.env.STRIPE_SECRET_KEY,
@@ -52,6 +55,7 @@ billing.post("/:team_id/checkout", async (c) => {
     c.env.STRIPE_PRICE_ID,
     successUrl,
     cancelUrl,
+    trialEnd,
   );
 
   return c.json({ url: checkoutUrl });
