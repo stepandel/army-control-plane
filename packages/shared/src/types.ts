@@ -29,6 +29,8 @@ export interface RouterEnv {
 export interface ControlPlaneEnv {
   ROUTING_TABLE: KVNamespace;
   OAUTH_STATE: KVNamespace;
+  /** Ephemeral alert bookkeeping — dedupe keys (1h TTL) and health-check bad-state counters. */
+  ALERT_STATE: KVNamespace;
   DB: Hyperdrive;
   BASE_URL: string;
   WEBSITE_URL: string;
@@ -62,4 +64,7 @@ export interface ControlPlaneEnv {
   STRIPE_PRICE_ID_MONTHLY: string;
   STRIPE_PRICE_ID_YEARLY: string;
   SESSION_SECRET: string;
+
+  /** Slack incoming-webhook URL for ops alerts (set via `wrangler secret put ALERT_SLACK_WEBHOOK_URL`). */
+  ALERT_SLACK_WEBHOOK_URL: string;
 }

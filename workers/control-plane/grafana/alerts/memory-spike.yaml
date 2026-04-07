@@ -1,0 +1,103 @@
+# Grafana Cloud alert rule — high-but-not-yet-critical memory usage.
+#
+# Fires warning when a tenant Fly machine's used memory stays above 90% for
+# 10 minutes. Distinct from oom-pressure.yaml (which looks at `available`,
+# not `used`) — the two metrics usually agree but we evaluate both so a
+# single broken metric pipeline doesn't silence both signals.
+#
+# See docs/monitoring.md for the full alert inventory.
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: tenant-memory
+    folder: Army Ops
+    interval: 1m
+    rules:
+      - uid: army-memory-spike
+        title: Tenant machine sustained memory spike
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: fly-prometheus
+            model:
+              editorMode: code
+              expr: fly_instance_memory_mem_used_percent{app=~"army-t.*"}
+              instant: false
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: last
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "High memory on {{ $labels.app }}"
+          description: |
+            fly_instance_memory_mem_used_percent for app {{ $labels.app }} has
+            been above 90% for 10+ minutes (current: {{ $values.B }}%). Not yet
+            OOM territory but worth investigating — memory leak, stuck agent
+            session, or workload that genuinely needs more headroom. Check the
+            tenant-detail dashboard for context, and resize via
+            `PATCH /admin/tenants/<id>/resize` if warranted.
+          runbook_url: https://github.com/stepandel/army-control-plane/blob/main/docs/monitoring.md#memory-spike
+        labels:
+          severity: warning
+          source: fly-prometheus
+        isPaused: false

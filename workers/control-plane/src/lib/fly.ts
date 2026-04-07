@@ -100,6 +100,23 @@ interface CreateMachineRequest {
   config: MachineConfig;
 }
 
+/**
+ * Subset of the machine event shape returned by Fly's `GET /machines/:id`.
+ * Fly emits events for every lifecycle transition (launch / start / exit /
+ * restart / stop / update / destroy). We use this for crash-loop detection in
+ * `lib/health-check.ts` — counting recent `start` / `exit` events within a
+ * sliding window.
+ *
+ * `timestamp` is epoch milliseconds (per Fly's API).
+ */
+export interface FlyMachineEvent {
+  id: string;
+  type: string;
+  status?: string;
+  source?: string;
+  timestamp: number;
+}
+
 export interface MachineResponse {
   id: string;
   name: string;
@@ -108,6 +125,8 @@ export interface MachineResponse {
   instance_id: string;
   private_ip: string;
   config: MachineConfig;
+  /** Recent lifecycle events (populated by GET /machines/:id). */
+  events?: FlyMachineEvent[];
 }
 
 export class FlyClient {
@@ -497,6 +516,24 @@ export class FlyClient {
     }
 
     throw new Error(`Machine creation failed in all regions:\n${errors.join("\n")}`);
+  }
+
+  /**
+   * List all machines in this app. Used by the health-check cron to scan
+   * every tenant's machines in one shot. Fly returns the full machine shape
+   * (including `events`) for each entry.
+   */
+  async listMachines(): Promise<MachineResponse[]> {
+    return this.request<MachineResponse[]>("GET", "/machines");
+  }
+
+  /**
+   * Fetch a single machine by ID, including recent lifecycle events. Used by
+   * the health-check cron for targeted state / crash-loop detection when the
+   * tenants table already has a `fly_machine_id`.
+   */
+  async getMachine(machineId: string): Promise<MachineResponse> {
+    return this.request<MachineResponse>("GET", `/machines/${machineId}`);
   }
 
   /** Stop a running machine. */
