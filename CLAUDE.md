@@ -51,7 +51,7 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 - Shared types live in `packages/shared/src/types.ts` — both workers import from `@army/shared`
 - Environment bindings are typed as `RouterEnv` and `ControlPlaneEnv`
 - Secrets are managed via `wrangler secret put`, never committed. Local dev uses `.dev.vars` (gitignored)
-- SQL schema lives in `workers/control-plane/src/db/schema.sql` — run manually against Neon
+- DB migrations live in `workers/control-plane/db/migrations/` and are managed with [dbmate](https://github.com/amacneil/dbmate). Create one with `pnpm db:new <name>` and CI applies them on merge to `main` (`.github/workflows/migrate.yml`). See `docs/migrations.md`. The current-state snapshot in `workers/control-plane/src/db/schema.sql` is a reference only — never edit it as a substitute for a migration
 - Each tenant gets a dedicated Fly app (app-per-tenant model). `FLY_APP` in `wrangler.toml` is used only as the shared image source: `registry.fly.io/${FLY_APP}:latest`
 - Provisioning and credential push are internal functions (`lib/provision.ts`, `lib/credentials.ts`), not HTTP routes
 
@@ -72,6 +72,8 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 | `workers/control-plane/src/lib/provision.ts` | provisionTenant() — creates machine, updates DB + KV |
 | `workers/control-plane/src/lib/credentials.ts` | pushCredentials() — updates machine env vars |
 | `workers/control-plane/src/db/client.ts` | Database client factory (Hyperdrive) |
-| `workers/control-plane/src/db/schema.sql` | Postgres schema |
+| `workers/control-plane/db/migrations/` | dbmate SQL migrations (source of truth, run by CI) |
+| `workers/control-plane/src/db/schema.sql` | Current-state schema snapshot (reference only) |
+| `docs/migrations.md` | How to author and run migrations |
 | `docs/security.md` | Route protection model and secrets inventory |
 | `docs/architecture.md` | System architecture and data flows |

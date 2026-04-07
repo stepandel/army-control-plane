@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   stripe_subscription_id TEXT,                   -- Stripe subscription ID for active subscription
   subscription_status TEXT NOT NULL DEFAULT 'trialing', -- trialing | active | past_due | canceled | suspended
   trial_ends_at TIMESTAMPTZ,                     -- when the free trial expires (3 days from signup)
+  grace_deadline TIMESTAMPTZ,                    -- end of grace period after subscription lapse
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -62,10 +63,4 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_slack ON users(slack_team_id, slack_user_id);
 CREATE INDEX IF NOT EXISTS idx_users_team ON users(slack_team_id);
 
--- Migration: add billing columns to tenants (safe to re-run)
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'trialing';
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS grace_deadline TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id);
