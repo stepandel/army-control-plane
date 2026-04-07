@@ -3,6 +3,10 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  # Also run on direct pushes / merge commits to main so violations
+  # introduced by branches that pre-date this workflow can't slip through.
+  push:
+    branches: [main]
 
 # Cancel in-progress runs on the same ref to save CI minutes
 concurrency:

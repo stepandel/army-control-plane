@@ -49,9 +49,9 @@ const DEFAULT_DEDUPE_TTL_SEC = 3600;
 
 /** Slack attachment colors per severity. */
 const SEVERITY_COLOR: Record<AlertSeverity, string> = {
-  info: "#9aa0a6",      // gray
-  warning: "#f5a623",   // yellow
-  critical: "#d93025",  // red
+  info: "#9aa0a6", // gray
+  warning: "#f5a623", // yellow
+  critical: "#d93025", // red
 };
 
 const SEVERITY_EMOJI: Record<AlertSeverity, string> = {
