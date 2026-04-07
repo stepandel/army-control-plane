@@ -8,6 +8,7 @@ import { reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
 import { sendAlert, type AlertSeverity } from "../lib/alerts";
+import { runHealthChecks } from "../lib/health-check";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -525,6 +526,16 @@ admin.post("/alerts/test", async (c) => {
   });
 
   return c.json(result);
+});
+
+/**
+ * POST /admin/health-checks/run — one-shot trigger for the fleet health-check
+ * job without waiting for the 5-minute cron. Same code path, so any alert
+ * fired is real and hits Slack (respecting dedupe).
+ */
+admin.post("/health-checks/run", async (c) => {
+  const summary = await runHealthChecks(c.env);
+  return c.json(summary);
 });
 
 export default admin;

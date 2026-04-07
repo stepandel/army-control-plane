@@ -137,6 +137,59 @@ curl -X POST .../admin/alerts/test -d '{
 
 Wait 60s and the next call delivers again.
 
+## Fleet health-check cron
+
+`workers/control-plane/src/lib/health-check.ts` runs every **5 minutes** via the `*/5 * * * *` trigger in `wrangler.toml`. It scans every `active` tenant with a Fly app+machine and the `integration_tokens` table, and fires the following alerts through `sendAlert()`.
+
+### Alert types
+
+| Alert | Severity | Trigger condition | Dedupe key |
+|-------|----------|-------------------|------------|
+| `machine_down` | critical | Machine state ≠ `started` for **≥2 consecutive checks** (≈10 min) | `machine_down:<tenant_id>` |
+| `crash_loop` | critical | **≥3** lifecycle events (`start` / `restart` / `exit`) in the last **15 min** | `crash_loop:<tenant_id>` |
+| `token_refresh_failed` | critical | Linear token `expires_at < now()` while tenant `status = 'active'` | `token_refresh_failed:<tenant_id>` |
+
+All three use the default **1-hour dedupe TTL** — the same persistent condition only pages once per hour, re-firing if it remains unresolved.
+
+### Consecutive-bad-checks state
+
+The unreachable detector uses a simple counter stored in `ALERT_STATE` KV under `fly_state:<tenant_id>`:
+
+- On each non-`started` observation, increment the counter (TTL 1 day).
+- When the counter reaches 2, fire the alert.
+- On the first `started` observation, delete the counter.
+
+This guards against transient flaps (e.g. a machine briefly in `replacing` during a deploy) without requiring cross-run state.
+
+### Triggering a one-shot run
+
+```sh
+curl -X POST https://army-control-plane.stepandel.workers.dev/admin/health-checks/run \
+  -H 'cf-access-client-id: ...' \
+  -H 'cf-access-client-secret: ...'
+# → {"tenantsChecked":N,"alertsFired":0,"errorsSkipped":0}
+```
+
+### Smoke-test procedure
+
+Each alert type has a manual reproduction. **Use a non-prod tenant only.**
+
+1. **`machine_down`** — stop a non-prod tenant's machine via the Fly dashboard (or `flyctl machine stop -a <app>`). Wait ~10 min. One `machine_down` alert should fire. Start the machine; subsequent runs are deduped for 1h but the counter resets immediately.
+
+2. **`crash_loop`** — temporarily deploy a known-broken image to a non-prod tenant so it restart-loops (set `restart: always` is already the default). Within ~15 min, one `crash_loop` alert fires. Roll back.
+
+3. **`token_refresh_failed`** — directly backdate a test tenant's Linear token in the DB:
+   ```sql
+   UPDATE integration_tokens
+   SET expires_at = now() - interval '1 hour'
+   WHERE tenant_id = '<test-tenant-id>' AND platform = 'linear';
+   ```
+   Next health check fires the alert. Restore the real `expires_at` or run `POST /admin/tenants/<id>/refresh-token` to clear it.
+
+### Rate limiting against Fly's API
+
+Fly's Machines API handles ~1 req/sec per token. With the current `*/5` cadence and one `GET /machines/:id` per active tenant, we make `N` requests every 5 min — well under the limit at 100+ tenants. If we hit limits later, swap the per-tenant loop for a single `listMachines()` call per distinct app.
+
 ## Silencing an alert
 
 There's no UI silencing today. Two options:
