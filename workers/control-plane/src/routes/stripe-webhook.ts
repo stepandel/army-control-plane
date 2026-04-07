@@ -152,11 +152,7 @@ stripeWebhook.post("/", async (c) => {
       // future Unix timestamp. The Billing Portal uses this directly without
       // flipping cancel_at_period_end, so don't gate on that flag.
       const cancelAtUnix = typeof obj.cancel_at === "number" ? obj.cancel_at : null;
-      const willPersistCancel = !!(cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000));
-      console.log(
-        `subscription.updated tenant=${tenant.id} status=${stripeStatus} cancel_at=${cancelAtUnix} cap=${obj.cancel_at_period_end} persist=${willPersistCancel}`,
-      );
-      if (willPersistCancel && cancelAtUnix) {
+      if (cancelAtUnix && cancelAtUnix > Math.floor(Date.now() / 1000)) {
         const cancelAtIso = new Date(cancelAtUnix * 1000).toISOString();
         await sql`
           UPDATE tenants SET cancel_at = ${cancelAtIso}::timestamptz WHERE id = ${tenant.id}
@@ -164,6 +160,26 @@ stripeWebhook.post("/", async (c) => {
       } else {
         // User undid the cancellation, or there was never one — make sure cancel_at is clear.
         await sql`UPDATE tenants SET cancel_at = NULL WHERE id = ${tenant.id}`;
+      }
+
+      // Track next billing date. In Stripe's flexible billing mode the period
+      // lives on the subscription item, not the top-level subscription, so
+      // check both shapes.
+      let cpeUnix: number | null = null;
+      if (typeof obj.current_period_end === "number") {
+        cpeUnix = obj.current_period_end;
+      } else {
+        const items = obj.items as { data?: Array<Record<string, unknown>> } | undefined;
+        const first = items?.data?.[0];
+        if (first && typeof first.current_period_end === "number") {
+          cpeUnix = first.current_period_end;
+        }
+      }
+      if (cpeUnix) {
+        const cpeIso = new Date(cpeUnix * 1000).toISOString();
+        await sql`
+          UPDATE tenants SET current_period_end = ${cpeIso}::timestamptz WHERE id = ${tenant.id}
+        `;
       }
 
       // Manage grace_deadline alongside status
@@ -201,6 +217,7 @@ stripeWebhook.post("/", async (c) => {
         SET stripe_subscription_id = NULL,
             grace_deadline = NULL,
             cancel_at = NULL,
+            current_period_end = NULL,
             updated_at = now()
         WHERE id = ${tenant.id}
       `;

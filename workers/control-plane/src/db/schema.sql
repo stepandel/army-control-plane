@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   trial_ends_at TIMESTAMPTZ,                     -- when the free trial expires (3 days from signup)
   grace_deadline TIMESTAMPTZ,                    -- end of grace period after subscription lapse
   cancel_at TIMESTAMPTZ,                         -- when a scheduled cancellation will take effect (cancel_at_period_end)
+  current_period_end TIMESTAMPTZ,                -- end of the current billing period (next charge date)
   status        TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | suspended
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()

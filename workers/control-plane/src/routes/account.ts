@@ -24,7 +24,7 @@ account.get("/tenant", async (c) => {
 
   const [tenant] = await sql`
     SELECT id, name, status, anthropic_api_key, tracing_provider,
-           subscription_status, trial_ends_at, cancel_at
+           subscription_status, trial_ends_at, cancel_at, current_period_end
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
@@ -50,6 +50,7 @@ account.get("/tenant", async (c) => {
       trial_ends_at: tenant.trial_ends_at,
       trial_days_remaining: trialDaysRemaining,
       cancel_at: tenant.cancel_at,
+      current_period_end: tenant.current_period_end,
     },
     integrations: tokens.map((t) => (t as Record<string, string>).platform),
   });
@@ -63,7 +64,7 @@ account.get("/billing", async (c) => {
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
-    SELECT id, subscription_status, trial_ends_at, cancel_at,
+    SELECT id, subscription_status, trial_ends_at, cancel_at, current_period_end,
            stripe_customer_id, stripe_subscription_id
     FROM tenants WHERE id = ${teamId}
   `;
@@ -80,6 +81,7 @@ account.get("/billing", async (c) => {
     trial_ends_at: tenant.trial_ends_at,
     trial_days_remaining: trialDaysRemaining,
     cancel_at: tenant.cancel_at,
+    current_period_end: tenant.current_period_end,
     has_payment_method: !!tenant.stripe_subscription_id,
   });
 });
