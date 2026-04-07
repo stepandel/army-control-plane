@@ -144,25 +144,34 @@ stripeWebhook.post("/", async (c) => {
         break;
       }
 
-      await updateSubscriptionStatus(sql, tenant.id, "active", subscriptionId);
       // Clear past_due grace deadline + any prior scheduled cancellation
       await sql`
         UPDATE tenants SET grace_deadline = NULL, cancel_at = NULL WHERE id = ${tenant.id}
       `;
-      await syncBillingToKv(c.env, tenant.id, "active", null, null);
 
       // Hydrate plan + period fields immediately by fetching the subscription.
       // The corresponding customer.subscription.updated event arrives shortly
       // after, but Stripe redirects the user to our success URL the moment
-      // checkout closes — so the dashboard would otherwise show "Active" with
-      // no plan label or next billing date until that race resolves.
+      // checkout closes — so the dashboard would otherwise show generic state
+      // until that race resolves.
+      //
+      // We also use the fetched subscription's actual status (e.g. "trialing"
+      // when checkout completes mid-trial) instead of hardcoding "active",
+      // so the UI can show the right messaging for trial-with-payment-method.
+      let resolvedStatus = "active";
       try {
         const sub = await getSubscription(c.env.STRIPE_SECRET_KEY, subscriptionId);
+        if (typeof sub.status === "string" && (sub.status === "active" || sub.status === "trialing")) {
+          resolvedStatus = sub.status;
+        }
         await persistSubscriptionFields(sql, tenant.id, sub);
       } catch (err) {
         console.error(`Failed to hydrate subscription fields for ${tenant.id}:`, err);
         // Non-fatal — the next subscription.updated webhook will fill them in.
       }
+
+      await updateSubscriptionStatus(sql, tenant.id, resolvedStatus, subscriptionId);
+      await syncBillingToKv(c.env, tenant.id, resolvedStatus, null, null);
 
       // If tenant was suspended, reactivate
       if (tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
