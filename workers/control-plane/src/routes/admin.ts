@@ -7,6 +7,7 @@ import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh"
 import { reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
+import { sendAlert, type AlertSeverity } from "../lib/alerts";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -478,6 +479,52 @@ admin.post("/encrypt-existing-credentials", async (c) => {
     tokens: { total: tokens.length, encrypted: tokensEncrypted, errors: tokenErrors },
     anthropic_keys: { total: tenants.length, encrypted: keysEncrypted, errors: keyErrors },
   });
+});
+
+/**
+ * POST /admin/alerts/test — fire a real ops alert through `lib/alerts.ts`.
+ *
+ * Body: `{ severity, title, body, dedupeKey?, dedupeTtlSec? }`.
+ * Used for verifying the Slack hookup end-to-end after deploy. Hits the same
+ * code path as production alerts — including dedupe.
+ */
+admin.post("/alerts/test", async (c) => {
+  let body: {
+    severity?: string;
+    title?: string;
+    body?: string;
+    dedupeKey?: string;
+    dedupeTtlSec?: number;
+  };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const validSeverities: AlertSeverity[] = ["info", "warning", "critical"];
+  if (!body.severity || !validSeverities.includes(body.severity as AlertSeverity)) {
+    return c.json({ error: `severity must be one of: ${validSeverities.join(", ")}` }, 400);
+  }
+  if (!body.title || typeof body.title !== "string") {
+    return c.json({ error: "title is required (string)" }, 400);
+  }
+  if (!body.body || typeof body.body !== "string") {
+    return c.json({ error: "body is required (string)" }, 400);
+  }
+  if (body.dedupeTtlSec !== undefined && (typeof body.dedupeTtlSec !== "number" || body.dedupeTtlSec < 1)) {
+    return c.json({ error: "dedupeTtlSec must be a positive number" }, 400);
+  }
+
+  const result = await sendAlert(c.env, {
+    severity: body.severity as AlertSeverity,
+    title: body.title,
+    body: body.body,
+    dedupeKey: body.dedupeKey,
+    dedupeTtlSec: body.dedupeTtlSec,
+  });
+
+  return c.json(result);
 });
 
 export default admin;
