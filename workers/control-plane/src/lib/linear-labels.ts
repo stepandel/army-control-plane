@@ -1,12 +1,37 @@
 const LABEL_GROUP_NAME = "Vera Controls";
 
 const LABELS = [
-  { name: "#research", color: "#34D399", description: "Deep-dive research across the web and codebase, returns a written report" },
-  { name: "#prep", color: "#34D399", description: "Break down the ticket into subtasks and propose an implementation plan" },
-  { name: "#triage", color: "#34D399", description: "Investigate the bug or issue, identify root cause, and recommend a fix" },
-  { name: "#execute", color: "#34D399", description: "(default behaviour) Implement the solution and open a pull request" },
-  { name: "#review", color: "#34D399", description: "Review the pull request for correctness, style, and edge cases" },
-  { name: "#epic", color: "#34D399", description: "Orchestrate an epic — break down, sequence, implement all sub-issues on one branch, and open a single PR" },
+  {
+    name: "#research",
+    color: "#34D399",
+    description: "Deep-dive research across the web and codebase, returns a written report",
+  },
+  {
+    name: "#prep",
+    color: "#34D399",
+    description: "Break down the ticket into subtasks and propose an implementation plan",
+  },
+  {
+    name: "#triage",
+    color: "#34D399",
+    description: "Investigate the bug or issue, identify root cause, and recommend a fix",
+  },
+  {
+    name: "#execute",
+    color: "#34D399",
+    description: "(default behaviour) Implement the solution and open a pull request",
+  },
+  {
+    name: "#review",
+    color: "#34D399",
+    description: "Review the pull request for correctness, style, and edge cases",
+  },
+  {
+    name: "#epic",
+    color: "#34D399",
+    description:
+      "Orchestrate an epic — break down, sequence, implement all sub-issues on one branch, and open a single PR",
+  },
 ] as const;
 
 interface GraphQLResponse<T> {
@@ -14,7 +39,11 @@ interface GraphQLResponse<T> {
   errors?: { message: string }[];
 }
 
-async function linearGraphQL<T>(accessToken: string, query: string, variables?: Record<string, unknown>): Promise<T> {
+async function linearGraphQL<T>(
+  accessToken: string,
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T> {
   const resp = await fetch("https://api.linear.app/graphql", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
@@ -37,11 +66,14 @@ export async function provisionLinearLabels(accessToken: string) {
   // Step 1 — Find or create the group label
   const { issueLabels: groupLabels } = await linearGraphQL<{
     issueLabels: { nodes: { id: string; name: string }[] };
-  }>(accessToken, `{
+  }>(
+    accessToken,
+    `{
     issueLabels(filter: { isGroup: { eq: true }, name: { eq: "${LABEL_GROUP_NAME}" } }) {
       nodes { id name }
     }
-  }`);
+  }`,
+  );
 
   let groupId: string;
   const existingGroup = groupLabels.nodes[0];
@@ -65,12 +97,23 @@ export async function provisionLinearLabels(accessToken: string) {
   // Step 2 — Fetch ALL labels with our names (workspace-wide, not just under our group)
   // This catches orphaned labels from previous failed provisioning attempts
   const { issueLabels } = await linearGraphQL<{
-    issueLabels: { nodes: { id: string; name: string; color: string; description?: string; parent?: { id: string } }[] };
-  }>(accessToken, `{
+    issueLabels: {
+      nodes: {
+        id: string;
+        name: string;
+        color: string;
+        description?: string;
+        parent?: { id: string };
+      }[];
+    };
+  }>(
+    accessToken,
+    `{
     issueLabels(filter: { name: { in: [${LABELS.map((l) => `"${l.name}"`).join(", ")}] } }) {
       nodes { id name color description parent { id } }
     }
-  }`);
+  }`,
+  );
 
   const existingByName = new Map(issueLabels.nodes.map((l) => [l.name, l]));
   const desiredNames: Set<string> = new Set(LABELS.map((l) => l.name));
@@ -78,11 +121,14 @@ export async function provisionLinearLabels(accessToken: string) {
   // Also fetch labels under our group to detect stale ones that need archiving
   const { issueLabels: groupChildren } = await linearGraphQL<{
     issueLabels: { nodes: { id: string; name: string }[] };
-  }>(accessToken, `{
+  }>(
+    accessToken,
+    `{
     issueLabels(filter: { parent: { id: { eq: "${groupId}" } } }) {
       nodes { id name }
     }
-  }`);
+  }`,
+  );
 
   // Step 3 — Create missing labels, adopt orphans, update drifted ones
   let created = 0;
@@ -99,7 +145,14 @@ export async function provisionLinearLabels(accessToken: string) {
         `mutation ($input: IssueLabelCreateInput!) {
           issueLabelCreate(input: $input) { issueLabel { id } success }
         }`,
-        { input: { name: label.name, color: label.color, description: label.description, parentId: groupId } },
+        {
+          input: {
+            name: label.name,
+            color: label.color,
+            description: label.description,
+            parentId: groupId,
+          },
+        },
       );
       if (!issueLabelCreate.success) throw new Error(`Failed to create label ${label.name}`);
       created++;
@@ -132,14 +185,12 @@ export async function provisionLinearLabels(accessToken: string) {
 
     const { issueLabelRetire } = await linearGraphQL<{
       issueLabelRetire: { success: boolean };
-    }>(
-      accessToken,
-      `mutation ($id: String!) { issueLabelRetire(id: $id) { success } }`,
-      { id },
-    );
+    }>(accessToken, `mutation ($id: String!) { issueLabelRetire(id: $id) { success } }`, { id });
     if (!issueLabelRetire.success) throw new Error(`Failed to retire label ${name}`);
     archived++;
   }
 
-  console.log(`Linear labels: ${created} created, ${updated} updated, ${adopted} adopted, ${archived} archived`);
+  console.log(
+    `Linear labels: ${created} created, ${updated} updated, ${adopted} adopted, ${archived} archived`,
+  );
 }

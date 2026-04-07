@@ -25,7 +25,12 @@ deploy.post("/", async (c) => {
     WHERE status = 'active' AND fly_machine_id IS NOT NULL AND fly_app_name IS NOT NULL
   `;
 
-  const results: { tenant_id: string; name: string; status: "deployed" | "failed"; error?: string }[] = [];
+  const results: {
+    tenant_id: string;
+    name: string;
+    status: "deployed" | "failed";
+    error?: string;
+  }[] = [];
 
   for (const tenant of tenants) {
     try {

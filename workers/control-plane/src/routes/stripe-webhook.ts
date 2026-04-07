@@ -12,10 +12,7 @@ const stripeWebhook = new Hono<{ Bindings: ControlPlaneEnv }>();
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-async function findTenantByStripeCustomer(
-  sql: ReturnType<typeof getDb>,
-  customerId: string,
-) {
+async function findTenantByStripeCustomer(sql: ReturnType<typeof getDb>, customerId: string) {
   const [tenant] = await sql`
     SELECT id, status, fly_app_name, fly_machine_id, subscription_status
     FROM tenants WHERE stripe_customer_id = ${customerId}
@@ -92,7 +89,12 @@ async function persistSubscriptionFields(
   `;
 }
 
-async function suspendTenant(env: ControlPlaneEnv, tenantId: string, flyAppName: string, flyMachineId: string) {
+async function suspendTenant(
+  env: ControlPlaneEnv,
+  tenantId: string,
+  flyAppName: string,
+  flyMachineId: string,
+) {
   const sql = getDb(env);
   // Stop the Fly machine
   const fly = new FlyClient(env.FLY_API_TOKEN_VERA, flyAppName);
@@ -161,7 +163,10 @@ stripeWebhook.post("/", async (c) => {
       let resolvedStatus = "active";
       try {
         const sub = await getSubscription(c.env.STRIPE_SECRET_KEY, subscriptionId);
-        if (typeof sub.status === "string" && (sub.status === "active" || sub.status === "trialing")) {
+        if (
+          typeof sub.status === "string" &&
+          (sub.status === "active" || sub.status === "trialing")
+        ) {
           resolvedStatus = sub.status;
         }
         await persistSubscriptionFields(sql, tenant.id, sub);
@@ -176,8 +181,8 @@ stripeWebhook.post("/", async (c) => {
       // If tenant was suspended, reactivate
       if (tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
         c.executionCtx.waitUntil(
-          reactivateTenant(c.env, tenant.id, tenant.fly_app_name, tenant.fly_machine_id).catch((err) =>
-            console.error(`Reactivation failed for ${tenant.id}:`, err),
+          reactivateTenant(c.env, tenant.id, tenant.fly_app_name, tenant.fly_machine_id).catch(
+            (err) => console.error(`Reactivation failed for ${tenant.id}:`, err),
           ),
         );
       }
@@ -230,10 +235,15 @@ stripeWebhook.post("/", async (c) => {
       await syncBillingToKv(c.env, tenant.id, newStatus, undefined, graceDeadline);
 
       // Reactivate if going from suspended → active
-      if (newStatus === "active" && tenant.status === "suspended" && tenant.fly_app_name && tenant.fly_machine_id) {
+      if (
+        newStatus === "active" &&
+        tenant.status === "suspended" &&
+        tenant.fly_app_name &&
+        tenant.fly_machine_id
+      ) {
         c.executionCtx.waitUntil(
-          reactivateTenant(c.env, tenant.id, tenant.fly_app_name, tenant.fly_machine_id).catch((err) =>
-            console.error(`Reactivation failed for ${tenant.id}:`, err),
+          reactivateTenant(c.env, tenant.id, tenant.fly_app_name, tenant.fly_machine_id).catch(
+            (err) => console.error(`Reactivation failed for ${tenant.id}:`, err),
           ),
         );
       }

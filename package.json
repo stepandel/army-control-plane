@@ -9,10 +9,15 @@
     "dev:website": "pnpm --filter @army/website dev",
     "build:website": "pnpm --filter @army/website build",
     "deploy:website": "pnpm --filter @army/website deploy",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "format:check": "biome format"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1023.0",
+    "@biomejs/biome": "^2.4.10",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0",
     "wrangler": "^4.0.0"
