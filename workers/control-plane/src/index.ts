@@ -14,6 +14,7 @@ import { cfAccessGuard } from "./middleware/cf-access";
 import { refreshExpiringTokens } from "./lib/token-refresh";
 import { enforceExpiredTrials } from "./lib/trial";
 import { runHealthChecks } from "./lib/health-check";
+import { runLangfuseAlertChecks } from "./lib/langfuse-alerts";
 
 const app = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -77,7 +78,11 @@ export default {
         return;
       }
       case "*/5 * * * *": {
+        // Two independent jobs share this trigger. Run them sequentially —
+        // each has its own try/catch inside, so one failing never blocks the
+        // other.
         await runHealthChecks(env);
+        await runLangfuseAlertChecks(env);
         return;
       }
       default: {

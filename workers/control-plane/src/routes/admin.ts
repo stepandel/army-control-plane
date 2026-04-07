@@ -9,6 +9,7 @@ import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
 import { sendAlert, type AlertSeverity } from "../lib/alerts";
 import { runHealthChecks } from "../lib/health-check";
+import { runLangfuseAlertChecks } from "../lib/langfuse-alerts";
 
 const admin = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -535,6 +536,41 @@ admin.post("/alerts/test", async (c) => {
  */
 admin.post("/health-checks/run", async (c) => {
   const summary = await runHealthChecks(c.env);
+  return c.json(summary);
+});
+
+/**
+ * POST /admin/langfuse-alerts/run — one-shot trigger for the Langfuse
+ * polling job without waiting for the cron. Supports optional threshold
+ * overrides in the body so you can lower them to force a cost alert during
+ * smoke testing:
+ *
+ *   { "costWarningUsd": 0.001, "costCriticalUsd": 100 }
+ */
+admin.post("/langfuse-alerts/run", async (c) => {
+  let body: { costWarningUsd?: unknown; costCriticalUsd?: unknown } = {};
+  try {
+    const raw = await c.req.text();
+    if (raw.length > 0) body = JSON.parse(raw);
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const opts: { costWarningUsd?: number; costCriticalUsd?: number } = {};
+  if (body.costWarningUsd !== undefined) {
+    if (typeof body.costWarningUsd !== "number" || body.costWarningUsd < 0) {
+      return c.json({ error: "costWarningUsd must be a non-negative number" }, 400);
+    }
+    opts.costWarningUsd = body.costWarningUsd;
+  }
+  if (body.costCriticalUsd !== undefined) {
+    if (typeof body.costCriticalUsd !== "number" || body.costCriticalUsd < 0) {
+      return c.json({ error: "costCriticalUsd must be a non-negative number" }, 400);
+    }
+    opts.costCriticalUsd = body.costCriticalUsd;
+  }
+
+  const summary = await runLangfuseAlertChecks(c.env, opts);
   return c.json(summary);
 });
 
