@@ -1,0 +1,17 @@
+{
+  "action": "opened",
+  "issue": {
+    "number": 7,
+    "title": "Test issue from GitHub",
+    "user": { "login": "octocat" }
+  },
+  "repository": {
+    "id": 987654,
+    "name": "test-repo",
+    "full_name": "octocat/test-repo"
+  },
+  "installation": {
+    "id": 12345678,
+    "node_id": "MDIzOkluc3RhbGxhdGlvbjEyMzQ1Njc4"
+  }
+}

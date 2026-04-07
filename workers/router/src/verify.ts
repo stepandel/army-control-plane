@@ -45,10 +45,13 @@ async function verifyLinear(body: string, headers: Headers, secret: string): Pro
 // ── GitHub ────────────────────────────────────────────────────────
 async function verifyGitHub(body: string, headers: Headers, secret: string): Promise<boolean> {
   const signature = headers.get("x-hub-signature-256");
-  if (!signature) return false;
+  // GitHub always sends the signature prefixed with "sha256=". Reject anything
+  // else outright — the prefix is a protocol invariant and a missing one is
+  // either a bug in the caller or a tampering attempt.
+  if (!signature?.startsWith("sha256=")) return false;
 
   const computed = await hmacSha256(secret, body);
-  const expected = hexToBuffer(signature.replace("sha256=", ""));
+  const expected = hexToBuffer(signature.slice("sha256=".length));
   return timingSafeEqual(computed, expected);
 }
 
