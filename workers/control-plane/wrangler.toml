@@ -46,7 +46,10 @@ LANGFUSE_PUBLIC_KEY = "pk-lf-8bf97bf2-34de-4532-91d4-724ab7f38feb"
 LANGFUSE_BASE_URL = "https://us.cloud.langfuse.com"
 
 [triggers]
-crons = ["*/30 * * * *"]  # Every 30 minutes — refresh Linear tokens expiring within 1 hour
+# Dispatched by `event.cron` in src/index.ts scheduled handler.
+#   */30 * * * *  — Linear token refresh + expired-trial enforcement
+#   */5  * * * *  — tenant fleet health checks (Fly machine state + token-refresh symptom)
+crons = ["*/30 * * * *", "*/5 * * * *"]
 
 [observability]
 enabled = false
