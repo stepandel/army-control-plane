@@ -1,0 +1,18 @@
+{
+  "action": "create",
+  "actor": {
+    "id": "user-1",
+    "name": "Test User"
+  },
+  "type": "Issue",
+  "data": {
+    "id": "issue-42",
+    "title": "Test issue",
+    "number": 42
+  },
+  "url": "https://linear.app/test-org/issue/TEST-42",
+  "createdAt": "2026-04-07T00:00:00.000Z",
+  "organizationId": "org-abc-123",
+  "webhookTimestamp": 1743984000000,
+  "webhookId": "wh-linear-1"
+}

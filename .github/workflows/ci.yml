@@ -38,6 +38,9 @@ jobs:
       - name: Typecheck website (astro check)
         run: pnpm --filter @army/website exec astro check
 
+      - name: Run tests (vitest)
+        run: pnpm test
+
       # ── Wrangler config validation (build + no API call) ───────────
       - name: Validate router wrangler config (dry-run)
         working-directory: workers/router
