@@ -24,7 +24,8 @@ account.get("/tenant", async (c) => {
 
   const [tenant] = await sql`
     SELECT id, name, status, anthropic_api_key, tracing_provider,
-           subscription_status, trial_ends_at, cancel_at, current_period_end
+           subscription_status, trial_ends_at, cancel_at, current_period_end,
+           plan_interval, plan_amount_cents
     FROM tenants WHERE id = ${teamId}
   `;
   if (!tenant) return c.json({ error: "not_found" }, 404);
@@ -51,6 +52,8 @@ account.get("/tenant", async (c) => {
       trial_days_remaining: trialDaysRemaining,
       cancel_at: tenant.cancel_at,
       current_period_end: tenant.current_period_end,
+      plan_interval: tenant.plan_interval,
+      plan_amount_cents: tenant.plan_amount_cents,
     },
     integrations: tokens.map((t) => (t as Record<string, string>).platform),
   });
@@ -65,6 +68,7 @@ account.get("/billing", async (c) => {
 
   const [tenant] = await sql`
     SELECT id, subscription_status, trial_ends_at, cancel_at, current_period_end,
+           plan_interval, plan_amount_cents,
            stripe_customer_id, stripe_subscription_id
     FROM tenants WHERE id = ${teamId}
   `;
@@ -82,6 +86,8 @@ account.get("/billing", async (c) => {
     trial_days_remaining: trialDaysRemaining,
     cancel_at: tenant.cancel_at,
     current_period_end: tenant.current_period_end,
+    plan_interval: tenant.plan_interval,
+    plan_amount_cents: tenant.plan_amount_cents,
     has_payment_method: !!tenant.stripe_subscription_id,
   });
 });
@@ -90,6 +96,15 @@ account.get("/billing", async (c) => {
 account.post("/checkout", async (c) => {
   const { team_id: teamId } = c.get("session");
   const sql = getDb(c.env);
+
+  // Body is optional; default to monthly when omitted or invalid.
+  let plan: "monthly" | "yearly" = "monthly";
+  try {
+    const body = (await c.req.json()) as { plan?: unknown };
+    if (body.plan === "yearly") plan = "yearly";
+  } catch {
+    /* empty body — keep default */
+  }
 
   const [tenant] = await sql`
     SELECT id, stripe_customer_id, subscription_status, trial_ends_at
@@ -104,11 +119,13 @@ account.post("/checkout", async (c) => {
   const trialEnd = tenant.trial_ends_at
     ? Math.floor(new Date(tenant.trial_ends_at).getTime() / 1000)
     : undefined;
+  const priceId =
+    plan === "yearly" ? c.env.STRIPE_PRICE_ID_YEARLY : c.env.STRIPE_PRICE_ID_MONTHLY;
 
   const checkoutUrl = await createCheckoutSession(
     c.env.STRIPE_SECRET_KEY,
     tenant.stripe_customer_id,
-    c.env.STRIPE_PRICE_ID,
+    priceId,
     successUrl,
     cancelUrl,
     trialEnd,

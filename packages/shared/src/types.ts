@@ -59,6 +59,7 @@ export interface ControlPlaneEnv {
   ENCRYPTION_KEY: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
-  STRIPE_PRICE_ID: string;
+  STRIPE_PRICE_ID_MONTHLY: string;
+  STRIPE_PRICE_ID_YEARLY: string;
   SESSION_SECRET: string;
 }

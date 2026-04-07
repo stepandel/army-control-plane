@@ -35,6 +35,8 @@ const billing = await res.json() as {
   trial_days_remaining: number;
   cancel_at: string | null;
   current_period_end: string | null;
+  plan_interval: string | null;
+  plan_amount_cents: number | null;
   has_payment_method: boolean;
 };
 
@@ -56,10 +58,22 @@ const formatDate = (iso: string) =>
     year: "numeric",
   });
 
+const formatPrice = (cents: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+
 const cancelAtFormatted = billing.cancel_at ? formatDate(billing.cancel_at) : null;
 const nextBillingFormatted = billing.current_period_end
   ? formatDate(billing.current_period_end)
   : null;
+const activePlanLabel =
+  billing.plan_amount_cents !== null && billing.plan_interval
+    ? `${formatPrice(billing.plan_amount_cents)}/${billing.plan_interval}`
+    : null;
 ---
 
 <OnboardingLayout title="Vera — Billing">
@@ -90,14 +104,21 @@ const nextBillingFormatted = billing.current_period_end
               ? `${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} remaining`
               : "Expires today"}
           </div>
-          <button class="btn btn-primary" id="checkout-btn">Upgrade to Pro — $30/mo</button>
+          <div class="plan-buttons">
+            <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
+            <button class="btn btn-primary" data-plan="yearly">
+              Yearly — $500/yr <span class="badge-save">Save $100</span>
+            </button>
+          </div>
         </Fragment>
       )}
 
       {isActive && !isScheduledCancel && (
         <Fragment>
           <div class="plan-name">Pro Plan</div>
-          <div class="plan-detail active-detail">✓ Active — $30/month</div>
+          <div class="plan-detail active-detail">
+            ✓ Active{activePlanLabel ? ` — ${activePlanLabel}` : ""}
+          </div>
           {nextBillingFormatted && (
             <div class="plan-meta">Next billing on {nextBillingFormatted}</div>
           )}
@@ -111,6 +132,9 @@ const nextBillingFormatted = billing.current_period_end
           <div class="plan-detail warning-detail">
             Cancels on {cancelAtFormatted} — you'll keep access until then
           </div>
+          {activePlanLabel && (
+            <div class="plan-meta">Currently on {activePlanLabel}</div>
+          )}
           <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
         </Fragment>
       )}
@@ -127,7 +151,12 @@ const nextBillingFormatted = billing.current_period_end
         <Fragment>
           <div class="plan-name">No Active Plan</div>
           <div class="plan-detail">Your subscription has been canceled. Subscribe to reactivate Vera.</div>
-          <button class="btn btn-primary" id="checkout-btn">Subscribe — $30/mo</button>
+          <div class="plan-buttons">
+            <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
+            <button class="btn btn-primary" data-plan="yearly">
+              Yearly — $500/yr <span class="badge-save">Save $100</span>
+            </button>
+          </div>
         </Fragment>
       )}
     </div>
@@ -152,11 +181,12 @@ const nextBillingFormatted = billing.current_period_end
 </OnboardingLayout>
 
 <script>
-  async function handleCheckout() {
+  async function handleCheckout(plan) {
     try {
       const res = await fetch(`/api/account/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -186,7 +216,12 @@ const nextBillingFormatted = billing.current_period_end
     }
   }
 
-  document.getElementById("checkout-btn")?.addEventListener("click", handleCheckout);
+  document.querySelectorAll("[data-plan]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const plan = btn.getAttribute("data-plan");
+      if (plan === "monthly" || plan === "yearly") handleCheckout(plan);
+    });
+  });
   document.getElementById("portal-btn")?.addEventListener("click", handlePortal);
 
   document.getElementById("promo-form")?.addEventListener("submit", async (e) => {
@@ -307,6 +342,24 @@ const nextBillingFormatted = billing.current_period_end
     opacity: 0.75;
     margin-top: -0.75rem;
     margin-bottom: 1.5rem;
+  }
+
+  .plan-buttons {
+    display: flex;
+    gap: 0.625rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .badge-save {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
 
   .btn {

@@ -182,6 +182,19 @@ stripeWebhook.post("/", async (c) => {
         `;
       }
 
+      // Track plan interval + amount so the dashboard can show the correct
+      // price even for grandfathered subscribers on retired prices.
+      const plan = obj.plan as { interval?: unknown; amount?: unknown } | undefined;
+      const planInterval = plan && typeof plan.interval === "string" ? plan.interval : null;
+      const planAmount = plan && typeof plan.amount === "number" ? plan.amount : null;
+      if (planInterval && planAmount !== null) {
+        await sql`
+          UPDATE tenants
+          SET plan_interval = ${planInterval}, plan_amount_cents = ${planAmount}
+          WHERE id = ${tenant.id}
+        `;
+      }
+
       // Manage grace_deadline alongside status
       let graceDeadline: string | null = null;
       if (newStatus === "past_due") {
@@ -218,6 +231,8 @@ stripeWebhook.post("/", async (c) => {
             grace_deadline = NULL,
             cancel_at = NULL,
             current_period_end = NULL,
+            plan_interval = NULL,
+            plan_amount_cents = NULL,
             updated_at = now()
         WHERE id = ${tenant.id}
       `;
