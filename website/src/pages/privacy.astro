@@ -19,7 +19,7 @@ import CTAFooter from "../components/CTAFooter.astro";
           it, how long we keep it, who can see it, and how to ask us to
           delete it.
         </p>
-        <p class="last-updated">Last updated: April 6, 2026</p>
+        <p class="last-updated">Last updated: April 7, 2026</p>
       </header>
 
       <section class="callout">
@@ -185,16 +185,6 @@ import CTAFooter from "../components/CTAFooter.astro";
                 <td>7 days</td>
               </tr>
               <tr>
-                <td>Cron run history</td>
-                <td>Tenant Fly volume</td>
-                <td>50 most recent runs per cron job</td>
-              </tr>
-              <tr>
-                <td>Workflow run history</td>
-                <td>Tenant Fly volume</td>
-                <td>100 most recent runs</td>
-              </tr>
-              <tr>
                 <td>Active session registry</td>
                 <td>Tenant Fly volume + Tigris S3</td>
                 <td>Pruned after 24 hours of inactivity</td>
@@ -202,7 +192,7 @@ import CTAFooter from "../components/CTAFooter.astro";
               <tr>
                 <td>Langfuse traces</td>
                 <td>Langfuse Cloud</td>
-                <td>Per Langfuse plan window</td>
+                <td>Up to 30 days</td>
               </tr>
               <tr>
                 <td>OAuth tokens (Slack, Linear, GitHub)</td>
@@ -225,21 +215,12 @@ import CTAFooter from "../components/CTAFooter.astro";
 
         <h3 class="sub-heading">Redaction before storage</h3>
         <p>
-          Every code path that writes conversation content to disk, object
-          storage, or an observability vendor passes through a central
-          scrubber before serialization. The scrubber redacts:
+          Before any conversation content is written to disk or sent to an
+          observability vendor, it passes through a scrubber that redacts
+          known secret formats, authentication tokens, connection strings,
+          and common personal identifiers such as email addresses and
+          payment card numbers.
         </p>
-        <ul class="redaction-list">
-          <li>Provider API keys (<code>sk-…</code>, <code>xoxb-…</code>, <code>ghp_…</code>, <code>lin_api_…</code>, <code>AKIA…</code>, <code>AIza…</code>)</li>
-          <li>JWTs</li>
-          <li>Database and message-broker connection strings (<code>postgres://</code>, <code>mysql://</code>, <code>mongodb+srv://</code>, <code>redis://</code>, <code>amqp://</code>)</li>
-          <li><code>KEY=value</code> environment-variable assignments where <code>KEY</code> is a known secret name</li>
-          <li><code>Bearer</code> and <code>Basic</code> auth headers</li>
-          <li>Long hex strings (likely tokens or hashes)</li>
-          <li>Email addresses</li>
-          <li>Credit-card-shaped 16-digit numbers</li>
-          <li>US Social Security number patterns</li>
-        </ul>
         <p>
           For tools that produce large or sensitive bodies (file reads, bash
           output, Linear issue bodies, web search results), the scrubber
