@@ -5,6 +5,13 @@ import { sessionGuard } from "../middleware/session";
 import { createCheckoutSession, createBillingPortalSession } from "../lib/stripe";
 import { syncBillingToKv } from "../lib/billing-sync";
 import { reactivateTenant } from "../lib/tenant-reactivate";
+import { createTigrisClient } from "../lib/tigris";
+import {
+  listConfig,
+  listSkills,
+  listWorkflows,
+  listCrons,
+} from "../lib/config-parser";
 import type { SessionPayload } from "../lib/jwt";
 
 const account = new Hono<{
@@ -251,6 +258,106 @@ account.post("/promo-code", async (c) => {
     extend_days: promo.extend_days,
     trial_ends_at: newTrialEndsAtIso,
   });
+});
+
+// ── Configuration dashboard ──────────────────────────────────────
+
+/**
+ * Helper: look up the signed-in tenant's `fly_app_name` (which doubles as
+ * the Tigris bucket name). Returns `null` if the tenant doesn't exist or
+ * isn't yet provisioned.
+ */
+async function getTenantBucket(
+  env: ControlPlaneEnv,
+  teamId: string,
+): Promise<string | null> {
+  const sql = getDb(env);
+  const [tenant] = await sql`
+    SELECT fly_app_name FROM tenants WHERE id = ${teamId}
+  `;
+  if (!tenant || !tenant.fly_app_name) return null;
+  return tenant.fly_app_name as string;
+}
+
+/** GET /config — combined skills, workflows, crons for the dashboard */
+account.get("/config", async (c) => {
+  const { team_id: teamId } = c.get("session");
+  const bucket = await getTenantBucket(c.env, teamId);
+  if (!bucket) {
+    return c.json(
+      { error: "tenant_not_provisioned", message: "Your agent is still being provisioned" },
+      404,
+    );
+  }
+
+  try {
+    const client = createTigrisClient(c.env);
+    const config = await listConfig(client, bucket);
+    return c.json(config);
+  } catch (err) {
+    console.error(`[/api/account/config] Tigris error for ${teamId}/${bucket}:`, err);
+    return c.json(
+      {
+        error: "tigris_unavailable",
+        message: "Couldn't load configuration from storage",
+      },
+      500,
+    );
+  }
+});
+
+/** GET /skills — just the skills section */
+account.get("/skills", async (c) => {
+  const { team_id: teamId } = c.get("session");
+  const bucket = await getTenantBucket(c.env, teamId);
+  if (!bucket) {
+    return c.json({ error: "tenant_not_provisioned" }, 404);
+  }
+
+  try {
+    const client = createTigrisClient(c.env);
+    const result = await listSkills(client, bucket);
+    return c.json(result);
+  } catch (err) {
+    console.error(`[/api/account/skills] Tigris error for ${teamId}/${bucket}:`, err);
+    return c.json({ error: "tigris_unavailable" }, 500);
+  }
+});
+
+/** GET /workflows — just the workflows section */
+account.get("/workflows", async (c) => {
+  const { team_id: teamId } = c.get("session");
+  const bucket = await getTenantBucket(c.env, teamId);
+  if (!bucket) {
+    return c.json({ error: "tenant_not_provisioned" }, 404);
+  }
+
+  try {
+    const client = createTigrisClient(c.env);
+    const result = await listWorkflows(client, bucket);
+    return c.json(result);
+  } catch (err) {
+    console.error(`[/api/account/workflows] Tigris error for ${teamId}/${bucket}:`, err);
+    return c.json({ error: "tigris_unavailable" }, 500);
+  }
+});
+
+/** GET /crons — just the crons section */
+account.get("/crons", async (c) => {
+  const { team_id: teamId } = c.get("session");
+  const bucket = await getTenantBucket(c.env, teamId);
+  if (!bucket) {
+    return c.json({ error: "tenant_not_provisioned" }, 404);
+  }
+
+  try {
+    const client = createTigrisClient(c.env);
+    const result = await listCrons(client, bucket);
+    return c.json(result);
+  } catch (err) {
+    console.error(`[/api/account/crons] Tigris error for ${teamId}/${bucket}:`, err);
+    return c.json({ error: "tigris_unavailable" }, 500);
+  }
 });
 
 // ── Sign out ─────────────────────────────────────────────────────

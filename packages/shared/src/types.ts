@@ -61,4 +61,8 @@ export interface ControlPlaneEnv {
   STRIPE_WEBHOOK_SECRET: string;
   STRIPE_PRICE_ID: string;
   SESSION_SECRET: string;
+  // Tigris S3 — read access to per-tenant buckets for the config dashboard
+  TIGRIS_ENDPOINT: string;
+  TIGRIS_ACCESS_KEY_ID: string;
+  TIGRIS_SECRET_ACCESS_KEY: string;
 }
