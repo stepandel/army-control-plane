@@ -38,6 +38,7 @@ const billing = await res.json() as {
   plan_interval: string | null;
   plan_amount_cents: number | null;
   has_payment_method: boolean;
+  yearly_plan_enabled: boolean;
 };
 
 const billingResult = new URL(Astro.request.url).searchParams.get("billing");
@@ -111,9 +112,11 @@ const activePlanLabel =
           </div>
           <div class="plan-buttons">
             <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
-            <button class="btn btn-primary" data-plan="yearly">
-              Yearly — $500/yr <span class="badge-save">Save $100</span>
-            </button>
+            {billing.yearly_plan_enabled && (
+              <button class="btn btn-primary" data-plan="yearly">
+                Yearly — $500/yr <span class="badge-save">Save $100</span>
+              </button>
+            )}
           </div>
         </Fragment>
       )}
@@ -174,9 +177,11 @@ const activePlanLabel =
           <div class="plan-detail">Your subscription has been canceled. Subscribe to reactivate Vera.</div>
           <div class="plan-buttons">
             <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
-            <button class="btn btn-primary" data-plan="yearly">
-              Yearly — $500/yr <span class="badge-save">Save $100</span>
-            </button>
+            {billing.yearly_plan_enabled && (
+              <button class="btn btn-primary" data-plan="yearly">
+                Yearly — $500/yr <span class="badge-save">Save $100</span>
+              </button>
+            )}
           </div>
         </Fragment>
       )}

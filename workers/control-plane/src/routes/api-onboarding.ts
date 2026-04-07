@@ -3,6 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { pushCredentials } from "../lib/credentials";
 import { encrypt, decryptIfEncrypted } from "../lib/crypto";
+import { getYearlyPlanEnabled } from "../lib/feature-flags";
 
 const apiOnboarding = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -24,6 +25,8 @@ apiOnboarding.get("/:team_id", async (c) => {
     ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  const yearlyPlanEnabled = await getYearlyPlanEnabled(sql);
+
   return c.json({
     tenant: {
       id: tenant.id,
@@ -36,6 +39,7 @@ apiOnboarding.get("/:team_id", async (c) => {
       trial_days_remaining: trialDaysRemaining,
     },
     integrations: tokens.map((t) => (t as Record<string, string>).platform),
+    yearly_plan_enabled: yearlyPlanEnabled,
   });
 });
 

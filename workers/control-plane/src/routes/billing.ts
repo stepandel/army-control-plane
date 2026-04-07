@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { createCheckoutSession, createBillingPortalSession } from "../lib/stripe";
+import { getYearlyPlanEnabled } from "../lib/feature-flags";
 
 const billing = new Hono<{ Bindings: ControlPlaneEnv }>();
 
@@ -24,6 +25,8 @@ billing.get("/:team_id/billing", async (c) => {
     ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  const yearlyPlanEnabled = await getYearlyPlanEnabled(sql);
+
   return c.json({
     subscription_status: tenant.subscription_status,
     trial_ends_at: tenant.trial_ends_at,
@@ -33,6 +36,7 @@ billing.get("/:team_id/billing", async (c) => {
     plan_interval: tenant.plan_interval,
     plan_amount_cents: tenant.plan_amount_cents,
     has_payment_method: !!tenant.stripe_subscription_id,
+    yearly_plan_enabled: yearlyPlanEnabled,
   });
 });
 
@@ -48,6 +52,12 @@ billing.post("/:team_id/checkout", async (c) => {
     if (body.plan === "yearly") plan = "yearly";
   } catch {
     /* empty body — keep default */
+  }
+
+  // Reject yearly when the feature flag is off (defense in depth — prevents
+  // direct API calls from bypassing the toggle).
+  if (plan === "yearly" && !(await getYearlyPlanEnabled(sql))) {
+    return c.json({ error: "Yearly plan is not available" }, 400);
   }
 
   const [tenant] = await sql`
