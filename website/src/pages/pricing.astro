@@ -1,0 +1,395 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import CTAFooter from "../components/CTAFooter.astro";
+---
+
+<Layout
+  title="Pricing — Vera AI"
+  description="Simple pricing for Vera AI. Monthly and yearly plans, 3-day free trial, transparent metered usage. All prices in US dollars."
+>
+  <Nav />
+  <main class="pricing">
+    <div class="pricing-inner">
+      <header class="pricing-header">
+        <div class="pricing-badge">Pricing</div>
+        <h1>Simple, transparent pricing</h1>
+        <p class="pricing-subtitle">
+          One plan, two billing cadences. Try Vera free for 3 days — no
+          credit card required to start. All prices in US dollars (USD).
+        </p>
+      </header>
+
+      <section class="plans">
+        <article class="plan">
+          <div class="plan-name">Pro — Monthly</div>
+          <div class="plan-price">
+            <span class="amount">$50</span>
+            <span class="cadence">USD / month</span>
+          </div>
+          <p class="plan-tagline">
+            Billed monthly. Cancel anytime — access continues until the end of
+            your current billing period.
+          </p>
+          <ul class="plan-features">
+            <li>Unlimited Slack, Linear, and GitHub delegations</li>
+            <li>Dedicated, isolated tenant infrastructure</li>
+            <li>5-stage engineering lifecycle (Research → Plan → Execute → Review → Triage)</li>
+            <li>7-day conversation and execution log retention</li>
+            <li>Email support</li>
+          </ul>
+          <a href="/onboarding" class="plan-cta">Start 3-day free trial →</a>
+        </article>
+
+        <article class="plan plan-highlight">
+          <div class="plan-flag">Save $100</div>
+          <div class="plan-name">Pro — Yearly</div>
+          <div class="plan-price">
+            <span class="amount">$500</span>
+            <span class="cadence">USD / year</span>
+          </div>
+          <p class="plan-tagline">
+            Billed once per year. Equivalent to ~$41.67/month — two months
+            free compared to the monthly plan.
+          </p>
+          <ul class="plan-features">
+            <li>Everything in Pro Monthly</li>
+            <li>Two months free vs. monthly billing</li>
+            <li>Priority email support</li>
+          </ul>
+          <a href="/onboarding" class="plan-cta">Start 3-day free trial →</a>
+        </article>
+      </section>
+
+      <section class="section">
+        <h2>What's included</h2>
+        <p>
+          Both plans include unlimited delegations to Vera across Slack,
+          Linear, and GitHub, an isolated per-tenant compute environment, and
+          access to every feature listed on the
+          <a href="/" class="inline-link">product page</a>.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Token usage</h2>
+        <p>
+          Each plan includes a monthly allowance of LLM token usage that
+          covers normal team workloads. Usage above the included allowance is
+          billed as metered overage at cost — you'll see your current usage
+          and the exact per-token rate in your
+          <a href="/account/billing" class="inline-link">account dashboard</a>
+          before any overage charge is applied.
+        </p>
+        {/*
+          TODO: replace this paragraph with concrete numbers once finalized.
+          Suggested format:
+            - "Each plan includes N million tokens / month."
+            - "Overage billed at $X per million input tokens, $Y per million output tokens."
+          The dashboard already exposes per-turn token usage via account/billing.
+        */}
+        <p class="caveat">
+          You can set a hard monthly spend cap in your account dashboard.
+          Vera will pause new sessions once the cap is reached and resume on
+          the next billing period.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Free trial</h2>
+        <p>
+          New workspaces get a <strong>3-day free trial</strong> of the Pro
+          plan with no credit card required. At any point during the trial
+          you can add a payment method to continue past day 3.
+        </p>
+        <p>
+          If you don't add a payment method before the trial ends, your
+          workspace is paused — your data is retained for 30 days so you can
+          come back later without losing your install. After 30 days, paused
+          workspaces are deleted.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Cancellation and refunds</h2>
+        <p>
+          You can cancel anytime from your
+          <a href="/account/billing" class="inline-link">billing dashboard</a>.
+          When you cancel, your subscription remains active through the end
+          of your current billing period and is not renewed. You will not be
+          charged again.
+        </p>
+        <p>
+          We do not pro-rate refunds for partial billing periods. If you
+          believe you were charged in error, or if Vera was unavailable for an
+          extended period, email
+          <a href="mailto:billing@agent-army.ai">billing@agent-army.ai</a>
+          and we'll review on a case-by-case basis.
+        </p>
+        <p>
+          Full refund and cancellation terms are in our
+          <a href="/terms" class="inline-link">Terms of Service</a>.
+        </p>
+      </section>
+
+      <section class="contact">
+        <h2>Questions about pricing?</h2>
+        <p>
+          Email <a href="mailto:hello@agent-army.ai">hello@agent-army.ai</a>
+          and we'll get back to you. For volume or enterprise pricing, ask
+          about annual contracts.
+        </p>
+      </section>
+    </div>
+  </main>
+  <CTAFooter />
+</Layout>
+
+<style>
+  .pricing {
+    padding: 8rem 1.5rem 4rem;
+  }
+
+  .pricing-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .pricing-header {
+    margin-bottom: 4rem;
+    text-align: center;
+  }
+
+  .pricing-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  .pricing-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .plan {
+    position: relative;
+    padding: 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .plan-highlight {
+    border: 2px solid var(--color-text);
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .plan-flag {
+    position: absolute;
+    top: -0.75rem;
+    right: 1.5rem;
+    background: var(--color-text);
+    color: var(--color-bg);
+    padding: 0.3rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .plan-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+  }
+
+  .plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .plan-price .amount {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .plan-price .cadence {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+  }
+
+  .plan-tagline {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .plan-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+  }
+
+  .plan-features li {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+    padding-left: 1.25rem;
+    position: relative;
+  }
+
+  .plan-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  .plan-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    background: var(--color-text);
+    color: var(--color-bg) !important;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .plan-cta:hover {
+    opacity: 0.85;
+    color: var(--color-bg) !important;
+    transform: translateY(-1px);
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section > p {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .section > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .section a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .inline-link {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .caveat {
+    font-size: 0.9rem !important;
+    color: var(--color-text-muted);
+    padding: 1rem 1.25rem;
+    border-left: 3px solid rgba(13, 40, 24, 0.2);
+    background: rgba(13, 40, 24, 0.03);
+    margin-top: 1rem !important;
+  }
+
+  .contact {
+    padding: 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .contact h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .contact a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .pricing {
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    .plans {
+      grid-template-columns: 1fr;
+    }
+
+    .plan {
+      padding: 2rem;
+    }
+
+    .plan-price .amount {
+      font-size: 2.5rem;
+    }
+  }
+</style>

@@ -1,0 +1,552 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import CTAFooter from "../components/CTAFooter.astro";
+---
+
+<Layout
+  title="Terms of Service — Vera AI"
+  description="Terms of Service for Vera AI, a product of Arsent LLC. Subscription, billing, refund, cancellation, acceptable use, and liability terms."
+>
+  <Nav />
+  <main class="terms">
+    <div class="terms-inner">
+      <header class="terms-header">
+        <div class="terms-badge">Terms of Service</div>
+        <h1>Terms of Service</h1>
+        <p class="terms-subtitle">
+          Vera is a product of <strong>Arsent LLC</strong>, a Delaware limited
+          liability company with offices at 600 California St, San Francisco,
+          CA. These Terms govern your access to and use of Vera.
+        </p>
+        <p class="last-updated">Last updated: April 7, 2026</p>
+      </header>
+
+      <section class="callout">
+        <h2>The short version</h2>
+        <ul class="callout-list">
+          <li>
+            Vera is a subscription SaaS product. The Pro plan is
+            <strong>$50 USD/month</strong> or
+            <strong>$500 USD/year</strong>, with a <strong>3-day free
+            trial</strong> for new workspaces.
+          </li>
+          <li>
+            <strong>Cancel anytime</strong> from your billing dashboard. Your
+            subscription stays active through the end of your current billing
+            period and is not renewed.
+          </li>
+          <li>
+            We do <strong>not pro-rate refunds</strong> for partial periods,
+            but we will review billing errors and extended outages on a
+            case-by-case basis.
+          </li>
+          <li>
+            You own your code and data. We don't train models on your data
+            and we don't sell it. See the
+            <a href="/privacy" class="inline-link">privacy notice</a>.
+          </li>
+          <li>
+            For legal questions email
+            <a href="mailto:legal@agent-army.ai">legal@agent-army.ai</a>.
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>1. Who we are</h2>
+        <p>
+          Vera ("Vera", "the Service") is operated by Arsent LLC ("Arsent",
+          "we", "us", "our"), a Delaware limited liability company with
+          offices at 600 California St, San Francisco, CA, United States.
+        </p>
+        <p>
+          By creating an account, installing Vera into your Slack workspace,
+          or otherwise accessing the Service, you ("Customer", "you") agree
+          to be bound by these Terms of Service ("Terms"). If you are
+          accepting these Terms on behalf of an organization, you represent
+          that you have authority to bind that organization, and "you" refers
+          to that organization.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>2. Account and access</h2>
+        <p>
+          To use Vera, you must create a workspace by installing the Vera
+          Slack application and authorizing the requested OAuth scopes for
+          Slack, Linear, and GitHub as needed. You are responsible for
+          maintaining the confidentiality of your account credentials and
+          for all activity that occurs under your workspace.
+        </p>
+        <p>
+          You must be at least 18 years old and legally able to enter into
+          contracts to use Vera. Vera is intended for business use; we do not
+          knowingly accept consumer accounts.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>3. Subscription, free trial, and billing</h2>
+        <h3 class="sub-heading">Plans and prices</h3>
+        <p>
+          Vera is offered on a subscription basis at the following prices,
+          all in US dollars (USD):
+        </p>
+        <ul class="rights-list">
+          <li><strong>Pro Monthly</strong> — $50 USD per workspace per month</li>
+          <li><strong>Pro Yearly</strong> — $500 USD per workspace per year</li>
+        </ul>
+        <p>
+          Each plan includes a monthly allowance of LLM token usage that
+          covers normal team workloads. Usage above the allowance is billed
+          as metered overage at the rates published in your account
+          dashboard. We will notify you in-product before applying any
+          overage charge.
+        </p>
+
+        <h3 class="sub-heading">Free trial</h3>
+        <p>
+          New workspaces receive a <strong>3-day free trial</strong> of the
+          Pro plan with no payment method required to begin. To continue
+          using Vera past the end of the trial, add a payment method and
+          select a plan from your billing dashboard.
+        </p>
+        <p>
+          If you do not add a payment method before the trial ends, your
+          workspace is paused. Paused workspace data is retained for 30 days
+          and then deleted.
+        </p>
+
+        <h3 class="sub-heading">Billing and renewals</h3>
+        <p>
+          Subscriptions automatically renew at the end of each billing
+          period (monthly or yearly) at the then-current price for your
+          plan, until you cancel. We use <strong>Stripe</strong> as our
+          payment processor — your card details are handled directly by
+          Stripe and are not stored on our servers.
+        </p>
+        <p>
+          Failed payments may result in your subscription being marked
+          past-due and your workspace being temporarily suspended. We will
+          email you and prompt you in-product to update your payment method.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>4. Cancellation and refunds</h2>
+        <h3 class="sub-heading">Cancellation</h3>
+        <p>
+          You can cancel your subscription at any time from the
+          <a href="/account/billing" class="inline-link">billing dashboard</a>
+          or by emailing
+          <a href="mailto:billing@agent-army.ai">billing@agent-army.ai</a>.
+          When you cancel, your subscription remains active through the end
+          of your current billing period and is not renewed. You will retain
+          access to Vera until the period ends.
+        </p>
+
+        <h3 class="sub-heading">Refunds</h3>
+        <p>
+          All fees are non-refundable. We do not pro-rate refunds for
+          partial billing periods, unused features, or downgraded plans.
+        </p>
+        <p>
+          We will, however, review the following on a case-by-case basis and
+          may issue a refund or credit at our discretion:
+        </p>
+        <ul class="rights-list">
+          <li><strong>Billing errors</strong> — duplicate charges, wrong amounts, charges after cancellation</li>
+          <li><strong>Extended service unavailability</strong> — material outages preventing normal use of Vera</li>
+          <li><strong>Required by law</strong> — refunds required by applicable consumer protection law</li>
+        </ul>
+        <p>
+          To request a refund review, email
+          <a href="mailto:billing@agent-army.ai">billing@agent-army.ai</a>
+          with your workspace name and the charge in question.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>5. Acceptable use</h2>
+        <p>
+          You agree not to use Vera to:
+        </p>
+        <ul class="rights-list">
+          <li>Violate any law or third-party right, including intellectual property and privacy rights</li>
+          <li>Generate, store, or distribute malware, exploit code intended for unauthorized access, or content prohibited by our model providers</li>
+          <li>Send spam, conduct phishing, or otherwise harm third parties</li>
+          <li>Reverse engineer, decompile, or attempt to extract the source code of Vera or its underlying models</li>
+          <li>Resell, sublicense, or provide Vera as a service to third parties without written permission</li>
+          <li>Interfere with or disrupt the integrity or performance of the Service or its infrastructure</li>
+        </ul>
+        <p>
+          We may suspend or terminate accounts that violate this section,
+          with or without notice depending on severity.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>6. Customer data and intellectual property</h2>
+        <p>
+          You retain all right, title, and interest in and to your code,
+          prompts, and any output Vera generates for you ("Customer Data").
+          We claim no ownership over Customer Data.
+        </p>
+        <p>
+          You grant Arsent a limited, non-exclusive license to process
+          Customer Data solely as needed to provide Vera, including
+          transmitting prompts to model providers, storing logs for
+          debugging and recovery, and operating the service generally. We
+          do not use Customer Data to train or fine-tune any model. See the
+          <a href="/privacy" class="inline-link">privacy notice</a> for full
+          detail on what we collect and how long we keep it.
+        </p>
+        <p>
+          Vera, the Vera and Arsent names and logos, and all related
+          software, design, and documentation are owned by Arsent LLC and
+          its licensors and are protected by intellectual property laws.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>7. Service availability and changes</h2>
+        <p>
+          We work hard to keep Vera available, but we do not guarantee
+          uninterrupted access. The Service may be temporarily unavailable
+          due to scheduled maintenance, infrastructure issues, third-party
+          outages (Anthropic, Slack, GitHub, Linear, Cloudflare, Fly.io),
+          or events beyond our reasonable control.
+        </p>
+        <p>
+          We may add, modify, or remove features from Vera at any time. If a
+          change materially reduces the functionality of a plan you are
+          subscribed to, we will notify you and offer you a pro-rated refund
+          if you choose to cancel as a result.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>8. Disclaimers</h2>
+        <p>
+          Vera generates code and other outputs using large language models.
+          These outputs may be incorrect, incomplete, or unsuitable for your
+          purpose. <strong>You are responsible for reviewing all output
+          before relying on it</strong>, including running tests, performing
+          code review, and validating that any pull request Vera opens meets
+          your standards before merging.
+        </p>
+        <p>
+          THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT
+          WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES
+          OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+          NON-INFRINGEMENT. We do not warrant that Vera will be error-free
+          or that defects will be corrected.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>9. Limitation of liability</h2>
+        <p>
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, ARSENT LLC SHALL NOT BE
+          LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+          PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, DATA, OR
+          BUSINESS OPPORTUNITY, ARISING OUT OF OR IN CONNECTION WITH YOUR
+          USE OF VERA, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF
+          SUCH DAMAGES.
+        </p>
+        <p>
+          OUR TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF OR RELATING TO
+          THESE TERMS OR THE SERVICE IS LIMITED TO THE GREATER OF
+          (A) ONE HUNDRED US DOLLARS ($100) OR (B) THE FEES YOU PAID TO US
+          FOR THE SERVICE IN THE TWELVE MONTHS PRECEDING THE CLAIM.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>10. Indemnification</h2>
+        <p>
+          You agree to defend, indemnify, and hold harmless Arsent LLC and
+          its officers, employees, and agents from any claims, damages, or
+          expenses (including reasonable attorneys' fees) arising out of
+          your use of Vera, your violation of these Terms, or your
+          violation of any third-party right.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>11. Termination</h2>
+        <p>
+          You may stop using Vera and cancel your subscription at any time
+          as described in Section 4. We may suspend or terminate your access
+          to Vera at any time, with or without notice, if you violate these
+          Terms or if we are required to do so by law.
+        </p>
+        <p>
+          On termination, your right to access Vera ends immediately. We
+          will retain your data for the periods described in our
+          <a href="/privacy" class="inline-link">privacy notice</a> and then
+          delete it. Sections that by their nature should survive
+          termination (including ownership, disclaimers, limitation of
+          liability, indemnification, and governing law) will survive.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>12. Governing law and disputes</h2>
+        <p>
+          These Terms are governed by the laws of the State of Delaware,
+          without regard to conflict-of-laws principles. Any dispute arising
+          out of or relating to these Terms or the Service shall be brought
+          exclusively in the state or federal courts located in San
+          Francisco County, California, and you consent to the personal
+          jurisdiction of those courts.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>13. Changes to these Terms</h2>
+        <p>
+          We may update these Terms from time to time. Material changes
+          will be communicated by email or in-product notice. Your continued
+          use of Vera after the effective date of revised Terms constitutes
+          acceptance of the changes. The <strong>Last updated</strong> date
+          at the top of this page reflects the most recent revision.
+        </p>
+      </section>
+
+      <section class="contact">
+        <h2>Contact</h2>
+        <p>
+          For legal questions or notices, email
+          <a href="mailto:legal@agent-army.ai">legal@agent-army.ai</a>.
+          For billing questions, email
+          <a href="mailto:billing@agent-army.ai">billing@agent-army.ai</a>.
+        </p>
+        <p>
+          Postal address:<br />
+          Arsent LLC<br />
+          600 California St<br />
+          San Francisco, CA, United States
+        </p>
+      </section>
+    </div>
+  </main>
+  <CTAFooter />
+</Layout>
+
+<style>
+  .terms {
+    padding: 8rem 1.5rem 4rem;
+  }
+
+  .terms-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .terms-header {
+    margin-bottom: 4rem;
+  }
+
+  .terms-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 1px solid rgba(13, 40, 24, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  .terms-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 650px;
+  }
+
+  .terms-subtitle strong {
+    color: var(--color-text);
+  }
+
+  .last-updated {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    margin-top: 1rem;
+  }
+
+  .callout {
+    padding: 2.5rem;
+    border: 2px solid rgba(13, 40, 24, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4rem;
+  }
+
+  .callout h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .callout-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .callout-list li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    padding-left: 1.5rem;
+    position: relative;
+  }
+
+  .callout-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text);
+  }
+
+  .callout-list strong,
+  .callout-list a {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .callout-list a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section > p {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .section > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .section .sub-heading {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
+  .section a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .inline-link {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .rights-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .rights-list li {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    position: relative;
+  }
+
+  .rights-list li::before {
+    content: "→";
+    position: absolute;
+    left: -1.5rem;
+    color: var(--color-text);
+    opacity: 0.5;
+  }
+
+  .rights-list strong {
+    color: var(--color-text);
+  }
+
+  .contact {
+    padding: 2.5rem;
+    border: 1px solid rgba(13, 40, 24, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .contact h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .contact p:last-child {
+    margin-bottom: 0;
+  }
+
+  .contact a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .terms {
+      padding: 4rem 1.5rem 2rem;
+    }
+  }
+</style>
