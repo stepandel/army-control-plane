@@ -49,15 +49,22 @@ export async function createCheckoutSession(
   priceId: string,
   successUrl: string,
   cancelUrl: string,
+  trialEndUnixSeconds?: number,
 ): Promise<string> {
-  const resp = await stripeRequest(secretKey, "POST", "/checkout/sessions", {
+  const params: Record<string, string> = {
     customer: customerId,
     "line_items[0][price]": priceId,
     "line_items[0][quantity]": "1",
     mode: "subscription",
     success_url: successUrl,
     cancel_url: cancelUrl,
-  });
+  };
+  // Honor an existing trial end date — Stripe will not charge until trial_end.
+  // Only pass if comfortably in the future to avoid edge-case validation errors.
+  if (trialEndUnixSeconds && trialEndUnixSeconds > Math.floor(Date.now() / 1000) + 60) {
+    params["subscription_data[trial_end]"] = String(trialEndUnixSeconds);
+  }
+  const resp = await stripeRequest(secretKey, "POST", "/checkout/sessions", params);
   if (!resp.ok) {
     const err = await resp.text();
     throw new Error(`Stripe createCheckoutSession failed: ${resp.status} ${err}`);
