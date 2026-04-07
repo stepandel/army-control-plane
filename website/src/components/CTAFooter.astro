@@ -28,7 +28,13 @@
       <a href="/subprocessors">Subprocessors</a>
       <a href="mailto:hello@agent-army.ai">Contact</a>
     </nav>
-    <p class="footer-copyright">© 2026 Vera AI. All rights reserved.</p>
+    <p class="footer-copyright">
+      © 2026 Vera AI. All rights reserved. · Powered by <a
+        href="https://www.anthropic.com"
+        target="_blank"
+        rel="noopener noreferrer">Anthropic</a
+      >
+    </p>
   </div>
 </footer>
 
@@ -143,6 +149,17 @@
   .footer-copyright {
     font-size: 0.8rem;
     color: var(--color-text-muted);
+  }
+
+  .footer-copyright a {
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  .footer-copyright a:hover {
+    color: var(--color-text);
   }
 
   @media (max-width: 768px) {
