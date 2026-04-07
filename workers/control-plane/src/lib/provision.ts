@@ -6,7 +6,11 @@ import { decryptIfEncrypted } from "./crypto";
 
 function buildGuest(tenant: Record<string, unknown>): GuestConfig | undefined {
   return tenant.memory_mb || tenant.cpus
-    ? { cpu_kind: "shared", cpus: (tenant.cpus as number) ?? 1, memory_mb: (tenant.memory_mb as number) ?? 2048 }
+    ? {
+        cpu_kind: "shared",
+        cpus: (tenant.cpus as number) ?? 1,
+        memory_mb: (tenant.memory_mb as number) ?? 2048,
+      }
     : undefined;
 }
 
@@ -51,7 +55,14 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     // 4. Create volume + machine
     const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
     const { machine, volume, instanceUrl } = await createMachineForTenant(
-      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest,
+      env,
+      sql,
+      tenantFly,
+      tenantId,
+      appName,
+      internalSecret,
+      tenant,
+      guest,
     );
 
     // 5. Update tenant record
@@ -67,12 +78,24 @@ export async function provisionTenant(env: ControlPlaneEnv, tenantId: string) {
     `;
 
     // 6. Record deployment + write KV routes
-    await recordDeploymentAndRoutes(env, sql, tenantId, machine.id, sharedImage, instanceUrl, internalSecret);
+    await recordDeploymentAndRoutes(
+      env,
+      sql,
+      tenantId,
+      machine.id,
+      sharedImage,
+      instanceUrl,
+      internalSecret,
+    );
 
     return { tenantId, machineId: machine.id, machineName: appName, instanceUrl };
   } catch (err) {
     // Clean up the app on failure (bucket is kept for data preservation)
-    try { await fly.deleteApp(appName); } catch { /* best effort */ }
+    try {
+      await fly.deleteApp(appName);
+    } catch {
+      /* best effort */
+    }
     await sql`UPDATE tenants SET status = 'pending', updated_at = now() WHERE id = ${tenantId}`;
     throw err;
   }
@@ -89,17 +112,26 @@ export async function reprovisionTenant(env: ControlPlaneEnv, tenantId: string) 
   const [tenant] = await sql`SELECT * FROM tenants WHERE id = ${tenantId}`;
   if (!tenant) throw new Error(`Tenant ${tenantId} not found`);
   if (tenant.status === "destroyed") throw new Error(`Tenant ${tenantId} is destroyed`);
-  if (!tenant.fly_app_name) throw new Error(`Tenant ${tenantId} has no Fly app — use provisionTenant instead`);
+  if (!tenant.fly_app_name)
+    throw new Error(`Tenant ${tenantId} has no Fly app — use provisionTenant instead`);
 
   const appName = tenant.fly_app_name as string;
   const tenantFly = new FlyClient(env.FLY_API_TOKEN_VERA, appName, sharedImage);
 
   // 1. Destroy old machine + volume (best effort)
   if (tenant.fly_machine_id) {
-    try { await tenantFly.destroyMachine(tenant.fly_machine_id); } catch { /* best effort */ }
+    try {
+      await tenantFly.destroyMachine(tenant.fly_machine_id);
+    } catch {
+      /* best effort */
+    }
   }
   if (tenant.fly_volume_id) {
-    try { await tenantFly.deleteVolume(tenant.fly_volume_id); } catch { /* best effort */ }
+    try {
+      await tenantFly.deleteVolume(tenant.fly_volume_id);
+    } catch {
+      /* best effort */
+    }
   }
 
   // 2. Mark old deployment as stopped
@@ -120,7 +152,14 @@ export async function reprovisionTenant(env: ControlPlaneEnv, tenantId: string) 
   try {
     // 3. Create new volume + machine in the same app
     const { machine, volume, instanceUrl } = await createMachineForTenant(
-      env, sql, tenantFly, tenantId, appName, internalSecret, tenant, guest,
+      env,
+      sql,
+      tenantFly,
+      tenantId,
+      appName,
+      internalSecret,
+      tenant,
+      guest,
     );
 
     // 4. Update tenant record (app name stays the same)
@@ -135,7 +174,15 @@ export async function reprovisionTenant(env: ControlPlaneEnv, tenantId: string) 
     `;
 
     // 5. Record deployment + write KV routes
-    await recordDeploymentAndRoutes(env, sql, tenantId, machine.id, sharedImage, instanceUrl, internalSecret);
+    await recordDeploymentAndRoutes(
+      env,
+      sql,
+      tenantId,
+      machine.id,
+      sharedImage,
+      instanceUrl,
+      internalSecret,
+    );
 
     return { tenantId, machineId: machine.id, machineName: appName, instanceUrl };
   } catch (err) {
@@ -169,14 +216,29 @@ async function createMachineForTenant(
   const anthropicKey = tenant.anthropic_api_key
     ? await decryptIfEncrypted(tenant.anthropic_api_key as string, env.ENCRYPTION_KEY)
     : null;
-  const { secrets, config } = buildMachineEnv(env, tenantId, internalSecret, tokens, anthropicKey, tenant.vera_production as boolean, tenant.tracing_provider as string, tenant.subscription_status as string);
+  const { secrets, config } = buildMachineEnv(
+    env,
+    tenantId,
+    internalSecret,
+    tokens,
+    anthropicKey,
+    tenant.vera_production as boolean,
+    tenant.tracing_provider as string,
+    tenant.subscription_status as string,
+  );
 
   // Set sensitive values as encrypted app secrets (no machines exist yet, so no restart triggered)
   await fly.setSecrets(appName, secrets);
 
   // Create machine with only non-sensitive config — secrets are injected automatically at boot
   const volumeName = "anton_state";
-  const { machine, volume } = await fly.createMachineWithVolume(appName, config, volumeName, 1, guest);
+  const { machine, volume } = await fly.createMachineWithVolume(
+    appName,
+    config,
+    volumeName,
+    1,
+    guest,
+  );
   const instanceUrl = `https://${appName}.fly.dev`;
 
   return { machine, volume, instanceUrl };
@@ -207,8 +269,12 @@ async function recordDeploymentAndRoutes(
     internal_secret: internalSecret,
     fly_machine_id: machineId,
     subscription_status: (billing?.subscription_status as string) ?? "trialing",
-    ...(billing?.trial_ends_at && { trial_ends_at: new Date(billing.trial_ends_at as string).toISOString() }),
-    ...(billing?.grace_deadline && { grace_deadline: new Date(billing.grace_deadline as string).toISOString() }),
+    ...(billing?.trial_ends_at && {
+      trial_ends_at: new Date(billing.trial_ends_at as string).toISOString(),
+    }),
+    ...(billing?.grace_deadline && {
+      grace_deadline: new Date(billing.grace_deadline as string).toISOString(),
+    }),
   };
 
   const webhookPlatforms = await sql`

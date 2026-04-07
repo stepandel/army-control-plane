@@ -103,7 +103,7 @@ export async function refreshLinearToken(
       if (attempt < 3) continue;
       console.error(
         `CRITICAL: Linear issued new tokens for ${tenantId} but DB write failed after 3 attempts. ` +
-        `Old refresh token is revoked — tenant needs to re-authenticate.`,
+          `Old refresh token is revoked — tenant needs to re-authenticate.`,
       );
       return false;
     }

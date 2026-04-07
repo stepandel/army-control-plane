@@ -4,10 +4,8 @@
     "composite": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types"]
   },
   "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../../packages/shared" }
-  ]
+  "references": [{ "path": "../../packages/shared" }]
 }

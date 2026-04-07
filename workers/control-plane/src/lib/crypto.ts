@@ -65,11 +65,11 @@ export async function decryptIfEncrypted(value: string, hexKey: string): Promise
 /** Heuristic: does this value look like a plaintext token rather than base64 ciphertext? */
 export function looksLikePlaintext(value: string): boolean {
   return (
-    value.startsWith("xoxb-") ||    // Slack bot token
-    value.startsWith("xoxp-") ||    // Slack user token
+    value.startsWith("xoxb-") || // Slack bot token
+    value.startsWith("xoxp-") || // Slack user token
     value.startsWith("lin_api_") || // Linear API token
-    value.startsWith("sk-ant-") ||  // Anthropic API key
-    /^\d+$/.test(value)             // GitHub installation ID (numeric)
+    value.startsWith("sk-ant-") || // Anthropic API key
+    /^\d+$/.test(value) // GitHub installation ID (numeric)
   );
 }
 

@@ -3,7 +3,7 @@ import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { FlyClient, type GuestConfig } from "../lib/fly";
 import { pushCredentials } from "../lib/credentials";
-import { refreshLinearToken, refreshExpiringTokens } from "../lib/token-refresh";
+import { refreshLinearToken } from "../lib/token-refresh";
 import { reprovisionTenant } from "../lib/provision";
 import { provisionLinearLabels } from "../lib/linear-labels";
 import { encrypt, decryptIfEncrypted, looksLikePlaintext } from "../lib/crypto";
@@ -96,7 +96,8 @@ admin.post("/tenants/:team_id/reprovision", async (c) => {
 
   const [tenant] = await sql`SELECT id, status, fly_app_name FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "Not found" }, 404);
-  if (tenant.status === "destroyed") return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
+  if (tenant.status === "destroyed")
+    return c.json({ error: "Tenant is destroyed, cannot reprovision" }, 400);
 
   c.executionCtx.waitUntil(
     reprovisionTenant(c.env, teamId).catch((err) =>
@@ -153,12 +154,15 @@ admin.patch("/tenants/:team_id/resize", async (c) => {
       await tenantFly.resizeMachine(tenant.fly_machine_id, guest);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      return c.json({
-        team_id: teamId,
-        memory_mb: newMemory,
-        cpus: newCpus,
-        resize_error: message,
-      }, 200);
+      return c.json(
+        {
+          team_id: teamId,
+          memory_mb: newMemory,
+          cpus: newCpus,
+          resize_error: message,
+        },
+        200,
+      );
     }
   }
 
@@ -301,16 +305,32 @@ admin.post("/refresh-tokens", async (c) => {
   `;
 
   if (candidates.length === 0) {
-    return c.json({ total: 0, refreshed: 0, failed: 0, results: [], message: "No Linear tokens with refresh_token found" });
+    return c.json({
+      total: 0,
+      refreshed: 0,
+      failed: 0,
+      results: [],
+      message: "No Linear tokens with refresh_token found",
+    });
   }
 
-  const results: { tenant_id: string; expires_at: string | null; status: "refreshed" | "failed"; error?: string }[] = [];
+  const results: {
+    tenant_id: string;
+    expires_at: string | null;
+    status: "refreshed" | "failed";
+    error?: string;
+  }[] = [];
 
   for (const { tenant_id, expires_at } of candidates) {
     try {
       const refreshed = await refreshLinearToken(c.env, tenant_id);
       if (!refreshed) {
-        results.push({ tenant_id, expires_at, status: "failed", error: "refreshLinearToken returned false" });
+        results.push({
+          tenant_id,
+          expires_at,
+          status: "failed",
+          error: "refreshLinearToken returned false",
+        });
         continue;
       }
       await pushCredentials(c.env, tenant_id);

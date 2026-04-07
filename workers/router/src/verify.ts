@@ -33,11 +33,7 @@ function hexToBuffer(hex: string): ArrayBuffer {
 }
 
 // ── Linear ───────────────────────────────────────────────────────
-async function verifyLinear(
-  body: string,
-  headers: Headers,
-  secret: string,
-): Promise<boolean> {
+async function verifyLinear(body: string, headers: Headers, secret: string): Promise<boolean> {
   const signature = headers.get("linear-signature");
   if (!signature) return false;
 
@@ -47,25 +43,20 @@ async function verifyLinear(
 }
 
 // ── GitHub ────────────────────────────────────────────────────────
-async function verifyGitHub(
-  body: string,
-  headers: Headers,
-  secret: string,
-): Promise<boolean> {
+async function verifyGitHub(body: string, headers: Headers, secret: string): Promise<boolean> {
   const signature = headers.get("x-hub-signature-256");
-  if (!signature) return false;
+  // GitHub always sends the signature prefixed with "sha256=". Reject anything
+  // else outright — the prefix is a protocol invariant and a missing one is
+  // either a bug in the caller or a tampering attempt.
+  if (!signature?.startsWith("sha256=")) return false;
 
   const computed = await hmacSha256(secret, body);
-  const expected = hexToBuffer(signature.replace("sha256=", ""));
+  const expected = hexToBuffer(signature.slice("sha256=".length));
   return timingSafeEqual(computed, expected);
 }
 
 // ── Slack ─────────────────────────────────────────────────────────
-async function verifySlack(
-  body: string,
-  headers: Headers,
-  secret: string,
-): Promise<boolean> {
+async function verifySlack(body: string, headers: Headers, secret: string): Promise<boolean> {
   const signature = headers.get("x-slack-signature");
   const timestamp = headers.get("x-slack-request-timestamp");
   if (!signature || !timestamp) return false;

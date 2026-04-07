@@ -13,9 +13,7 @@ type Sql = ReturnType<typeof getDb>;
  * Pass an existing `sql` client to reuse the connection; otherwise the function
  * will open one from `env`.
  */
-export async function getDefaultTrialDays(
-  envOrSql: ControlPlaneEnv | Sql,
-): Promise<number> {
+export async function getDefaultTrialDays(envOrSql: ControlPlaneEnv | Sql): Promise<number> {
   try {
     const sql = isSqlClient(envOrSql) ? envOrSql : getDb(envOrSql);
     const [row] = await sql`

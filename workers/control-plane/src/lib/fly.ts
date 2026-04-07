@@ -68,15 +68,18 @@ interface MachineConfig {
     size_gb_limit?: number;
   }>;
   services?: ServiceConfig[];
-  checks?: Record<string, {
-    type: string;
-    port: number;
-    method?: string;
-    path?: string;
-    interval: string;
-    timeout: string;
-    grace_period?: string;
-  }>;
+  checks?: Record<
+    string,
+    {
+      type: string;
+      port: number;
+      method?: string;
+      path?: string;
+      interval: string;
+      timeout: string;
+      grace_period?: string;
+    }
+  >;
   metrics?: {
     port: number;
     path: string;
@@ -223,7 +226,9 @@ export class FlyClient {
   /** Resolve an org slug (e.g. "vera-ai") to its internal GraphQL node ID. */
   async resolveOrgId(orgSlug: string): Promise<string> {
     const query = `query($slug: String!) { organization(slug: $slug) { id } }`;
-    const data = await this.graphqlRequest<{ organization: { id: string } }>(query, { slug: orgSlug });
+    const data = await this.graphqlRequest<{ organization: { id: string } }>(query, {
+      slug: orgSlug,
+    });
     return data.organization.id;
   }
 
@@ -356,14 +361,16 @@ export class FlyClient {
         swap_size_mb: SWAP_SIZE_MB,
         ...(volumeId
           ? {
-              mounts: [{
-                volume: volumeId,
-                name: VOLUME_NAME,
-                path: VOLUME_PATH,
-                extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
-                add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
-                size_gb_limit: VOLUME_SIZE_LIMIT_GB,
-              }],
+              mounts: [
+                {
+                  volume: volumeId,
+                  name: VOLUME_NAME,
+                  path: VOLUME_PATH,
+                  extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
+                  add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
+                  size_gb_limit: VOLUME_SIZE_LIMIT_GB,
+                },
+              ],
             }
           : {}),
         services: this.buildServiceConfig(),
@@ -401,14 +408,16 @@ export class FlyClient {
         swap_size_mb: SWAP_SIZE_MB,
         ...(volumeId
           ? {
-              mounts: [{
-                volume: volumeId,
-                name: VOLUME_NAME,
-                path: VOLUME_PATH,
-                extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
-                add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
-                size_gb_limit: VOLUME_SIZE_LIMIT_GB,
-              }],
+              mounts: [
+                {
+                  volume: volumeId,
+                  name: VOLUME_NAME,
+                  path: VOLUME_PATH,
+                  extend_threshold_percent: VOLUME_AUTO_EXTEND_THRESHOLD_PERCENT,
+                  add_size_gb: VOLUME_AUTO_EXTEND_ADD_GB,
+                  size_gb_limit: VOLUME_SIZE_LIMIT_GB,
+                },
+              ],
             }
           : {}),
         services: this.buildServiceConfig(),
@@ -476,7 +485,11 @@ export class FlyClient {
         errors.push(`${region}: ${msg}`);
         // Clean up orphaned volume before trying next region
         if (volume) {
-          try { await this.deleteVolume(volume.id); } catch { /* best effort */ }
+          try {
+            await this.deleteVolume(volume.id);
+          } catch {
+            /* best effort */
+          }
         }
         // Only retry on capacity errors (409)
         if (!msg.includes("(409)")) throw err;

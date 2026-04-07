@@ -276,7 +276,7 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${team_id}`;
   const TEAM_ID = el?.dataset.teamId ?? "";
 
   // ── Billing: Subscribe / Upgrade ──────────────────────────────
-  async function handleCheckout(plan) {
+  async function handleCheckout(plan: "monthly" | "yearly") {
     try {
       const res = await fetch(
         `${API_BASE}/api/onboarding/${TEAM_ID}/checkout`,

@@ -29,7 +29,10 @@ export function buildMachineEnv(
 
   const secrets: Record<string, string> = {
     INTERNAL_SECRET: internalSecret,
-    ANTHROPIC_API_KEY: (tenantAnthropicKey && tenantAnthropicKey !== "null") ? tenantAnthropicKey : env.ANTHROPIC_API_KEY,
+    ANTHROPIC_API_KEY:
+      tenantAnthropicKey && tenantAnthropicKey !== "null"
+        ? tenantAnthropicKey
+        : env.ANTHROPIC_API_KEY,
     BRAVE_API_KEY: env.BRAVE_API_KEY,
     GITHUB_PRIVATE_KEY: env.GITHUB_PRIVATE_KEY,
     LINEAR_CLIENT_SECRET: env.LINEAR_CLIENT_SECRET,

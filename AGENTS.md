@@ -22,11 +22,27 @@ docs/                 → architecture + security docs
 ```sh
 pnpm install           # install deps
 pnpm typecheck         # tsc -b (whole project) — run after every change
+pnpm lint              # biome check (lint + format verification) — run after every change
+pnpm lint:fix          # biome check --write (auto-fix lint + format)
+pnpm format            # biome format --write (format only)
 pnpm dev:router        # wrangler dev for router
 pnpm dev:control-plane # wrangler dev for control plane
 ```
 
-Always run `pnpm typecheck` after making changes. The project uses TypeScript project references — all three packages must compile together.
+Always run `pnpm typecheck` **and** `pnpm lint` after making changes. Both gate CI on pull requests. The project uses TypeScript project references — all three packages must compile together.
+
+### Verification checklist (before opening a PR)
+
+Run `pnpm check` to execute everything below in one shot, or run them individually:
+
+1. `pnpm typecheck` → clean (`tsc -b` over shared / router / control-plane)
+2. `pnpm lint` → clean (run `pnpm lint:fix` to auto-fix formatting and simple lint issues)
+3. `pnpm typecheck:website` → clean (`astro check` over the Astro site)
+4. `pnpm test` → passes (if you touched testable code)
+
+CI (`.github/workflows/ci.yml`) runs the same steps on every pull request plus
+`wrangler deploy --dry-run` for router, control-plane, and website to catch
+`wrangler.toml` drift before it reaches production.
 
 ## Code style and patterns
 

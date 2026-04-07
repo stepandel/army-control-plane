@@ -163,9 +163,7 @@ oauth.get("/slack/callback", async (c) => {
       { sub: userId, team_id: teamId, slack_uid: slackUserId },
       c.env.SESSION_SECRET,
     );
-    return c.redirect(
-      `${c.env.WEBSITE_URL}/auth/complete?token=${jwt}&next=/onboarding/${teamId}`,
-    );
+    return c.redirect(`${c.env.WEBSITE_URL}/auth/complete?token=${jwt}&next=/onboarding/${teamId}`);
   }
 
   return c.redirect(`${c.env.WEBSITE_URL}/onboarding/${teamId}`);
@@ -183,7 +181,8 @@ oauth.get("/linear/install", async (c) => {
     client_id: c.env.LINEAR_CLIENT_ID,
     redirect_uri: `${c.env.BASE_URL}/oauth/linear/callback`,
     response_type: "code",
-    scope: "read,write,issues:create,comments:create,app:assignable,app:mentionable,customer:read,initiative:read",
+    scope:
+      "read,write,issues:create,comments:create,app:assignable,app:mentionable,customer:read,initiative:read",
     state,
     actor: "app",
     prompt: "consent",

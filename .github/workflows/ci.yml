@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same ref to save CI minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, Typecheck, Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Code quality ───────────────────────────────────────────────
+      - name: Typecheck workers & shared (tsc -b)
+        run: pnpm typecheck
+
+      - name: Lint & format check (Biome)
+        run: pnpm lint
+
+      - name: Typecheck website (astro check)
+        run: pnpm --filter @army/website exec astro check
+
+      - name: Run tests (vitest)
+        run: pnpm test
+
+      # ── Wrangler config validation (build + no API call) ───────────
+      - name: Validate router wrangler config (dry-run)
+        working-directory: workers/router
+        run: pnpm exec wrangler deploy --dry-run --outdir /tmp/router-out
+
+      - name: Validate control-plane wrangler config (dry-run)
+        working-directory: workers/control-plane
+        run: pnpm exec wrangler deploy --dry-run --outdir /tmp/cp-out
+
+      - name: Build website (astro build)
+        working-directory: website
+        run: pnpm exec astro build
+
+      - name: Validate website wrangler config (dry-run)
+        working-directory: website
+        run: pnpm exec wrangler deploy --dry-run --outdir /tmp/website-out

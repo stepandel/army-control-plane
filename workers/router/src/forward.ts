@@ -7,10 +7,7 @@ import type { TenantRoute, WebhookSource, RouterEnv } from "@army/shared";
  * - Linear:  JSON body → `organizationId`
  * - GitHub:  JSON body → `installation.id`
  */
-export function extractTeamId(
-  source: WebhookSource,
-  rawBody: string,
-): string | null {
+export function extractTeamId(source: WebhookSource, rawBody: string): string | null {
   try {
     const payload = JSON.parse(rawBody);
     switch (source) {
@@ -19,9 +16,7 @@ export function extractTeamId(
       case "linear":
         return (payload.organizationId as string) ?? null;
       case "github": {
-        const installation = payload.installation as
-          | Record<string, unknown>
-          | undefined;
+        const installation = payload.installation as Record<string, unknown> | undefined;
         return installation?.id != null ? String(installation.id) : null;
       }
       default:
@@ -73,9 +68,7 @@ export function forwardToInstance(
     headers: {
       // Preserve original x-* and content-type headers
       ...Object.fromEntries(
-        [...incomingHeaders.entries()].filter(
-          ([k]) => k.startsWith("x-") || k === "content-type",
-        ),
+        [...incomingHeaders.entries()].filter(([k]) => k.startsWith("x-") || k === "content-type"),
       ),
       // Army headers last — cannot be spoofed by incoming request
       "x-army-source": source,

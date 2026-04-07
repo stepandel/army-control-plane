@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { pushCredentials } from "../lib/credentials";
-import { encrypt, decryptIfEncrypted } from "../lib/crypto";
+import { encrypt } from "../lib/crypto";
 import { getYearlyPlanEnabled } from "../lib/feature-flags";
 
 const apiOnboarding = new Hono<{ Bindings: ControlPlaneEnv }>();
@@ -13,11 +13,11 @@ apiOnboarding.get("/:team_id", async (c) => {
   const teamId = c.req.param("team_id");
   const sql = getDb(c.env);
 
-  const [tenant] = await sql`SELECT id, name, status, anthropic_api_key, tracing_provider, subscription_status, trial_ends_at FROM tenants WHERE id = ${teamId}`;
+  const [tenant] =
+    await sql`SELECT id, name, status, anthropic_api_key, tracing_provider, subscription_status, trial_ends_at FROM tenants WHERE id = ${teamId}`;
   if (!tenant) return c.json({ error: "not_found" }, 404);
 
-  const tokens =
-    await sql`SELECT platform FROM integration_tokens WHERE tenant_id = ${teamId}`;
+  const tokens = await sql`SELECT platform FROM integration_tokens WHERE tenant_id = ${teamId}`;
 
   const now = new Date();
   const trialEndsAt = tenant.trial_ends_at ? new Date(tenant.trial_ends_at) : null;
