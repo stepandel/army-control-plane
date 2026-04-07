@@ -1,4 +1,6 @@
 ---
+import Analytics from "../components/Analytics.astro";
+
 interface Props {
   title: string;
   description: string;
@@ -193,6 +195,7 @@ const jsonLd = {
   </head>
   <body>
     <slot />
+    <Analytics />
     <style is:global>
       *,
       *::before,
