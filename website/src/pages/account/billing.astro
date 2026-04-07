@@ -48,6 +48,11 @@ const isCanceled =
   billing.subscription_status === "canceled" ||
   billing.subscription_status === "suspended";
 
+// "Trial without subscription yet" → show plan picker.
+// "Trial with subscription already created" → show subscribed UI + first-charge date.
+const isTrialWithoutSub = isTrialing && !billing.has_payment_method;
+const isTrialWithSub = isTrialing && billing.has_payment_method;
+
 // Cancellation scheduled — Stripe leaves status="active" until the period ends.
 const isScheduledCancel = isActive && !!billing.cancel_at;
 
@@ -96,7 +101,7 @@ const activePlanLabel =
     )}
 
     <div class="billing-card">
-      {isTrialing && (
+      {isTrialWithoutSub && (
         <Fragment>
           <div class="plan-name">Free Trial</div>
           <div class="plan-detail">
@@ -110,6 +115,22 @@ const activePlanLabel =
               Yearly — $500/yr <span class="badge-save">Save $100</span>
             </button>
           </div>
+        </Fragment>
+      )}
+
+      {isTrialWithSub && (
+        <Fragment>
+          <div class="plan-name">Pro Plan</div>
+          <div class="plan-detail active-detail">
+            ✓ Subscribed{activePlanLabel ? ` — ${activePlanLabel}` : ""}
+          </div>
+          {nextBillingFormatted && (
+            <div class="plan-meta">
+              Trial ends {nextBillingFormatted} — first charge then
+              {billing.trial_days_remaining > 0 && ` (${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} left)`}
+            </div>
+          )}
+          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
         </Fragment>
       )}
 
