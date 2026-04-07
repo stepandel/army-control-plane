@@ -12,12 +12,17 @@ const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
 const cookie = Astro.request.headers.get("cookie");
 const sessionToken = cookie?.match(/(?:^|;\s*)__Host-session=([^;]*)/)?.[1];
 
+console.log("[/account] cookie present:", !!cookie, "sessionToken present:", !!sessionToken);
+
 if (!sessionToken) {
+  console.log("[/account] redirect: no sessionToken");
   return Astro.redirect("/sign-in");
 }
 
 const session = await verifyJwt(sessionToken, env.SESSION_SECRET);
+console.log("[/account] verifyJwt result:", session ? "valid" : "null");
 if (!session) {
+  console.log("[/account] redirect: verifyJwt failed");
   return Astro.redirect("/sign-in");
 }
 
@@ -26,7 +31,11 @@ const res = await controlPlane.fetch("https://api/api/account/tenant", {
   headers: { cookie: cookie ?? "" },
 });
 
+console.log("[/account] controlPlane.fetch status:", res.status, res.statusText);
 if (!res.ok) {
+  const body = await res.text();
+  console.log("[/account] controlPlane.fetch body:", body);
+  console.log("[/account] redirect: controlPlane.fetch !ok");
   return Astro.redirect("/sign-in");
 }
 
