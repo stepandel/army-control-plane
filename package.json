@@ -10,10 +10,12 @@
     "build:website": "pnpm --filter @army/website build",
     "deploy:website": "pnpm --filter @army/website deploy",
     "typecheck": "tsc -b",
+    "typecheck:website": "pnpm --filter @army/website exec astro check",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
-    "format:check": "biome format"
+    "format:check": "biome format",
+    "check": "pnpm typecheck && pnpm lint && pnpm typecheck:website"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1023.0",
