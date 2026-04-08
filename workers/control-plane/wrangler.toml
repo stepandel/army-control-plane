@@ -4,8 +4,6 @@ main = "src/index.ts"
 compatibility_date = "2026-02-17"
 compatibility_flags = ["nodejs_compat"]
 
-# routes = [{ pattern = "api.army.ai", custom_domain = true }]
-
 [[kv_namespaces]]
 binding = "ROUTING_TABLE"
 id = "aa0a6fbff64147bc95814a4491cb1725"

@@ -11,8 +11,8 @@ Army is a multi-tenant control plane that connects Slack, Linear, and GitHub to 
 ```
 army-control-pane/
 ├── packages/shared/          # @army/shared — types and interfaces shared across workers
-├── workers/router/           # @army/router — webhook ingress (router.army.ai)
-├── workers/control-plane/    # @army/control-plane — tenant lifecycle API (api.army.ai)
+├── workers/router/           # @army/router — webhook ingress (army-router.stepandel.workers.dev)
+├── workers/control-plane/    # @army/control-plane — tenant lifecycle API (army-control-plane.stepandel.workers.dev)
 └── docs/                     # Architecture and security documentation
 ```
 

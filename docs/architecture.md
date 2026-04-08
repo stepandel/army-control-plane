@@ -10,7 +10,7 @@ Army is a multi-tenant orchestration platform. It connects Slack, Linear, and Gi
 │                                                             │
 │  ┌──────────────────┐         ┌──────────────────────────┐  │
 │  │  Router Worker   │         │  Control Plane Worker    │  │
-│  │  router.army.ai  │         │  api.army.ai             │  │
+│  │  army-router     │         │  army-control-plane      │  │
 │  │  (Linear/GitHub) │         │                          │  │
 │  │  1. Verify HMAC  │         │  /oauth/*    (public)    │  │
 │  │  2. Return 200   │         │  /admin/*    (CF Access) │  │
@@ -195,7 +195,7 @@ GET /oauth/linear/callback?code=...&state=...
 ### 3. Webhook delivery — Linear/GitHub (steady state)
 
 ```
-Linear/GitHub sends POST to router.army.ai/webhooks/{platform}
+Linear/GitHub sends POST to army-router.stepandel.workers.dev/webhooks/{platform}
   │
   ▼
 Router Worker
