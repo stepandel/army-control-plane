@@ -15,32 +15,41 @@
       >
     </div>
   </div>
-
-  <nav class="cta-links" aria-label="Footer navigation">
-    <div class="cta-link-col">
-      <h3 class="cta-link-heading">Product</h3>
-      <a href="/pricing">Pricing</a>
-      <a href="/security">Security</a>
-      <a href="mailto:hello@agent-army.ai">Contact</a>
-    </div>
-    <div class="cta-link-col">
-      <h3 class="cta-link-heading">Legal</h3>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-      <a href="/subprocessors">Subprocessors</a>
-    </div>
-  </nav>
 </section>
 
 <footer class="footer">
-  <p class="footer-legal">
-    A product of <strong>Arsent LLC</strong> · San Francisco, CA
-  </p>
+  <div class="footer-main">
+    <div class="footer-tagline">
+      <p>The async AI engineering agent for Slack, Linear &amp; GitHub.</p>
+      <p class="footer-tagline-sub">
+        Delegate a task in a DM. Wake up to a merged pull request.
+      </p>
+    </div>
+    <nav class="footer-cols" aria-label="Footer navigation">
+      <div class="footer-col">
+        <h3 class="footer-heading">Product</h3>
+        <a href="/pricing">Pricing</a>
+        <a href="/security">Security</a>
+        <a href="mailto:hello@agent-army.ai">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h3 class="footer-heading">Legal</h3>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/subprocessors">Subprocessors</a>
+      </div>
+    </nav>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-legal">
+      A product of <strong>Arsent LLC</strong> · San Francisco, CA
+    </p>
+  </div>
 </footer>
 
 <style>
   .cta-section {
-    padding: 6rem 1.5rem 4rem;
+    padding: 6rem 1.5rem;
     text-align: center;
     border-top: 1px solid rgba(13, 40, 24, 0.15);
   }
@@ -105,56 +114,89 @@
     transform: translateY(-2px);
   }
 
-  .cta-links {
-    max-width: var(--max-width);
-    margin: 5rem auto 0;
-    display: flex;
-    justify-content: center;
-    gap: 6rem;
-    text-align: left;
+  .footer {
+    border-top: 1px solid rgba(13, 40, 24, 0.15);
+    padding: 0 1.5rem;
   }
 
-  .cta-link-col {
+  .footer-main {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 4rem 0 3.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4rem;
+  }
+
+  .footer-tagline {
+    max-width: 360px;
+  }
+
+  .footer-tagline p {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  .footer-tagline-sub {
+    margin-top: 0.5rem;
+    font-size: 0.9rem !important;
+    font-weight: 400 !important;
+    color: var(--color-text-muted) !important;
+    opacity: 0.75;
+  }
+
+  .footer-cols {
+    display: flex;
+    gap: 5rem;
+  }
+
+  .footer-col {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    min-width: 100px;
   }
 
-  .cta-link-heading {
-    font-size: 0.75rem;
+  .footer-heading {
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     color: var(--color-text);
     margin-bottom: 0.25rem;
   }
 
-  .cta-link-col a {
+  .footer-col a {
     font-size: 0.9rem;
     color: var(--color-text-muted);
-    opacity: 0.85;
+    opacity: 0.8;
     transition: opacity 0.2s;
   }
 
-  .cta-link-col a:hover {
+  .footer-col a:hover {
     opacity: 1;
   }
 
-  .footer {
-    padding: 1.75rem 1.5rem;
-    border-top: 1px solid rgba(13, 40, 24, 0.15);
-    text-align: center;
+  .footer-bottom {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 1.5rem 0;
+    border-top: 1px solid rgba(13, 40, 24, 0.1);
   }
 
   .footer-legal {
     font-size: 0.8rem;
     color: var(--color-text-muted);
-    opacity: 0.85;
+    opacity: 0.75;
   }
 
   .footer-legal strong {
     color: var(--color-text);
     font-weight: 600;
+    opacity: 1;
   }
 
   @media (max-width: 768px) {
@@ -168,22 +210,24 @@
       max-width: 320px;
     }
 
-    .cta-links {
+    .footer-main {
+      flex-direction: column;
       gap: 3rem;
-      margin-top: 4rem;
+      padding: 3rem 0 2.5rem;
+    }
+
+    .footer-cols {
+      gap: 4rem;
+    }
+
+    .footer-bottom {
+      text-align: center;
     }
   }
 
   @media (max-width: 480px) {
-    .cta-links {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 2.5rem;
-    }
-
-    .cta-link-col {
-      align-items: center;
+    .footer-cols {
+      gap: 3rem;
     }
   }
 </style>
