@@ -71,7 +71,7 @@ All `/admin/*` routes are protected by Cloudflare Access, which provides zero-tr
 ### Two-layer protection
 
 **Layer 1: Cloudflare Access Policy (network level)**
-Configured in the Cloudflare Zero Trust dashboard. When a request hits `api.army.ai/admin/*`, Cloudflare intercepts it and redirects to your identity provider (Google, GitHub SSO, etc.) before the request ever reaches the Worker. Authenticated users get a signed JWT cookie.
+Configured in the Cloudflare Zero Trust dashboard. When a request hits `army-control-plane.stepandel.workers.dev/admin/*`, Cloudflare intercepts it and redirects to your identity provider (Google, GitHub SSO, etc.) before the request ever reaches the Worker. Authenticated users get a signed JWT cookie.
 
 **Layer 2: JWT Validation Middleware (application level)**
 The Worker independently verifies the JWT to defend against bypass scenarios (e.g., someone hitting the `*.workers.dev` URL directly, which doesn't go through Access).
@@ -99,7 +99,7 @@ The Worker independently verifies the JWT to defend against bypass scenarios (e.
 
 1. Cloudflare Zero Trust dashboard → Access → Applications → **Add an application**
 2. Type: Self-hosted
-3. Application domain: `api.army.ai`, path: `/admin/*`
+3. Application domain: `army-control-plane.stepandel.workers.dev`, path: `/admin/*`
 4. Add an Allow policy (e.g., emails ending in `@yourcompany.com`)
 5. Copy the **Application Audience (AUD) tag** from the overview page
 6. Set the env vars:
