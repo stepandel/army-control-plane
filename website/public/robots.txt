@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://agent-army.ai/sitemap.xml
+Sitemap: https://agent-vera.com/sitemap.xml

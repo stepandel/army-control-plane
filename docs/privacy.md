@@ -10,8 +10,8 @@ This document describes how the Army control plane handles personal data on beha
 
 | Role | Responsibility | Owner |
 |---|---|---|
-| Data protection owner | Maintains this document, responds to data subject requests at `privacy@agent-army.ai`, approves new subprocessors | Vera AI engineering team — named owner **TBD** |
-| Security incident commander | Leads breach response, coordinates customer notifications, owns the `security@agent-army.ai` inbox | Vera AI engineering team — named owner **TBD** |
+| Data protection owner | Maintains this document, responds to data subject requests at `privacy@agent-vera.com`, approves new subprocessors | Vera AI engineering team — named owner **TBD** |
+| Security incident commander | Leads breach response, coordinates customer notifications, owns the `security@agent-vera.com` inbox | Vera AI engineering team — named owner **TBD** |
 | Engineering on-call | First-line response to data-handling incidents surfaced via monitoring | Routed through `#ops-alerts` per [`monitoring.md`](monitoring.md) |
 
 Privacy controls are reviewed at least annually, and whenever a new subprocessor, data category, or integration is added.
@@ -66,7 +66,7 @@ Each tenant's Fly machine receives its own credentials via the Fly Machines API 
 
 ## 3. Notice and consent (P2, P3)
 
-- **Notice.** The public-facing privacy notice at <https://agent-army.ai/privacy> (source: `website/src/pages/privacy.astro`) informs data subjects of processing purposes, categories, subprocessors, retention, and their rights. This document is the engineering-level counterpart and must stay consistent with it.
+- **Notice.** The public-facing privacy notice at <https://agent-vera.com/privacy> (source: `website/src/pages/privacy.astro`) informs data subjects of processing purposes, categories, subprocessors, retention, and their rights. This document is the engineering-level counterpart and must stay consistent with it.
 - **Lawful basis.** Processing is based on (a) performance of the customer contract for tenant workspace data, and (b) legitimate interest for operational telemetry (see [`monitoring.md`](monitoring.md)).
 - **Consent.** OAuth consent is obtained from an authorized workspace administrator at install time for each of Slack, Linear, and GitHub. Scopes requested are the minimum needed to operate; the current set is defined in `workers/control-plane/src/routes/oauth.ts`.
 - **Withdrawal.** Consent can be withdrawn at any time by uninstalling the integration in the source platform or by requesting tenant deletion (see §6).
@@ -130,7 +130,7 @@ Production database access by Vera AI engineers is governed by an internal acces
 
 ## 6. Data subject rights (P6)
 
-We honor the following rights for data subjects. Requests are received at `privacy@agent-army.ai` and completed within **30 days** (matches the public privacy notice §7 commitment, GDPR / CCPA compliant).
+We honor the following rights for data subjects. Requests are received at `privacy@agent-vera.com` and completed within **30 days** (matches the public privacy notice §7 commitment, GDPR / CCPA compliant).
 
 | Right | How it is fulfilled |
 |---|---|
@@ -145,7 +145,7 @@ We can only delete data we still hold. Conversation snapshots and execution logs
 
 ## 7. Subprocessors and disclosure (P7)
 
-The control plane relies on the following subprocessors. Each handles a defined slice of data under a data processing agreement (DPA). This list mirrors the public subprocessor page at <https://agent-army.ai/subprocessors> (source: `website/src/pages/subprocessors.astro`) and must be kept in sync with it.
+The control plane relies on the following subprocessors. Each handles a defined slice of data under a data processing agreement (DPA). This list mirrors the public subprocessor page at <https://agent-vera.com/subprocessors> (source: `website/src/pages/subprocessors.astro`) and must be kept in sync with it.
 
 | Subprocessor | Purpose | Data categories | Region |
 |---|---|---|---|
@@ -162,7 +162,7 @@ The control plane relies on the following subprocessors. Each handles a defined 
 | LangSmith | LLM tracing — opt-in / non-prod (`ENABLE_LANGSMITH=true`) | LLM call traces (scrubbed) | US |
 | Brave Search | Web search tool for tenant workloads | Search queries issued by tenant machines | US (global) |
 
-We notify customers at least **30 days** before adding a new subprocessor, and update both this document and the public subprocessor page in the same change. A DPA is available on request via `privacy@agent-army.ai`.
+We notify customers at least **30 days** before adding a new subprocessor, and update both this document and the public subprocessor page in the same change. A DPA is available on request via `privacy@agent-vera.com`.
 
 No personal data is disclosed to any party other than the subprocessors above, except when required by law. Such legal disclosures are recorded in the incident log and reviewed by the data protection owner.
 
@@ -179,7 +179,7 @@ Security incidents that may involve personal data follow the runbook in [`monito
    - Downstream data subjects as directed by customer contracts
 5. **Remediate and record** — post-mortem, corrective actions, and incident log entry
 
-Vulnerability reports received at `security@agent-army.ai` are acknowledged within **48 hours** (per the public commitment on `/security`).
+Vulnerability reports received at `security@agent-vera.com` are acknowledged within **48 hours** (per the public commitment on `/security`).
 
 A formal incident log location (e.g., a dedicated Linear project, Notion DB, or git-tracked file) is **TBD** and should be linked here once chosen.
 
@@ -189,7 +189,7 @@ Vera AI is operated from the United States and all data is stored and processed 
 
 ## 10. Children's data
 
-Vera is not directed to children under 16 and we do not knowingly collect personal data from children under 16. If you believe a child has used Vera, email `privacy@agent-army.ai` and we will delete the relevant data.
+Vera is not directed to children under 16 and we do not knowingly collect personal data from children under 16. If you believe a child has used Vera, email `privacy@agent-vera.com` and we will delete the relevant data.
 
 ## 11. Change log
 

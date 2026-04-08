@@ -150,7 +150,7 @@ The AI coding tools landscape splits into four categories:
 
 ## Getting Started
 
-1. **Add Vera to Slack** — one-click installation from agent-army.ai.
+1. **Add Vera to Slack** — one-click installation from agent-vera.com.
 2. **Connect your tools** — link your GitHub repositories and Linear workspace.
 3. **Delegate your first task** — send Vera a DM: "Research and fix the auth bug in ticket ENG-42."
 4. **Review the results** — Vera works the task and opens a pull request ready for review.
@@ -159,8 +159,8 @@ The AI coding tools landscape splits into four categories:
 
 Agent Army builds autonomous AI engineering agents. Vera is our flagship product — an AI engineering agent designed for teams that ship fast. We believe the future of software engineering is human-AI collaboration: humans set direction and make creative decisions, AI handles the execution and the repetitive work that fills backlogs.
 
-Website: https://agent-army.ai
-Contact: hello@agent-army.ai
+Website: https://agent-vera.com
+Contact: hello@agent-vera.com
 
 ## FAQ
 

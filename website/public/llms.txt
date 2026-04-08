@@ -6,8 +6,8 @@ Vera operates on a 5-stage lifecycle: Research, Prep/Plan, Execute, Review, and 
 
 ## Pages
 
-- [Home](https://agent-army.ai/): Landing page with product overview, lifecycle, use cases, and integrations
-- [Full Product Description](https://agent-army.ai/llms-full.txt): Complete feature descriptions, use cases, and technical details
+- [Home](https://agent-vera.com/): Landing page with product overview, lifecycle, use cases, and integrations
+- [Full Product Description](https://agent-vera.com/llms-full.txt): Complete feature descriptions, use cases, and technical details
 
 ## Product
 
@@ -26,22 +26,22 @@ Vera operates on a 5-stage lifecycle: Research, Prep/Plan, Execute, Review, and 
 
 ## Use Cases
 
-- [Feature Research & Implementation](https://agent-army.ai/#use-cases): Turn ideas into implementation-ready specs and merged PRs
-- [Backlog Triage & Bug Fixes](https://agent-army.ai/#use-cases): Clear your backlog while you sleep
-- [Codebase Audits](https://agent-army.ai/#use-cases): Security, scalability, and anti-pattern detection
-- [Market Research to Shipped Code](https://agent-army.ai/#use-cases): From competitive analysis to shipped code
-- [Autonomous Backlog Processing](https://agent-army.ai/#use-cases): An engineer that never stops shipping
+- [Feature Research & Implementation](https://agent-vera.com/#use-cases): Turn ideas into implementation-ready specs and merged PRs
+- [Backlog Triage & Bug Fixes](https://agent-vera.com/#use-cases): Clear your backlog while you sleep
+- [Codebase Audits](https://agent-vera.com/#use-cases): Security, scalability, and anti-pattern detection
+- [Market Research to Shipped Code](https://agent-vera.com/#use-cases): From competitive analysis to shipped code
+- [Autonomous Backlog Processing](https://agent-vera.com/#use-cases): An engineer that never stops shipping
 
 ## Integrations
 
-- [Slack](https://agent-army.ai/#integrations): Delegate tasks via DM. Progress updates in threads.
-- [Linear](https://agent-army.ai/#integrations): Assign tickets directly. Vera moves them through your workflow.
-- [GitHub](https://agent-army.ai/#integrations): Automated pull requests, review comments, and iteration.
+- [Slack](https://agent-vera.com/#integrations): Delegate tasks via DM. Progress updates in threads.
+- [Linear](https://agent-vera.com/#integrations): Assign tickets directly. Vera moves them through your workflow.
+- [GitHub](https://agent-vera.com/#integrations): Automated pull requests, review comments, and iteration.
 
 ## Technical
 
-- [Architecture](https://agent-army.ai/#architecture): Multi-agent system with codebase understanding, structured workflows, and BYOK support.
-- [Full Product Description](https://agent-army.ai/llms-full.txt): Complete technical details, competitive positioning, and FAQ.
+- [Architecture](https://agent-vera.com/#architecture): Multi-agent system with codebase understanding, structured workflows, and BYOK support.
+- [Full Product Description](https://agent-vera.com/llms-full.txt): Complete technical details, competitive positioning, and FAQ.
 
 ## Differentiators
 

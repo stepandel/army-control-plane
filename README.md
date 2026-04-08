@@ -13,7 +13,7 @@ army-control-plane/
 ├── packages/shared/          # @army/shared       — types shared across workers
 ├── workers/router/           # @army/router       — webhook ingress (router.army.ai)
 ├── workers/control-plane/    # @army/control-plane — tenant lifecycle API (api.army.ai)
-├── website/                  # @army/website      — marketing site (army.ai)
+├── website/                  # @army/website      — marketing site (agent-vera.com)
 ├── docs/                     # architecture, security, ops docs
 └── scripts/                  # one-off operational scripts
 ```
