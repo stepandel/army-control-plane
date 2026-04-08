@@ -111,7 +111,7 @@
   }
 
   .footer {
-    padding: 2rem 1.5rem;
+    padding: 3.5rem 1.5rem 2.5rem;
     border-top: 1px solid rgba(13, 40, 24, 0.15);
   }
 
@@ -119,10 +119,10 @@
     max-width: var(--max-width);
     margin: 0 auto;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 2.5rem;
   }
 
   .footer-brand {
@@ -150,9 +150,9 @@
 
   .footer-links {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: flex-start;
   }
 
   .footer-links a {
@@ -198,11 +198,12 @@
 
     .footer-inner {
       flex-direction: column;
+      align-items: center;
       text-align: center;
     }
 
     .footer-links {
-      justify-content: center;
+      align-items: center;
     }
   }
 </style>
