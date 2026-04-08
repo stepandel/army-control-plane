@@ -25,20 +25,18 @@
         Delegate a task in a DM. Wake up to a merged pull request.
       </p>
     </div>
-    <nav class="footer-cols" aria-label="Footer navigation">
-      <div class="footer-col">
-        <h3 class="footer-heading">Product</h3>
-        <a href="/pricing">Pricing</a>
-        <a href="/security">Security</a>
-        <a href="mailto:hello@agent-army.ai">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h3 class="footer-heading">Legal</h3>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/subprocessors">Subprocessors</a>
-      </div>
-    </nav>
+    <div class="footer-col">
+      <h3 class="footer-heading">Product</h3>
+      <a href="/pricing">Pricing</a>
+      <a href="/security">Security</a>
+      <a href="mailto:hello@agent-army.ai">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h3 class="footer-heading">Legal</h3>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/subprocessors">Subprocessors</a>
+    </div>
   </div>
   <div class="footer-bottom">
     <p class="footer-legal">
@@ -123,10 +121,10 @@
     max-width: var(--max-width);
     margin: 0 auto;
     padding: 4rem 0 3.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 4rem;
+    align-items: start;
   }
 
   .footer-tagline {
@@ -148,16 +146,10 @@
     opacity: 0.75;
   }
 
-  .footer-cols {
-    display: flex;
-    gap: 5rem;
-  }
-
   .footer-col {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    min-width: 100px;
   }
 
   .footer-heading {
@@ -211,13 +203,13 @@
     }
 
     .footer-main {
-      flex-direction: column;
-      gap: 3rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem 4rem;
       padding: 3rem 0 2.5rem;
     }
 
-    .footer-cols {
-      gap: 4rem;
+    .footer-tagline {
+      grid-column: 1 / -1;
     }
 
     .footer-bottom {
@@ -226,8 +218,9 @@
   }
 
   @media (max-width: 480px) {
-    .footer-cols {
-      gap: 3rem;
+    .footer-main {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
     }
   }
 </style>
