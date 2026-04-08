@@ -4,6 +4,11 @@ main = "dist/_worker.js/index.js"
 compatibility_date = "2026-02-17"
 compatibility_flags = ["nodejs_compat"]
 
+routes = [
+  { pattern = "agent-vera.com", custom_domain = true },
+  { pattern = "www.agent-vera.com", custom_domain = true },
+]
+
 [assets]
 binding = "ASSETS"
 directory = "./dist"
