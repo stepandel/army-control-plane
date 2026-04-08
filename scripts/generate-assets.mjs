@@ -240,7 +240,7 @@ async function generateOGImage(svgBuf) {
   ctx.fillStyle = "#fff";
   ctx.font = "600 16px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("agent-army.ai", 172, 437);
+  ctx.fillText("agent-vera.com", 172, 437);
   ctx.textAlign = "left";
 
   // Integration cards
@@ -329,7 +329,7 @@ async function generateOGImage(svgBuf) {
   ctx.font = "400 14px Inter, sans-serif";
   ctx.fillText("Async AI agent embedded in Slack, Linear & GitHub", 72, H - 28);
   ctx.textAlign = "right";
-  ctx.fillText("agent-army.ai", W - 72, H - 28);
+  ctx.fillText("agent-vera.com", W - 72, H - 28);
 
   return canvas.toBuffer("image/png");
 }

@@ -7,20 +7,20 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const canonicalURL = "https://agent-army.ai/";
+const canonicalURL = "https://agent-vera.com/";
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://agent-army.ai/#organization",
+      "@id": "https://agent-vera.com/#organization",
       name: "Vera AI",
       legalName: "Arsent LLC",
-      url: "https://agent-army.ai",
+      url: "https://agent-vera.com",
       logo: {
         "@type": "ImageObject",
-        url: "https://agent-army.ai/icon-192.png",
+        url: "https://agent-vera.com/icon-192.png",
       },
       address: {
         "@type": "PostalAddress",
@@ -31,7 +31,7 @@ const jsonLd = {
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "support@agent-army.ai",
+        email: "support@agent-vera.com",
       },
       sameAs: [
         "https://github.com/agent-army",
@@ -41,15 +41,15 @@ const jsonLd = {
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://agent-army.ai/#vera",
+      "@id": "https://agent-vera.com/#vera",
       name: "Vera",
       applicationCategory: "DeveloperApplication",
       applicationSubCategory: "AI Engineering Agent",
       operatingSystem: "Web, Slack, Linear, GitHub",
       description:
         "Vera is an async AI engineering agent that lives in Slack, Linear, and GitHub. Delegate a task in a DM, wake up to a merged pull request.",
-      url: "https://agent-army.ai",
-      author: { "@id": "https://agent-army.ai/#organization" },
+      url: "https://agent-vera.com",
+      author: { "@id": "https://agent-vera.com/#organization" },
       offers: [
         {
           "@type": "Offer",
@@ -59,7 +59,7 @@ const jsonLd = {
           billingIncrement: "P1M",
           description:
             "Pro plan billed monthly. $50 USD/month per workspace. Includes a 3-day free trial.",
-          url: "https://agent-army.ai/pricing",
+          url: "https://agent-vera.com/pricing",
         },
         {
           "@type": "Offer",
@@ -69,7 +69,7 @@ const jsonLd = {
           billingIncrement: "P1Y",
           description:
             "Pro plan billed yearly. $500 USD/year per workspace — save $100 vs. monthly. Includes a 3-day free trial.",
-          url: "https://agent-army.ai/pricing",
+          url: "https://agent-vera.com/pricing",
         },
       ],
       featureList: [
@@ -88,23 +88,23 @@ const jsonLd = {
     },
     {
       "@type": "WebPage",
-      "@id": "https://agent-army.ai/#webpage",
-      url: "https://agent-army.ai",
+      "@id": "https://agent-vera.com/#webpage",
+      url: "https://agent-vera.com",
       name: "Vera — AI Engineering Agent for Slack, Linear & GitHub",
       description:
         "Vera is the async AI engineering agent that lives in Slack, Linear, and GitHub.",
       isPartOf: {
         "@type": "WebSite",
-        "@id": "https://agent-army.ai/#website",
+        "@id": "https://agent-vera.com/#website",
         name: "Vera AI",
-        url: "https://agent-army.ai",
+        url: "https://agent-vera.com",
       },
-      about: { "@id": "https://agent-army.ai/#vera" },
-      publisher: { "@id": "https://agent-army.ai/#organization" },
+      about: { "@id": "https://agent-vera.com/#vera" },
+      publisher: { "@id": "https://agent-vera.com/#organization" },
     },
     {
       "@type": "FAQPage",
-      "@id": "https://agent-army.ai/#faq",
+      "@id": "https://agent-vera.com/#faq",
       mainEntity: [
         {
           "@type": "Question",
@@ -176,7 +176,7 @@ const jsonLd = {
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:image" content="https://agent-army.ai/og-image.png" />
+    <meta property="og:image" content="https://agent-vera.com/og-image.png" />
     <meta property="og:site_name" content="Vera AI" />
 
     <!-- Twitter Card -->
@@ -189,7 +189,7 @@ const jsonLd = {
       name="twitter:description"
       content="Delegate a task in Slack. Wake up to a merged PR. No IDE. No babysitting."
     />
-    <meta name="twitter:image" content="https://agent-army.ai/og-image.png" />
+    <meta name="twitter:image" content="https://agent-vera.com/og-image.png" />
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

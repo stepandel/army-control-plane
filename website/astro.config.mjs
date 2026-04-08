@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
-  site: "https://agent-army.ai",
+  site: "https://agent-vera.com",
   output: "static",
   adapter: cloudflare(),
   build: {
