@@ -34,7 +34,7 @@ const jsonLd = {
         email: "support@agent-vera.com",
       },
       description:
-        "Vera is an AI engineering agent embedded in Slack, Linear, and GitHub. Vera is a product of Arsent LLC, a Delaware company based in San Francisco.",
+        "Vera is an AI engineering agent that turns feature requests into detailed specs, gets your sign-off, then ships the PR. Embedded in Slack, Linear, and GitHub. Vera is a product of Arsent LLC, a Delaware company based in San Francisco.",
     },
     {
       "@type": "SoftwareApplication",
@@ -44,7 +44,7 @@ const jsonLd = {
       applicationSubCategory: "AI Engineering Agent",
       operatingSystem: "Web, Slack, Linear, GitHub",
       description:
-        "Vera is an async AI engineering agent that lives in Slack, Linear, and GitHub. Delegate a task in a DM, wake up to a merged pull request.",
+        "Vera turns feature requests into detailed specs, gets your sign-off, then ships the PR. Async AI engineering agent embedded in Slack, Linear, and GitHub.",
       url: "https://agent-vera.com",
       author: { "@id": "https://agent-vera.com/#organization" },
       offers: [
@@ -70,6 +70,9 @@ const jsonLd = {
         },
       ],
       featureList: [
+        "Spec-first workflow — turns feature requests into detailed specs",
+        "Sign-off loop — humans approve the spec before any code is written",
+        "Ships what you meant, not what you wrote — clarifies intent before implementing",
         "Async AI engineering agent",
         "Slack integration — delegate tasks via DM",
         "Linear integration — assign tickets directly",
@@ -87,9 +90,9 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": "https://agent-vera.com/#webpage",
       url: "https://agent-vera.com",
-      name: "Vera — AI Engineering Agent for Slack, Linear & GitHub",
+      name: "Vera — Ship What You Meant, Not What You Wrote",
       description:
-        "Vera is the async AI engineering agent that lives in Slack, Linear, and GitHub.",
+        "Vera turns feature requests into detailed specs, gets your sign-off, then ships the PR. Async AI engineering agent embedded in Slack, Linear, and GitHub.",
       isPartOf: {
         "@type": "WebSite",
         "@id": "https://agent-vera.com/#website",
@@ -105,6 +108,14 @@ const jsonLd = {
       mainEntity: [
         {
           "@type": "Question",
+          name: "How does Vera turn a vague feature request into shipped code?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "You describe the feature in plain English in a Slack DM or Linear ticket. Vera researches your codebase, drafts a detailed spec covering scope, edge cases, and implementation approach, then shares it back for sign-off. Once you approve the spec, Vera implements it, opens a pull request, and iterates on review feedback — asynchronously, in the tools you already use. You ship what you meant, not what you wrote.",
+          },
+        },
+        {
+          "@type": "Question",
           name: "What is an AI engineering agent?",
           acceptedAnswer: {
             "@type": "Answer",
@@ -116,7 +127,7 @@ const jsonLd = {
           name: "How does Vera work in Slack?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "You delegate a task to Vera via Slack DM — describe what you need in plain English. Vera researches the codebase, creates a plan, implements the solution, and opens a pull request on GitHub. You get progress updates in the Slack thread and review the final PR when it's ready.",
+            text: "You delegate a task to Vera via Slack DM — describe what you need in plain English. Vera researches the codebase, drafts a detailed spec, and shares it back for your sign-off. Once approved, she implements the solution and opens a pull request on GitHub. You get progress updates in the Slack thread and review the final PR when it's ready.",
           },
         },
         {
@@ -158,18 +169,18 @@ const jsonLd = {
     <meta name="description" content={description} />
     <meta
       name="keywords"
-      content="AI engineering agent, async AI engineer, AI coding agent Slack, autonomous coding agent, AI agent for Slack, delegate engineering work to AI"
+      content="AI engineering agent, async AI engineer, AI coding agent Slack, autonomous coding agent, AI agent for Slack, delegate engineering work to AI, feature spec generation, AI product specs, requirements to PR, ship what you meant, AI feature delegation, intent clarification agent"
     />
     <link rel="canonical" href={canonicalURL} />
 
     <!-- Open Graph -->
     <meta
       property="og:title"
-      content="Vera — Ship features you actually want"
+      content="Vera — Ship what you meant, not what you wrote"
     />
     <meta
       property="og:description"
-      content="Delegate a task in Slack. Wake up to a merged PR. Vera is the async AI engineering agent embedded in your workflow."
+      content="Vera turns feature requests into detailed specs, gets your sign-off, then ships the PR. Async AI engineering agent embedded in Slack, Linear, and GitHub."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
@@ -180,11 +191,11 @@ const jsonLd = {
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Vera — Ship features you actually want"
+      content="Vera — Ship what you meant, not what you wrote"
     />
     <meta
       name="twitter:description"
-      content="Delegate a task in Slack. Wake up to a merged PR. Vera is the async AI engineering agent embedded in your workflow."
+      content="Vera turns feature requests into detailed specs, gets your sign-off, then ships the PR. Async AI engineering agent embedded in Slack, Linear, and GitHub."
     />
     <meta name="twitter:image" content="https://agent-vera.com/og-image.png" />
 
