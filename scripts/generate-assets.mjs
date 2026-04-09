@@ -19,9 +19,10 @@ const publicDir = join(__dirname, "..", "website", "public");
 const W = 1200;
 const H = 630;
 
-const BG = "#0a0a0f";
-const TEXT = "#f0f0f5";
-const MUTED = "#8888a0";
+// Match the website theme (see website/src/layouts/Layout.astro :root)
+const BG = "#f0ede8";
+const TEXT = "#0d2818";
+const MUTED = "#0d2818";
 
 // The parrot icon PNG has a solid white background. Strip it so the mark sits
 // cleanly on the dark OG canvas. Cheap chroma key: any pixel that is near-white
@@ -57,10 +58,14 @@ async function generateOGImage() {
   // Source logo — 192x192 parrot mark already in public/
   const logoBuf = await loadLogoTransparent(join(publicDir, "icon-192.png"), 180);
 
+  // Font stack mirrors the site (Satoshi on the web, system fallbacks here —
+  // librsvg can't fetch remote fonts, so it resolves to Helvetica/Arial).
+  const fontStack =
+    'Satoshi, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif';
   const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     <style>
-      .title { font: 700 132px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: ${TEXT}; letter-spacing: -4px; }
-      .url   { font: 500 28px  -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: ${MUTED}; letter-spacing: 0.5px; }
+      .title { font: 900 132px ${fontStack}; fill: ${TEXT}; letter-spacing: -4px; }
+      .url   { font: 500 28px ${fontStack}; fill: ${MUTED}; fill-opacity: 0.6; letter-spacing: 0.5px; }
     </style>
     <text x="600" y="445" text-anchor="middle" class="title">Vera</text>
     <text x="600" y="555" text-anchor="middle" class="url">agent-vera.com</text>
