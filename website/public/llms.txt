@@ -14,7 +14,6 @@ Vera operates on a 5-stage lifecycle: Research, Prep/Plan, Execute, Review, and 
 - Name: Vera
 - Category: AI Engineering Agent
 - Platforms: Slack, Linear, GitHub
-- Built by: Vera AI (Arsent LLC)
 
 ## Capabilities
 
