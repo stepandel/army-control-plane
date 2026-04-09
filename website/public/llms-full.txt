@@ -2,7 +2,7 @@
 
 ## What is Vera?
 
-Vera is an autonomous AI engineering agent built by Vera AI. She lives in Slack, Linear, and GitHub — the tools software teams already use every day. Unlike IDE-embedded copilots that assist while you type, or standalone AI workspaces that require you to learn a new environment, Vera works asynchronously in the background with one crucial human-in-the-loop step: she turns vague feature requests into detailed specs, gets your sign-off, then ships the PR. You ship what you meant, not what you wrote.
+Vera is an autonomous AI engineering agent that lives in Slack, Linear, and GitHub — the tools software teams already use every day. Unlike IDE-embedded copilots that assist while you type, or standalone AI workspaces that require you to learn a new environment, Vera works asynchronously in the background with one crucial human-in-the-loop step: she turns vague feature requests into detailed specs, gets your sign-off, then ships the PR. You ship what you meant, not what you wrote.
 
 The workflow: delegate a task in a Slack DM or assign a Linear ticket. Vera researches the problem, drafts a detailed specification covering scope, edge cases, and implementation approach, and shares it back for your approval. Once you sign off on the spec, Vera implements it, opens a pull request, and responds to review feedback — all without requiring you at the keyboard.
 
