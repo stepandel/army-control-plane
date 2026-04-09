@@ -1,10 +1,12 @@
-# Vera — The Async AI Engineering Agent
+# Vera — Ship What You Meant, Not What You Wrote
 
 ## What is Vera?
 
-Vera is an autonomous AI engineering agent built by Agent Army. She lives in Slack, Linear, and GitHub — the tools software teams already use every day. Unlike IDE-embedded copilots that assist while you type, or standalone AI workspaces that require you to learn a new environment, Vera works asynchronously in the background. Delegate a task in a Slack DM or assign a Linear ticket. Vera researches the problem, plans the implementation, writes production code, opens a pull request, and responds to review feedback — all without requiring you at the keyboard.
+Vera is an autonomous AI engineering agent that lives in Slack, Linear, and GitHub — the tools software teams already use every day. Unlike IDE-embedded copilots that assist while you type, or standalone AI workspaces that require you to learn a new environment, Vera works asynchronously in the background with one crucial human-in-the-loop step: she turns vague feature requests into detailed specs, gets your sign-off, then ships the PR. You ship what you meant, not what you wrote.
 
-Vera is designed for engineering teams that want to multiply their output without multiplying their headcount. She handles the work that fills your backlog — bug fixes, feature research, codebase audits, ticket triage — so your team can focus on the creative, high-judgment work that humans do best. She's not a code completion tool or a chatbot — she's an AI engineering agent that owns tasks end-to-end.
+The workflow: delegate a task in a Slack DM or assign a Linear ticket. Vera researches the problem, drafts a detailed specification covering scope, edge cases, and implementation approach, and shares it back for your approval. Once you sign off on the spec, Vera implements it, opens a pull request, and responds to review feedback — all without requiring you at the keyboard.
+
+Vera is designed for engineering teams that want to multiply their output without multiplying their headcount. She handles the work that fills your backlog — feature implementation, bug fixes, codebase audits, ticket triage — so your team can focus on the creative, high-judgment work that humans do best. She's not a code completion tool or a chatbot — she's an AI engineering agent that owns tasks end-to-end, with a built-in clarification loop so you don't ship the wrong thing at 2am.
 
 ## How Vera Works
 
@@ -16,11 +18,13 @@ When Vera receives a task, she starts by understanding the problem. She reads th
 
 Research isn't just a preliminary step — it's what separates Vera from tools that jump straight to code generation. By deeply understanding the problem space first, Vera produces implementations that fit your architecture instead of generic solutions that need heavy modification.
 
-### Stage 2: Prep & Plan
+### Stage 2: Prep & Plan — Spec Generation and Sign-Off
 
-Before writing any code, Vera validates the scope of the work. She identifies entry points in the codebase, defines a clear implementation plan, flags edge cases, and determines the right approach. For larger tasks, she breaks the work into smaller, independently shippable pieces — just like a senior engineer would during sprint planning.
+This is Vera's signature stage. Before writing any code, Vera drafts a detailed specification for the work. She identifies entry points in the codebase, defines a clear implementation plan, flags edge cases, lists acceptance criteria, and determines the right approach. For larger tasks, she breaks the work into smaller, independently shippable pieces — just like a senior engineer would during sprint planning.
 
-During the prep phase, Vera also enriches the ticket itself. She adds research findings, implementation notes, and context directly to the Linear ticket so your team has full visibility into the planned approach. If a task is too large or ambiguous, she'll flag it and propose a breakdown before writing any code.
+Then Vera stops and waits for your sign-off. The spec is shared back to you in Slack or on the Linear ticket. You review it, request changes if it misinterpreted what you wanted, and approve it when it reflects what you actually meant. This one small sync touchpoint is what lets Vera operate safely on vague or ambiguous requests — she doesn't guess at intent, she confirms it. The result: you ship what you meant, not what you wrote.
+
+During the prep phase, Vera also enriches the ticket itself. She adds research findings, implementation notes, and context directly to the Linear ticket so your team has full visibility into the planned approach. If a task is too large or ambiguous, she'll flag it and propose a breakdown before the spec is finalized.
 
 ### Stage 3: Execute
 
@@ -68,11 +72,13 @@ When reviewers leave comments on her PRs, Vera reads them, understands the feedb
 
 ## Key Differentiators
 
-### Async-First
+### Spec-First, Async Execution
 
-Vera doesn't need you at the keyboard. She doesn't need you in an IDE. She doesn't need you watching over her shoulder. Delegate a task before you leave for the day. Vera works through it overnight. You wake up to a pull request ready for review. This is fundamentally different from synchronous tools like Cursor or GitHub Copilot, which only work when you're actively coding.
+Vera's defining move is the spec-first workflow. She doesn't jump straight from a vague request to generated code — she reads the request, researches the codebase, drafts a detailed spec, and gets your sign-off. Only then does she start writing code. The sign-off step is the single sync touchpoint in an otherwise fully async workflow. It's what keeps Vera from confidently shipping the wrong thing overnight.
 
-The async model means zero context switches for your team. You delegate in a Slack DM — a 30-second interaction. Then you review a PR when it's ready — your normal workflow. Nothing in between. No pair-programming with an AI. No babysitting a coding session.
+Once the spec is approved, Vera doesn't need you at the keyboard, doesn't need you in an IDE, doesn't need you watching over her shoulder. She works through the implementation asynchronously. You sign off on a spec before you leave for the day; you wake up to a pull request ready for review. This is fundamentally different from synchronous tools like Cursor or GitHub Copilot, which only work when you're actively coding.
+
+The async model means zero context switches for your team. You delegate in a Slack DM — a 30-second interaction. You review and approve the spec — another quick interaction. Then you review the PR when it's ready — your normal workflow. Nothing in between. No pair-programming with an AI. No babysitting a coding session.
 
 ### Embedded in Your Tools
 
@@ -144,9 +150,11 @@ The AI coding tools landscape splits into four categories:
 
 ## Pricing
 
-**BYOK Plan — $20/month per seat:** Bring your own LLM API key. Full access to all Vera capabilities. Slack, Linear, and GitHub integrations included.
+**Pro Monthly — $50/month per workspace:** Full access to Vera in Slack, Linear, and GitHub. 3-day free trial. No credit card required to start.
 
-**Enterprise — Starting at $50/month per seat:** Dedicated support, custom workflows, advanced configuration, and priority processing.
+**Pro Yearly — $500/year per workspace:** Same as Pro Monthly, billed yearly. Save $100 vs. monthly. 3-day free trial.
+
+See https://agent-vera.com/pricing for current plans and terms.
 
 ## Getting Started
 
@@ -155,29 +163,37 @@ The AI coding tools landscape splits into four categories:
 3. **Delegate your first task** — send Vera a DM: "Research and fix the auth bug in ticket ENG-42."
 4. **Review the results** — Vera works the task and opens a pull request ready for review.
 
-## About Agent Army
+## About Vera AI
 
-Agent Army builds autonomous AI engineering agents. Vera is our flagship product — an AI engineering agent designed for teams that ship fast. We believe the future of software engineering is human-AI collaboration: humans set direction and make creative decisions, AI handles the execution and the repetitive work that fills backlogs.
+Vera AI builds autonomous AI engineering agents. Vera is our flagship product — an AI engineering agent designed for teams that ship fast. We believe the future of software engineering is human-AI collaboration: humans set direction and make creative decisions, AI handles the execution and the repetitive work that fills backlogs. Vera's spec-first workflow is the expression of that belief — humans stay in the loop for intent, AI handles the implementation.
+
+Vera AI is a product of Arsent LLC, a Delaware company based in San Francisco.
 
 Website: https://agent-vera.com
 Contact: hello@agent-vera.com
 
 ## FAQ
 
+**How does Vera turn a vague feature request into shipped code?**
+You describe the feature in plain English in a Slack DM or Linear ticket. Vera researches your codebase, drafts a detailed spec covering scope, edge cases, and implementation approach, then shares it back for sign-off. Once you approve the spec, Vera implements it, opens a pull request, and iterates on review feedback — all asynchronously, in the tools you already use. The sign-off step is the single sync touchpoint, and it's what lets Vera operate safely on vague requests without guessing at intent.
+
 **What is an AI engineering agent?**
 An AI engineering agent is an autonomous AI system that performs software engineering tasks — researching codebases, planning implementations, writing code, opening pull requests, and reviewing code — without requiring a human at the keyboard. Unlike copilots that assist while you type, an AI engineering agent like Vera owns tasks end-to-end.
 
 **How does Vera work in Slack?**
-Delegate a task via Slack DM in plain English. Vera researches, implements, and opens a PR. You get progress updates in the Slack thread and can reply with follow-up context at any time.
+Delegate a task via Slack DM in plain English. Vera researches the codebase, drafts a detailed spec, and shares it back for sign-off. Once you approve, she implements and opens a PR. You get progress updates in the Slack thread and can reply with follow-up context at any time.
 
 **How is Vera different from Copilot or Cursor?**
-Copilot and Cursor assist while you're actively coding in an IDE. Vera is async — delegate a task and walk away. She works independently in Slack, Linear, and GitHub without requiring you at the keyboard.
+Copilot and Cursor assist while you're actively coding in an IDE. Vera is async and spec-first — delegate a task, approve the spec, walk away. She works independently in Slack, Linear, and GitHub without requiring you at the keyboard.
 
 **How is Vera different from Devin?**
-Devin operates in its own standalone workspace. Vera is embedded in Slack, Linear, and GitHub — no new tools to learn, no new environment to manage. Your workflow stays the same.
+Devin operates in its own standalone workspace and jumps straight to execution. Vera is embedded in Slack, Linear, and GitHub — no new tools to learn, no new environment to manage — and has a built-in spec sign-off step, so you don't end up with a confidently-implemented PR for something you didn't actually want.
 
 **Can Vera write code while I sleep?**
-Yes. Vera is designed for async delegation. Assign a task before you log off and Vera works through it overnight. You wake up to a pull request ready for review.
+Yes, once you've approved the spec. Vera is designed for async execution: you sign off on the spec at the end of the day, Vera implements it overnight, you wake up to a pull request ready for review.
+
+**Does Vera ever write code without my approval?**
+For feature work, no — Vera drafts a spec first and waits for your sign-off before implementing. For smaller, well-scoped tasks like bug fixes and follow-ups on review feedback, she can proceed without a separate spec step when the intent is already clear.
 
 **Is my code safe?**
 BYOK — your code is processed using your own API keys and infrastructure. Nothing is stored or used for training. You maintain full control over your data.
