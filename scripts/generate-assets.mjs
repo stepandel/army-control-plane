@@ -87,27 +87,20 @@ function centeredText(font, text, { size, cx, y, fill, fillOpacity }) {
 
 async function generateOGImage() {
   const titleFont = await opentype.load(join(fontsDir, "Satoshi-Black.ttf"));
-  const bodyFont = await opentype.load(join(fontsDir, "Satoshi-Medium.ttf"));
 
-  const logoBuf = await loadLogoTransparent(join(publicDir, "icon-192.png"), 180);
+  const LOGO_SIZE = 320;
+  const TITLE_SIZE = 88;
+  const logoBuf = await loadLogoTransparent(join(publicDir, "icon-192.png"), LOGO_SIZE);
 
   const title = centeredText(titleFont, "Vera", {
-    size: 140,
+    size: TITLE_SIZE,
     cx: W / 2,
-    y: 445,
+    y: 505,
     fill: TEXT,
-  });
-  const url = centeredText(bodyFont, "agent-vera.com", {
-    size: 28,
-    cx: W / 2,
-    y: 555,
-    fill: TEXT,
-    fillOpacity: 0.55,
   });
 
   const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     ${title.svg}
-    ${url.svg}
   </svg>`;
 
   const bg = sharp({
@@ -116,7 +109,7 @@ async function generateOGImage() {
 
   return bg
     .composite([
-      { input: logoBuf, top: 110, left: (W - 180) / 2 },
+      { input: logoBuf, top: 100, left: (W - LOGO_SIZE) / 2 },
       { input: Buffer.from(textSvg), top: 0, left: 0 },
     ])
     .png()
