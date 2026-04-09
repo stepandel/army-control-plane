@@ -1,9 +1,9 @@
 /**
  * Generate the OG image (1200x630) for the website.
  *
- * Simple design: cream background, centered parrot mark, "Vera" wordmark, URL.
- * Satoshi is the brand font — we load the TTFs from scripts/fonts/satoshi via
- * opentype.js and convert text to SVG paths, then rasterize with sharp. This
+ * Simple design: cream background, centered parrot mark, "Vera" wordmark,
+ * tagline. Satoshi is the brand font — we load the TTFs from scripts/fonts/satoshi
+ * via opentype.js and convert text to SVG paths, then rasterize with sharp. This
  * sidesteps fontconfig entirely, which sharp's bundled librsvg on macOS does
  * not reliably consult.
  *
@@ -87,20 +87,31 @@ function centeredText(font, text, { size, cx, y, fill, fillOpacity }) {
 
 async function generateOGImage() {
   const titleFont = await opentype.load(join(fontsDir, "Satoshi-Black.ttf"));
+  const taglineFont = await opentype.load(join(fontsDir, "Satoshi-Medium.ttf"));
 
-  const LOGO_SIZE = 320;
-  const TITLE_SIZE = 88;
+  const LOGO_SIZE = 260;
+  const TITLE_SIZE = 80;
+  const TAGLINE_SIZE = 40;
   const logoBuf = await loadLogoTransparent(join(publicDir, "icon-192.png"), LOGO_SIZE);
 
   const title = centeredText(titleFont, "Vera", {
     size: TITLE_SIZE,
     cx: W / 2,
-    y: 505,
+    y: 440,
     fill: TEXT,
+  });
+
+  const tagline = centeredText(taglineFont, "Ship features you actually want", {
+    size: TAGLINE_SIZE,
+    cx: W / 2,
+    y: 540,
+    fill: TEXT,
+    fillOpacity: 0.75,
   });
 
   const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     ${title.svg}
+    ${tagline.svg}
   </svg>`;
 
   const bg = sharp({
@@ -109,7 +120,7 @@ async function generateOGImage() {
 
   return bg
     .composite([
-      { input: logoBuf, top: 100, left: (W - LOGO_SIZE) / 2 },
+      { input: logoBuf, top: 70, left: (W - LOGO_SIZE) / 2 },
       { input: Buffer.from(textSvg), top: 0, left: 0 },
     ])
     .png()
