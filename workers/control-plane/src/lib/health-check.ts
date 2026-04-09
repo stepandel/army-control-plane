@@ -199,11 +199,16 @@ async function checkMachineHealth(
       if (result.delivered) alerts += 1;
     }
   } else if (env.ALERT_STATE) {
-    // Healthy — clear the counter if any.
+    // Healthy — clear the counter if any. Check presence first so we don't
+    // burn a KV delete op (strictly rate-limited on the daily quota) on every
+    // healthy tenant every 5 minutes.
     try {
-      await env.ALERT_STATE.delete(badStateKey);
+      const existing = await env.ALERT_STATE.get(badStateKey);
+      if (existing !== null) {
+        await env.ALERT_STATE.delete(badStateKey);
+      }
     } catch (err) {
-      console.warn(`health-check: ALERT_STATE.delete failed for ${badStateKey}:`, err);
+      console.warn(`health-check: ALERT_STATE clear failed for ${badStateKey}:`, err);
     }
   }
 

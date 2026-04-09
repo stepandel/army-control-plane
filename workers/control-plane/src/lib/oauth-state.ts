@@ -33,8 +33,14 @@ export async function verifyState(
   const raw = await kv.get(token);
   if (!raw) return null;
 
-  // Delete immediately — single use
-  await kv.delete(token);
+  // Delete immediately — single use. Tolerate delete failures (e.g. KV daily
+  // quota exhaustion): the 10-minute TTL still bounds replay, and Slack's
+  // authorization code is itself single-use, so sign-in must not hard-fail here.
+  try {
+    await kv.delete(token);
+  } catch (err) {
+    console.warn("oauth-state: kv.delete failed, relying on TTL:", err);
+  }
 
   try {
     const data: StateData = JSON.parse(raw);
