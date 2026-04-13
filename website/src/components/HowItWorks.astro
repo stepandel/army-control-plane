@@ -72,6 +72,7 @@ const stages = [
             <div class="page-content">
               <div class="page-text">
                 <span class="linear-label"><span class="linear-dot"></span>{stage.label}</span>
+                <h3 class="page-name">{stage.name}</h3>
                 <p class="page-desc">{stage.description}</p>
               </div>
               <div class="page-screenshot">
@@ -339,6 +340,10 @@ const stages = [
   }
 
   @media (max-width: 768px) {
+    .book-label {
+      display: none;
+    }
+
     .book {
       flex-direction: column;
       height: auto;

@@ -19,6 +19,10 @@ const { minimal = false } = Astro.props;
         <a href="/#use-cases">Use Cases</a>
         <a href="/pricing">Pricing</a>
         <a href="/security">Security</a>
+        <div class="nav-links-cta">
+          <a href="/sign-in" class="nav-signin">Sign in</a>
+          <a href="/onboarding" class="nav-cta">Install Vera →</a>
+        </div>
       </div>
     )}
     {!minimal && (
@@ -181,6 +185,11 @@ const { minimal = false } = Astro.props;
     top: 7px;
   }
 
+  /* Mobile CTA group inside collapsible menu — hidden on desktop */
+  .nav-links-cta {
+    display: none;
+  }
+
   @media (max-width: 768px) {
     .nav-inner {
       flex-wrap: wrap;
@@ -199,13 +208,45 @@ const { minimal = false } = Astro.props;
       display: flex;
     }
 
-    .nav-cta {
-      padding: 0.4rem 1rem;
-      font-size: 0.8rem;
+    /* Hide the desktop CTA group on mobile */
+    .nav-cta-group {
+      display: none;
+    }
+
+    /* Show CTAs inside the collapsible menu on mobile */
+    .nav-links-cta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(13, 40, 24, 0.1);
+      margin-top: 0.25rem;
+    }
+
+    .nav-links-cta .nav-cta {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      text-align: center;
+      justify-content: center;
     }
 
     .nav-toggle {
       display: block;
+    }
+
+    /* Hamburger → X animation */
+    .nav-toggle[aria-expanded="true"] .hamburger {
+      background: transparent;
+    }
+
+    .nav-toggle[aria-expanded="true"] .hamburger::before {
+      top: 0;
+      transform: rotate(45deg);
+    }
+
+    .nav-toggle[aria-expanded="true"] .hamburger::after {
+      top: 0;
+      transform: rotate(-45deg);
     }
   }
 </style>
