@@ -12,3 +12,6 @@ website/.astro/
 
 # Agent state
 .vera/
+
+.tickets
+.obsidian
