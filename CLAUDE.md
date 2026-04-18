@@ -62,9 +62,11 @@ pnpm deploy:control-plane     # deploy control plane to Cloudflare
 | `packages/shared/src/types.ts` | All shared types and env bindings |
 | `workers/router/src/verify.ts` | Per-platform webhook HMAC verification |
 | `workers/router/src/forward.ts` | KV lookup + async forwarding to Fly |
+| `workers/control-plane/src/routes/auth.ts` | Sign-in OAuth flows (Slack OIDC + standalone Google/GitHub/Discord) |
 | `workers/control-plane/src/routes/oauth.ts` | OAuth install/callback for all 3 platforms |
 | `workers/control-plane/src/routes/admin.ts` | Admin CRUD for tenants |
 | `workers/control-plane/src/routes/internal.ts` | Machine self-registration + credential fetch (INTERNAL_SECRET auth) |
+| `workers/control-plane/src/lib/oauth-profile.ts` | Standalone-account provider profile fetchers (Google, GitHub, Discord) |
 | `workers/control-plane/src/middleware/cf-access.ts` | Cloudflare Access JWT validation |
 | `workers/control-plane/src/lib/oauth-state.ts` | KV-backed single-use CSRF state tokens |
 | `workers/control-plane/src/lib/fly.ts` | Fly Machines API client |

@@ -4,12 +4,12 @@
  */
 
 export interface SessionPayload {
-  /** users.id (our UUID) */
+  /** Opaque subject identifier for the signed-in principal. */
   sub: string;
-  /** slack_team_id (tenant FK) */
-  team_id: string;
-  /** slack_user_id */
-  slack_uid: string;
+  /** Slack tenant ID for legacy workspace-backed sessions. */
+  team_id?: string;
+  /** Slack user ID for legacy workspace-backed sessions. */
+  slack_uid?: string;
   email?: string;
   name?: string;
   iat: number;

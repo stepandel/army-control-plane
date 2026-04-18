@@ -16,11 +16,17 @@ const account = new Hono<{
 // All routes require a valid session cookie
 account.use("/*", sessionGuard);
 
+function requireTenantSession(c: { get(name: "session"): SessionPayload }) {
+  const teamId = c.get("session").team_id;
+  return teamId ?? null;
+}
+
 // ── Tenant info ──────────────────────────────────────────────────
 
 /** GET /tenant — return tenant info + integration status (session-derived) */
 account.get("/tenant", async (c) => {
-  const { team_id: teamId } = c.get("session");
+  const teamId = requireTenantSession(c);
+  if (!teamId) return c.json({ error: "no_tenant" }, 409);
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
@@ -64,7 +70,8 @@ account.get("/tenant", async (c) => {
 
 /** GET /billing — return billing status for the signed-in tenant */
 account.get("/billing", async (c) => {
-  const { team_id: teamId } = c.get("session");
+  const teamId = requireTenantSession(c);
+  if (!teamId) return c.json({ error: "no_tenant" }, 409);
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
@@ -98,7 +105,8 @@ account.get("/billing", async (c) => {
 
 /** POST /checkout — create Stripe Checkout session */
 account.post("/checkout", async (c) => {
-  const { team_id: teamId } = c.get("session");
+  const teamId = requireTenantSession(c);
+  if (!teamId) return c.json({ error: "no_tenant" }, 409);
   const sql = getDb(c.env);
 
   // Body is optional; default to monthly when omitted or invalid.
@@ -146,7 +154,8 @@ account.post("/checkout", async (c) => {
 
 /** POST /billing/portal — create Stripe Billing Portal session */
 account.post("/billing/portal", async (c) => {
-  const { team_id: teamId } = c.get("session");
+  const teamId = requireTenantSession(c);
+  if (!teamId) return c.json({ error: "no_tenant" }, 409);
   const sql = getDb(c.env);
 
   const [tenant] = await sql`
@@ -178,7 +187,8 @@ account.post("/billing/portal", async (c) => {
  * (Fly machine started) as a side effect.
  */
 account.post("/promo-code", async (c) => {
-  const { team_id: teamId } = c.get("session");
+  const teamId = requireTenantSession(c);
+  if (!teamId) return c.json({ error: "no_tenant" }, 409);
 
   let body: { code?: unknown };
   try {

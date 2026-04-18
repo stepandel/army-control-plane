@@ -1,13 +1,61 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { ControlPlaneEnv } from "@army/shared";
 import { getDb } from "../db/client";
 import { createState, verifyState } from "../lib/oauth-state";
 import { signJwt } from "../lib/jwt";
 import { createCustomer } from "../lib/stripe";
+import {
+  fetchDiscordProfile,
+  fetchGitHubProfile,
+  fetchGoogleProfile,
+  type IdentityProfile,
+  type StandaloneProvider,
+} from "../lib/oauth-profile";
 
 const auth = new Hono<{ Bindings: ControlPlaneEnv }>();
+type AuthContext = Context<{ Bindings: ControlPlaneEnv }>;
 
-const OIDC_SCOPES = "openid,email,profile";
+const SLACK_OIDC_SCOPES = "openid,email,profile";
+const GOOGLE_SCOPES = "openid email profile";
+const GITHUB_SCOPES = "read:user user:email";
+const DISCORD_SCOPES = "identify email";
+
+const STANDALONE_PROVIDERS: Record<
+  StandaloneProvider,
+  {
+    authorizationUrl: string;
+    tokenUrl: string;
+    clientId: (env: ControlPlaneEnv) => string;
+    clientSecret: (env: ControlPlaneEnv) => string;
+    redirectPath: string;
+    scope: string;
+  }
+> = {
+  google: {
+    authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientId: (env) => env.GOOGLE_CLIENT_ID,
+    clientSecret: (env) => env.GOOGLE_CLIENT_SECRET,
+    redirectPath: "/auth/google/callback",
+    scope: GOOGLE_SCOPES,
+  },
+  github: {
+    authorizationUrl: "https://github.com/login/oauth/authorize",
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    clientId: (env) => env.GITHUB_OAUTH_CLIENT_ID,
+    clientSecret: (env) => env.GITHUB_OAUTH_CLIENT_SECRET,
+    redirectPath: "/auth/github/callback",
+    scope: GITHUB_SCOPES,
+  },
+  discord: {
+    authorizationUrl: "https://discord.com/oauth2/authorize",
+    tokenUrl: "https://discord.com/api/oauth2/token",
+    clientId: (env) => env.DISCORD_CLIENT_ID,
+    clientSecret: (env) => env.DISCORD_CLIENT_SECRET,
+    redirectPath: "/auth/discord/callback",
+    scope: DISCORD_SCOPES,
+  },
+};
 
 /** GET /slack/authorize — redirect to Slack OIDC consent screen */
 auth.get("/slack/authorize", async (c) => {
@@ -16,7 +64,7 @@ auth.get("/slack/authorize", async (c) => {
 
   const params = new URLSearchParams({
     client_id: c.env.SLACK_CLIENT_ID,
-    scope: OIDC_SCOPES,
+    scope: SLACK_OIDC_SCOPES,
     response_type: "code",
     redirect_uri: `${c.env.BASE_URL}/auth/slack/callback`,
     state,
@@ -35,7 +83,6 @@ auth.get("/slack/callback", async (c) => {
   const statePayload = await verifyState(c.env.OAUTH_STATE, state);
   if (!statePayload) return c.text("Invalid or expired state", 403);
 
-  // Exchange code for tokens via Slack OIDC token endpoint
   const tokenResp = await fetch("https://slack.com/api/openid.connect.token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -51,15 +98,13 @@ auth.get("/slack/callback", async (c) => {
   const tokenData = (await tokenResp.json()) as Record<string, unknown>;
   if (!tokenData.ok || !tokenData.id_token) {
     console.error("Slack OIDC token exchange failed:", tokenData);
-    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oidc_failed`);
+    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oauth_failed`);
   }
 
-  // Decode id_token payload (signature trusted — token came directly from Slack
-  // over TLS in confidential client flow with our client_secret)
   const idToken = tokenData.id_token as string;
   const parts = idToken.split(".");
   if (parts.length !== 3) {
-    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oidc_failed`);
+    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oauth_failed`);
   }
 
   let idPayload: Record<string, unknown>;
@@ -67,7 +112,7 @@ auth.get("/slack/callback", async (c) => {
     const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     idPayload = JSON.parse(atob(padded)) as Record<string, unknown>;
   } catch {
-    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oidc_failed`);
+    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oauth_failed`);
   }
 
   const slackTeamId = idPayload["https://slack.com/team_id"] as string | undefined;
@@ -77,12 +122,11 @@ auth.get("/slack/callback", async (c) => {
   const avatar = (idPayload["https://slack.com/user_image_72"] as string | undefined) ?? null;
 
   if (!slackTeamId || !slackUserId) {
-    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oidc_failed`);
+    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oauth_failed`);
   }
 
   const sql = getDb(c.env);
 
-  // Verify the team has installed the app (tenant exists)
   const [tenant] = await sql`
     SELECT id, name, stripe_customer_id FROM tenants WHERE id = ${slackTeamId}
   `;
@@ -90,10 +134,6 @@ auth.get("/slack/callback", async (c) => {
     return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=team_not_found`);
   }
 
-  // Backfill Stripe customer if missing — covers tenants installed before
-  // STRIPE_SECRET_KEY was configured (or any prior createCustomer failure).
-  // The conditional UPDATE makes this idempotent across concurrent sign-ins;
-  // a lost race may leave an orphan customer in Stripe, which is harmless.
   if (!tenant.stripe_customer_id) {
     try {
       const stripeCustomerId = await createCustomer(
@@ -108,12 +148,9 @@ auth.get("/slack/callback", async (c) => {
       `;
     } catch (err) {
       console.error(`Stripe customer backfill failed for ${tenant.id}:`, err);
-      // Continue — sign-in still succeeds; billing routes will surface the issue.
     }
   }
 
-  // Upsert user — sign-in flow may be the first time we capture profile data
-  // (the install flow only captures slack_user_id; OIDC gives us email/name/avatar)
   const [user] = await sql`
     INSERT INTO users (slack_user_id, slack_team_id, email, name, avatar_url)
     VALUES (${slackUserId}, ${slackTeamId}, ${email}, ${name}, ${avatar})
@@ -126,7 +163,6 @@ auth.get("/slack/callback", async (c) => {
     RETURNING id
   `;
 
-  // Sign session JWT and hand off to the website
   const jwt = await signJwt(
     {
       sub: user.id,
@@ -140,5 +176,197 @@ auth.get("/slack/callback", async (c) => {
 
   return c.redirect(`${c.env.WEBSITE_URL}/auth/complete?token=${jwt}&next=/account`);
 });
+
+auth.get("/google/authorize", (c) => beginStandaloneAuth(c, "google"));
+auth.get("/github/authorize", (c) => beginStandaloneAuth(c, "github"));
+auth.get("/discord/authorize", (c) => beginStandaloneAuth(c, "discord"));
+
+auth.get("/google/callback", (c) => finishStandaloneAuth(c, "google"));
+auth.get("/github/callback", (c) => finishStandaloneAuth(c, "github"));
+auth.get("/discord/callback", (c) => finishStandaloneAuth(c, "discord"));
+
+async function beginStandaloneAuth(c: AuthContext, provider: StandaloneProvider) {
+  const config = STANDALONE_PROVIDERS[provider];
+  const state = await createState(c.env.OAUTH_STATE);
+
+  const params = new URLSearchParams({
+    client_id: config.clientId(c.env),
+    redirect_uri: `${c.env.BASE_URL}${config.redirectPath}`,
+    response_type: "code",
+    scope: config.scope,
+    state,
+  });
+
+  if (provider === "google") {
+    params.set("access_type", "offline");
+    params.set("prompt", "consent");
+  }
+
+  return c.redirect(`${config.authorizationUrl}?${params}`);
+}
+
+async function finishStandaloneAuth(c: AuthContext, provider: StandaloneProvider) {
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  if (!code || !state) return c.text("Missing code or state", 400);
+
+  const statePayload = await verifyState(c.env.OAUTH_STATE, state);
+  if (!statePayload) return c.text("Invalid or expired state", 403);
+
+  try {
+    const profile = await fetchStandaloneProfile(c.env, provider, code);
+    const account = await upsertStandaloneAccount(getDb(c.env), profile);
+    const jwt = await signJwt(
+      {
+        sub: account.id,
+        ...(account.email !== null && { email: account.email }),
+        ...(account.name !== null && { name: account.name }),
+      },
+      c.env.SESSION_SECRET,
+    );
+
+    return c.redirect(`${c.env.WEBSITE_URL}/auth/complete?token=${jwt}&next=/account`);
+  } catch (err) {
+    console.error(`${provider} auth failed:`, err);
+    return c.redirect(`${c.env.WEBSITE_URL}/sign-in?error=oauth_failed`);
+  }
+}
+
+async function fetchStandaloneProfile(
+  env: ControlPlaneEnv,
+  provider: StandaloneProvider,
+  code: string,
+): Promise<IdentityProfile> {
+  const config = STANDALONE_PROVIDERS[provider];
+  const tokenResp = await fetch(config.tokenUrl, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: config.clientId(env),
+      client_secret: config.clientSecret(env),
+      code,
+      redirect_uri: `${env.BASE_URL}${config.redirectPath}`,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  const tokenData = (await tokenResp.json()) as Record<string, unknown>;
+  const accessToken = tokenData.access_token;
+  if (!tokenResp.ok || typeof accessToken !== "string") {
+    throw new Error(`token_exchange_failed:${provider}`);
+  }
+
+  switch (provider) {
+    case "google":
+      return fetchGoogleProfile(accessToken);
+    case "github":
+      return fetchGitHubProfile(accessToken);
+    case "discord":
+      return fetchDiscordProfile(accessToken);
+  }
+}
+
+async function upsertStandaloneAccount(
+  sql: ReturnType<typeof getDb>,
+  profile: IdentityProfile,
+): Promise<{ id: string; email: string | null; name: string | null }> {
+  const existing = await findAccountByIdentity(sql, profile);
+  if (existing) {
+    return updateStandaloneAccount(sql, existing.id, profile);
+  }
+
+  const [created] = await sql`
+    INSERT INTO accounts (email, name, avatar_url, updated_at, last_login_at)
+    VALUES (${profile.email}, ${profile.name}, ${profile.avatarUrl}, now(), now())
+    RETURNING id
+  `;
+
+  await sql`
+    INSERT INTO account_identities (
+      account_id,
+      provider,
+      provider_user_id,
+      provider_email,
+      provider_name,
+      provider_avatar_url,
+      updated_at,
+      last_login_at
+    )
+    VALUES (
+      ${created.id},
+      ${profile.provider},
+      ${profile.providerUserId},
+      ${profile.email},
+      ${profile.name},
+      ${profile.avatarUrl},
+      now(),
+      now()
+    )
+    ON CONFLICT (provider, provider_user_id) DO NOTHING
+  `;
+
+  const linked = await findAccountByIdentity(sql, profile);
+  if (!linked) {
+    throw new Error("account_identity_upsert_failed");
+  }
+
+  if (linked.id !== created.id) {
+    await sql`DELETE FROM accounts WHERE id = ${created.id}`;
+  }
+
+  return updateStandaloneAccount(sql, linked.id, profile);
+}
+
+async function findAccountByIdentity(
+  sql: ReturnType<typeof getDb>,
+  profile: IdentityProfile,
+): Promise<{ id: string } | null> {
+  const [account] = await sql`
+    SELECT a.id
+    FROM account_identities ai
+    JOIN accounts a ON a.id = ai.account_id
+    WHERE ai.provider = ${profile.provider}
+      AND ai.provider_user_id = ${profile.providerUserId}
+  `;
+
+  return account ? { id: String(account.id) } : null;
+}
+
+async function updateStandaloneAccount(
+  sql: ReturnType<typeof getDb>,
+  accountId: string,
+  profile: IdentityProfile,
+): Promise<{ id: string; email: string | null; name: string | null }> {
+  await sql`
+    UPDATE account_identities
+    SET provider_email = ${profile.email},
+        provider_name = ${profile.name},
+        provider_avatar_url = ${profile.avatarUrl},
+        updated_at = now(),
+        last_login_at = now()
+    WHERE provider = ${profile.provider}
+      AND provider_user_id = ${profile.providerUserId}
+  `;
+
+  const [account] = await sql`
+    UPDATE accounts
+    SET email = COALESCE(${profile.email}, accounts.email),
+        name = COALESCE(${profile.name}, accounts.name),
+        avatar_url = COALESCE(${profile.avatarUrl}, accounts.avatar_url),
+        updated_at = now(),
+        last_login_at = now()
+    WHERE id = ${accountId}
+    RETURNING id, email, name
+  `;
+
+  return {
+    id: String(account.id),
+    email: (account.email as string | null) ?? null,
+    name: (account.name as string | null) ?? null,
+  };
+}
 
 export default auth;

@@ -5,8 +5,8 @@
 
 export interface SessionPayload {
   sub: string;
-  team_id: string;
-  slack_uid: string;
+  team_id?: string;
+  slack_uid?: string;
   email?: string;
   name?: string;
   iat: number;

@@ -25,6 +25,8 @@ export default defineConfig({
           include: [
             "workers/router/src/**/*.test.ts",
             "workers/control-plane/src/lib/machine-env.test.ts",
+            "workers/control-plane/src/lib/jwt.test.ts",
+            "workers/control-plane/src/lib/oauth-profile.test.ts",
           ],
         },
       },

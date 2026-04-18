@@ -79,7 +79,8 @@ The Control Plane manages the full tenant lifecycle. Built with Hono.
 
 | Group | Path | Auth | Purpose |
 |---|---|---|---|
-| OAuth | `/oauth/{slack,linear,github}/{install,callback}` | Public (CSRF via state tokens) | OAuth consent + token exchange |
+| Auth | `/auth/{slack,google,github,discord}/{authorize,callback}` | Public (CSRF via state tokens) | Sign-in OAuth flows for all providers |
+| OAuth | `/oauth/{slack,linear,github}/{install,callback}` | Public (CSRF via state tokens) | OAuth consent + token exchange (workspace install) |
 | Internal | `/internal/register`, `/internal/credentials/:team_id` | Per-tenant `INTERNAL_SECRET` | Machine self-registration + credential fetch |
 | Admin | `/admin/tenants`, `/admin/tenants/:team_id`, etc. | Cloudflare Access JWT | Tenant CRUD |
 | Health | `/health` | Public | Liveness check |
@@ -115,7 +116,7 @@ Separated from the routing table so the Router Worker never has access to OAuth 
 
 ### Neon Postgres (via Hyperdrive)
 
-Three tables, accessed only by the Control Plane Worker:
+Five tables, accessed only by the Control Plane Worker:
 
 **`tenants`** — one row per Slack workspace
 - `id` (PK): Slack team_id (e.g., `T012345`)
@@ -131,6 +132,16 @@ Three tables, accessed only by the Control Plane Worker:
 **`deployments`** — deployment history per tenant
 - Links to tenant via `tenant_id`
 - Tracks Fly machine ID, image ref, status, timestamps
+
+**`accounts`** — one row per standalone (non-tenant) account
+- `id` (PK): random UUID
+- Stores `email`, `name`, `avatar_url`, `last_login_at`
+- Represents a signed-in user before any tenant/workspace is attached
+
+**`account_identities`** — provider identity records linked to an account
+- Maps `(provider, provider_user_id)` → `account_id` (unique index)
+- Providers: `google`, `github`, `discord`
+- Stores per-provider profile fields (`provider_email`, `provider_name`, `provider_avatar_url`)
 
 Schema is managed via dbmate migrations in `workers/control-plane/db/migrations/` (applied automatically by `.github/workflows/migrate.yml` on merge to `main`). A current-state reference snapshot lives at `workers/control-plane/src/db/schema.sql`. See `docs/migrations.md` for authoring and running migrations.
 

@@ -7,7 +7,6 @@ import { verifyJwt } from "../../lib/jwt";
 const env = Astro.locals.runtime.env;
 const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
 
-// Verify session
 const cookie = Astro.request.headers.get("cookie");
 const sessionToken = cookie?.match(/(?:^|;\s*)__Host-session=([^;]*)/)?.[1];
 
@@ -20,42 +19,44 @@ if (!session) {
   return Astro.redirect("/sign-in");
 }
 
-// Fetch billing data via service binding
 const res = await controlPlane.fetch("https://api/api/account/billing", {
   headers: { cookie: cookie ?? "" },
 });
 
-if (!res.ok) {
+if (res.status === 401) {
   return Astro.redirect("/sign-in");
 }
 
-const billing = await res.json() as {
-  subscription_status: string;
-  trial_ends_at: string | null;
-  trial_days_remaining: number;
-  cancel_at: string | null;
-  current_period_end: string | null;
-  plan_interval: string | null;
-  plan_amount_cents: number | null;
-  has_payment_method: boolean;
-  yearly_plan_enabled: boolean;
-};
+const hasTenant = res.ok;
+const noTenant = res.status === 409;
+if (!hasTenant && !noTenant) {
+  return Astro.redirect("/sign-in");
+}
+
+const billing = hasTenant
+  ? ((await res.json()) as {
+      subscription_status: string;
+      trial_ends_at: string | null;
+      trial_days_remaining: number;
+      cancel_at: string | null;
+      current_period_end: string | null;
+      plan_interval: string | null;
+      plan_amount_cents: number | null;
+      has_payment_method: boolean;
+      yearly_plan_enabled: boolean;
+    })
+  : null;
 
 const billingResult = new URL(Astro.request.url).searchParams.get("billing");
-const isTrialing = billing.subscription_status === "trialing";
-const isActive = billing.subscription_status === "active";
-const isPastDue = billing.subscription_status === "past_due";
+const isTrialing = billing?.subscription_status === "trialing";
+const isActive = billing?.subscription_status === "active";
+const isPastDue = billing?.subscription_status === "past_due";
 const isCanceled =
-  billing.subscription_status === "canceled" ||
-  billing.subscription_status === "suspended";
-
-// "Trial without subscription yet" → show plan picker.
-// "Trial with subscription already created" → show subscribed UI + first-charge date.
-const isTrialWithoutSub = isTrialing && !billing.has_payment_method;
-const isTrialWithSub = isTrialing && billing.has_payment_method;
-
-// Cancellation scheduled — Stripe leaves status="active" until the period ends.
-const isScheduledCancel = isActive && !!billing.cancel_at;
+  billing?.subscription_status === "canceled" ||
+  billing?.subscription_status === "suspended";
+const isTrialWithoutSub = isTrialing && !billing?.has_payment_method;
+const isTrialWithSub = isTrialing && billing?.has_payment_method;
+const isScheduledCancel = isActive && !!billing?.cancel_at;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", {
@@ -72,12 +73,12 @@ const formatPrice = (cents: number) =>
     maximumFractionDigits: 2,
   }).format(cents / 100);
 
-const cancelAtFormatted = billing.cancel_at ? formatDate(billing.cancel_at) : null;
-const nextBillingFormatted = billing.current_period_end
+const cancelAtFormatted = billing?.cancel_at ? formatDate(billing.cancel_at) : null;
+const nextBillingFormatted = billing?.current_period_end
   ? formatDate(billing.current_period_end)
   : null;
 const activePlanLabel =
-  billing.plan_amount_cents !== null && billing.plan_interval
+  billing?.plan_amount_cents !== null && billing?.plan_amount_cents !== undefined && billing.plan_interval
     ? `${formatPrice(billing.plan_amount_cents)}/${billing.plan_interval}`
     : null;
 ---
@@ -93,116 +94,128 @@ const activePlanLabel =
       <a href="/account/billing" class="active">Billing</a>
     </nav>
 
-    {billingResult === "success" && (
-      <div class="banner success-banner">✓ Subscription activated successfully!</div>
+    {hasTenant && billingResult === "success" && (
+      <div class="banner success-banner">Subscription activated successfully.</div>
     )}
 
-    {billingResult === "canceled" && (
-      <div class="banner info-banner">Checkout canceled — no charges were made.</div>
+    {hasTenant && billingResult === "canceled" && (
+      <div class="banner info-banner">Checkout canceled. No charges were made.</div>
     )}
 
-    <div class="billing-card">
-      {isTrialWithoutSub && (
-        <Fragment>
-          <div class="plan-name">Free Trial</div>
-          <div class="plan-detail">
-            {billing.trial_days_remaining > 0
-              ? `${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} remaining`
-              : "Expires today"}
-          </div>
-          <div class="plan-buttons">
-            <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
-            {billing.yearly_plan_enabled && (
-              <button class="btn btn-primary" data-plan="yearly">
-                Yearly — $500/yr <span class="badge-save">Save $100</span>
-              </button>
-            )}
-          </div>
-        </Fragment>
-      )}
+    {!hasTenant && (
+      <div class="billing-card">
+        <div class="plan-name">No workspace billing yet</div>
+        <div class="plan-detail">
+          Billing becomes available after your account is attached to a workspace-backed tenant.
+        </div>
+      </div>
+    )}
 
-      {isTrialWithSub && (
-        <Fragment>
-          <div class="plan-name">Pro Plan</div>
-          <div class="plan-detail active-detail">
-            ✓ Subscribed{activePlanLabel ? ` — ${activePlanLabel}` : ""}
-          </div>
-          {nextBillingFormatted && (
-            <div class="plan-meta">
-              Trial ends {nextBillingFormatted} — first charge then
-              {billing.trial_days_remaining > 0 && ` (${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} left)`}
-            </div>
+    {hasTenant && billing && (
+      <Fragment>
+        <div class="billing-card">
+          {isTrialWithoutSub && (
+            <Fragment>
+              <div class="plan-name">Free Trial</div>
+              <div class="plan-detail">
+                {billing.trial_days_remaining > 0
+                  ? `${billing.trial_days_remaining} day${billing.trial_days_remaining !== 1 ? "s" : ""} remaining`
+                  : "Expires today"}
+              </div>
+              <div class="plan-buttons">
+                <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
+                {billing.yearly_plan_enabled && (
+                  <button class="btn btn-primary" data-plan="yearly">
+                    Yearly — $500/yr <span class="badge-save">Save $100</span>
+                  </button>
+                )}
+              </div>
+            </Fragment>
           )}
-          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
-        </Fragment>
-      )}
 
-      {isActive && !isScheduledCancel && (
-        <Fragment>
-          <div class="plan-name">Pro Plan</div>
-          <div class="plan-detail active-detail">
-            ✓ Active{activePlanLabel ? ` — ${activePlanLabel}` : ""}
-          </div>
-          {nextBillingFormatted && (
-            <div class="plan-meta">Next billing on {nextBillingFormatted}</div>
+          {isTrialWithSub && (
+            <Fragment>
+              <div class="plan-name">Pro Plan</div>
+              <div class="plan-detail active-detail">
+                Subscribed{activePlanLabel ? ` — ${activePlanLabel}` : ""}
+              </div>
+              {nextBillingFormatted && (
+                <div class="plan-meta">
+                  Trial ends {nextBillingFormatted} and the first charge lands then.
+                </div>
+              )}
+              <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
+            </Fragment>
           )}
-          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
-        </Fragment>
-      )}
 
-      {isScheduledCancel && (
-        <Fragment>
-          <div class="plan-name">Pro Plan</div>
-          <div class="plan-detail warning-detail">
-            Cancels on {cancelAtFormatted} — you'll keep access until then
-          </div>
-          {activePlanLabel && (
-            <div class="plan-meta">Currently on {activePlanLabel}</div>
+          {isActive && !isScheduledCancel && (
+            <Fragment>
+              <div class="plan-name">Pro Plan</div>
+              <div class="plan-detail active-detail">
+                Active{activePlanLabel ? ` — ${activePlanLabel}` : ""}
+              </div>
+              {nextBillingFormatted && (
+                <div class="plan-meta">Next billing on {nextBillingFormatted}</div>
+              )}
+              <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
+            </Fragment>
           )}
-          <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
-        </Fragment>
-      )}
 
-      {isPastDue && (
-        <Fragment>
-          <div class="plan-name">Pro Plan</div>
-          <div class="plan-detail warning-detail">⚠️ Payment failed — please update your payment method</div>
-          <button class="btn btn-primary" id="portal-btn">Update payment method</button>
-        </Fragment>
-      )}
+          {isScheduledCancel && (
+            <Fragment>
+              <div class="plan-name">Pro Plan</div>
+              <div class="plan-detail warning-detail">
+                Cancels on {cancelAtFormatted}. Access continues until then.
+              </div>
+              {activePlanLabel && <div class="plan-meta">Currently on {activePlanLabel}</div>}
+              <button class="btn btn-secondary" id="portal-btn">Manage subscription</button>
+            </Fragment>
+          )}
 
-      {isCanceled && (
-        <Fragment>
-          <div class="plan-name">No Active Plan</div>
-          <div class="plan-detail">Your subscription has been canceled. Subscribe to reactivate Vera.</div>
-          <div class="plan-buttons">
-            <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
-            {billing.yearly_plan_enabled && (
-              <button class="btn btn-primary" data-plan="yearly">
-                Yearly — $500/yr <span class="badge-save">Save $100</span>
-              </button>
-            )}
-          </div>
-        </Fragment>
-      )}
-    </div>
+          {isPastDue && (
+            <Fragment>
+              <div class="plan-name">Pro Plan</div>
+              <div class="plan-detail warning-detail">
+                Payment failed. Update your payment method to keep access.
+              </div>
+              <button class="btn btn-primary" id="portal-btn">Update payment method</button>
+            </Fragment>
+          )}
 
-    <div class="promo-card">
-      <label for="promo-code">Have a promo code?</label>
-      <form id="promo-form">
-        <input
-          type="text"
-          id="promo-code"
-          name="promo-code"
-          placeholder="Enter code"
-          autocapitalize="characters"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button type="submit" class="btn btn-secondary">Apply</button>
-      </form>
-      <p id="promo-msg" class="promo-msg" hidden></p>
-    </div>
+          {isCanceled && (
+            <Fragment>
+              <div class="plan-name">No Active Plan</div>
+              <div class="plan-detail">Your subscription has been canceled. Subscribe to reactivate Vera.</div>
+              <div class="plan-buttons">
+                <button class="btn btn-primary" data-plan="monthly">Monthly — $50/mo</button>
+                {billing.yearly_plan_enabled && (
+                  <button class="btn btn-primary" data-plan="yearly">
+                    Yearly — $500/yr <span class="badge-save">Save $100</span>
+                  </button>
+                )}
+              </div>
+            </Fragment>
+          )}
+        </div>
+
+        <div class="promo-card">
+          <label for="promo-code">Have a promo code?</label>
+          <form id="promo-form">
+            <input
+              type="text"
+              id="promo-code"
+              name="promo-code"
+              placeholder="Enter code"
+              autocapitalize="characters"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn btn-secondary">Apply</button>
+          </form>
+          <p id="promo-msg" class="promo-msg" hidden></p>
+        </div>
+      </Fragment>
+    )}
   </div>
 </OnboardingLayout>
 
@@ -271,7 +284,7 @@ const activePlanLabel =
       });
       const data = await res.json();
       if (res.ok) {
-        msg.textContent = "✓ Code applied — refreshing…";
+        msg.textContent = "Code applied. Refreshing…";
         msg.className = "promo-msg success";
         msg.hidden = false;
         setTimeout(() => location.reload(), 800);
@@ -281,7 +294,7 @@ const activePlanLabel =
         msg.hidden = false;
       }
     } catch {
-      msg.textContent = "Network error — try again";
+      msg.textContent = "Network error. Try again.";
       msg.className = "promo-msg error";
       msg.hidden = false;
     }
