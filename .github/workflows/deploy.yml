@@ -1,35 +1,33 @@
 name: Deploy
 
 on:
-  workflow_dispatch: # manual-only — Cloudflare handles automatic deploys
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (tag, branch, or commit SHA)"
+        required: true
+        default: "main"
+
+concurrency:
+  group: deploy-workers-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_REF: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.ref }}
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      shared: ${{ steps.filter.outputs.shared }}
-      control-plane: ${{ steps.filter.outputs.control-plane }}
-      router: ${{ steps.filter.outputs.router }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            shared:
-              - 'packages/shared/**'
-            control-plane:
-              - 'workers/control-plane/**'
-            router:
-              - 'workers/router/**'
-
-
   typecheck:
-    needs: changes
-    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.control-plane == 'true' || needs.changes.outputs.router == 'true'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -41,11 +39,13 @@ jobs:
       - run: pnpm typecheck
 
   deploy-control-plane:
-    needs: [changes, typecheck]
-    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.control-plane == 'true'
+    needs: typecheck
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -59,11 +59,13 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   deploy-router:
-    needs: [changes, typecheck]
-    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.router == 'true'
+    needs: typecheck
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -75,3 +77,10 @@ jobs:
       - run: pnpm -F @army/router run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Summarize deploy
+        run: |
+          echo "## Worker deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Ref: \`$DEPLOY_REF\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: \`${{ github.event_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Targets: \`@army/control-plane\`, \`@army/router\`" >> "$GITHUB_STEP_SUMMARY"

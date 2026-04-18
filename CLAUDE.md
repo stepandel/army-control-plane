@@ -29,6 +29,14 @@ pnpm deploy:router            # deploy router to Cloudflare
 pnpm deploy:control-plane     # deploy control plane to Cloudflare
 ```
 
+## Production release flow
+
+- `main` is not the production deploy channel for any of the three Cloudflare services.
+- Production deploys are triggered from published GitHub release tags such as `release-v1.0.0`.
+- `.github/workflows/deploy.yml` deploys `@army/control-plane` and `@army/router` from the release ref.
+- `.github/workflows/deploy-website.yml` deploys `@army/website` from the same release ref.
+- Cloudflare Git auto-deploy for the production website should stay disabled so unreleased `main` commits do not go live.
+
 ## Tech stack
 
 - **Runtime:** Cloudflare Workers

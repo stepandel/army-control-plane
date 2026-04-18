@@ -50,6 +50,16 @@ pnpm deploy:website
 
 CI (`.github/workflows/ci.yml`) runs `pnpm check` plus `wrangler deploy --dry-run` for each worker on every PR. Database migrations are applied automatically on merge to `main` by `.github/workflows/migrate.yml`.
 
+### Production releases
+
+All three production deploys are cut from explicit release refs, not directly from `main`.
+
+- Create and publish a GitHub release tag such as `release-v1.0.0` to ship the current production set.
+- `.github/workflows/deploy.yml` deploys `@army/control-plane` and `@army/router` from that release ref.
+- `.github/workflows/deploy-website.yml` deploys `@army/website` from that same release ref.
+- Both workflows also support manual `workflow_dispatch` with an explicit ref when needed.
+- Keep Cloudflare Git auto-deploy disabled for the production website so `main` pushes do not overwrite the last released site.
+
 ## Architecture at a glance
 
 - **Router Worker** — verifies webhook HMACs, ACKs immediately, then forwards async to the correct Fly machine via a KV lookup. Stateless, no DB access, intentionally minimal.
