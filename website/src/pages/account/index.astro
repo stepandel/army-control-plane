@@ -20,7 +20,7 @@ if (!session) {
   return Astro.redirect("/sign-in");
 }
 
-const displayName = session.name ?? session.email ?? session.slack_uid ?? session.sub;
+const displayName = session.name ?? session.email ?? session.slack_uid ?? "Your account";
 
 const res = await controlPlane.fetch("https://api/api/account/tenant", {
   headers: { cookie: cookie ?? "" },
