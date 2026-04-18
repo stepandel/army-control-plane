@@ -8,7 +8,6 @@ const env = Astro.locals.runtime.env;
 const apiBase = env.API_BASE_URL;
 const controlPlane: { fetch: typeof fetch } = env.CONTROL_PLANE;
 
-// Verify session
 const cookie = Astro.request.headers.get("cookie");
 const sessionToken = cookie?.match(/(?:^|;\s*)__Host-session=([^;]*)/)?.[1];
 
@@ -21,84 +20,119 @@ if (!session) {
   return Astro.redirect("/sign-in");
 }
 
-// Fetch tenant data via service binding (forward cookie so sessionGuard sees it)
+const displayName = session.name ?? session.email ?? session.slack_uid ?? session.sub;
+
 const res = await controlPlane.fetch("https://api/api/account/tenant", {
   headers: { cookie: cookie ?? "" },
 });
 
-if (!res.ok) {
+let tenant:
+  | {
+      id: string;
+      name: string;
+      status: string;
+      has_anthropic_key: boolean;
+      subscription_status: string;
+      trial_ends_at: string | null;
+      trial_days_remaining: number;
+    }
+  | null = null;
+let integrations: string[] = [];
+
+if (res.status === 401) {
   return Astro.redirect("/sign-in");
 }
 
-const data = await res.json() as {
-  tenant: {
-    id: string;
-    name: string;
-    status: string;
-    has_anthropic_key: boolean;
-    subscription_status: string;
-    trial_ends_at: string | null;
-    trial_days_remaining: number;
+if (res.ok) {
+  const data = (await res.json()) as {
+    tenant: {
+      id: string;
+      name: string;
+      status: string;
+      has_anthropic_key: boolean;
+      subscription_status: string;
+      trial_ends_at: string | null;
+      trial_days_remaining: number;
+    };
+    integrations: string[];
   };
-  integrations: string[];
-};
+  tenant = data.tenant;
+  integrations = data.integrations;
+} else if (res.status !== 409) {
+  return Astro.redirect("/sign-in");
+}
 
-const { tenant, integrations } = data;
 const connected = new Set(integrations);
-const isActive = tenant.status === "active";
-
-const linearUrl = `${apiBase}/oauth/linear/install?tenant_id=${tenant.id}`;
-const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
+const hasTenant = tenant !== null;
+const isActive = tenant?.status === "active";
+const linearUrl = tenant ? `${apiBase}/oauth/linear/install?tenant_id=${tenant.id}` : "#";
+const githubUrl = tenant ? `${apiBase}/oauth/github/install?tenant_id=${tenant.id}` : "#";
 ---
 
 <OnboardingLayout title="Vera — Account">
   <div class="account">
     <div class="account-header">
-      <h1>{tenant.name}</h1>
-      <p class="subtitle">Team dashboard</p>
+      <h1>{tenant?.name ?? displayName}</h1>
+      <p class="subtitle">{hasTenant ? "Team dashboard" : "Standalone account"}</p>
     </div>
 
     <nav class="account-nav">
       <a href="/account" class="active">Overview</a>
-      <a href="/account/billing">Billing</a>
+      {hasTenant && <a href="/account/billing">Billing</a>}
     </nav>
 
-    <div class="section">
-      <h2>Integrations</h2>
-      <div class="integrations">
-        <div class={`integration ${connected.has("slack") ? "connected" : ""}`}>
-          <span class="name">Slack</span>
-          <span class={`status ${connected.has("slack") ? "ok" : "missing"}`}>
-            {connected.has("slack") ? "Connected" : "Not connected"}
-          </span>
-        </div>
-
-        <div class={`integration ${connected.has("linear") ? "connected" : ""}`}>
-          <span class="name">Linear</span>
-          <span class={`status ${connected.has("linear") ? "ok" : "missing"}`}>
-            {connected.has("linear") ? "Connected" : "Not connected"}
-          </span>
-          {!connected.has("linear") && isActive && (
-            <a href={linearUrl} class="btn btn-sm">Connect</a>
-          )}
-        </div>
-
-        <div class={`integration ${connected.has("github") ? "connected" : ""}`}>
-          <span class="name">GitHub</span>
-          <span class={`status ${connected.has("github") ? "ok" : "missing"}`}>
-            {connected.has("github") ? "Connected" : "Not connected"}
-          </span>
-          {!connected.has("github") && isActive && (
-            <a href={githubUrl} class="btn btn-sm">Connect</a>
-          )}
+    {!hasTenant && (
+      <div class="section">
+        <h2>No workspace attached yet</h2>
+        <div class="empty-card">
+          <p>
+            Your account is active, but it is not connected to a Slack workspace or tenant yet.
+          </p>
+          <p>
+            This ticket only generalizes account creation and sign-in. Workspace attach and deploy will come later.
+          </p>
         </div>
       </div>
-    </div>
+    )}
+
+    {hasTenant && (
+      <div class="section">
+        <h2>Integrations</h2>
+        <div class="integrations">
+          <div class={`integration ${connected.has("slack") ? "connected" : ""}`}>
+            <span class="name">Slack</span>
+            <span class={`status ${connected.has("slack") ? "ok" : "missing"}`}>
+              {connected.has("slack") ? "Connected" : "Not connected"}
+            </span>
+          </div>
+
+          <div class={`integration ${connected.has("linear") ? "connected" : ""}`}>
+            <span class="name">Linear</span>
+            <span class={`status ${connected.has("linear") ? "ok" : "missing"}`}>
+              {connected.has("linear") ? "Connected" : "Not connected"}
+            </span>
+            {!connected.has("linear") && isActive && (
+              <a href={linearUrl} class="btn btn-sm">Connect</a>
+            )}
+          </div>
+
+          <div class={`integration ${connected.has("github") ? "connected" : ""}`}>
+            <span class="name">GitHub</span>
+            <span class={`status ${connected.has("github") ? "ok" : "missing"}`}>
+              {connected.has("github") ? "Connected" : "Not connected"}
+            </span>
+            {!connected.has("github") && isActive && (
+              <a href={githubUrl} class="btn btn-sm">Connect</a>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
     <div class="section">
       <h2>Session</h2>
       <p class="session-info">
-        Signed in as <strong>{session.name ?? session.email ?? session.slack_uid}</strong>
+        Signed in as <strong>{displayName}</strong>
       </p>
       <button class="btn btn-danger" id="sign-out-btn">Sign out</button>
     </div>
@@ -118,14 +152,12 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
   </div>
 </OnboardingLayout>
 
-<script define:vars={{ apiBase }}>
+<script>
   const signOutBtn = document.getElementById("sign-out-btn");
   if (signOutBtn) {
     signOutBtn.addEventListener("click", async () => {
       try {
-        await fetch(`/api/account/sign-out`, {
-          method: "POST",
-        });
+        await fetch(`/api/account/sign-out`, { method: "POST" });
       } catch {}
       window.location.href = "/sign-in";
     });
@@ -177,6 +209,24 @@ const githubUrl = `${apiBase}/oauth/github/install?tenant_id=${tenant.id}`;
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 1rem;
+  }
+
+  .empty-card {
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .empty-card p {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    opacity: 0.72;
+    margin: 0;
+  }
+
+  .empty-card p + p {
+    margin-top: 0.75rem;
   }
 
   .integrations {

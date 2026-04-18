@@ -7,6 +7,7 @@ This document covers authentication, authorization, and request verification acr
 | Route group | Worker | Auth mechanism | Who calls it |
 |---|---|---|---|
 | `POST /webhooks/{linear,github}` | Router | Webhook HMAC signature | Linear, GitHub (Slack uses Socket Mode, not webhooks) |
+| `GET /auth/{google,github,discord,slack}/*` | Control Plane | KV-backed single-use state token | End users via browser |
 | `GET /oauth/*/install` | Control Plane | None (public) | End users via browser |
 | `GET /oauth/*/callback` | Control Plane | KV-backed single-use state token | OAuth provider redirect |
 | `GET /health` | Control Plane | None (public) | Monitoring / load balancers |
@@ -154,6 +155,10 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 |---|---|
 | `SLACK_CLIENT_ID` | Slack OAuth app credentials |
 | `SLACK_CLIENT_SECRET` | Slack OAuth app credentials |
+| `GOOGLE_CLIENT_ID` | Google OAuth sign-in credentials |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth sign-in credentials |
+| `DISCORD_CLIENT_ID` | Discord OAuth sign-in credentials |
+| `DISCORD_CLIENT_SECRET` | Discord OAuth sign-in credentials |
 | `SLACK_APP_TOKEN` | Slack app-level token (pushed to tenant machines for Socket Mode) |
 | `LINEAR_CLIENT_ID` | Linear OAuth app credentials |
 | `LINEAR_CLIENT_SECRET` | Linear OAuth app credentials |
@@ -161,6 +166,8 @@ All sensitive values are stored as **Cloudflare Worker secrets** (encrypted at r
 | `GITHUB_APP_ID` | GitHub App ID (pushed to tenant machines for installation token generation) |
 | `GITHUB_CLIENT_ID` | GitHub App OAuth credentials |
 | `GITHUB_CLIENT_SECRET` | GitHub App OAuth credentials |
+| `GITHUB_OAUTH_CLIENT_ID` | Dedicated GitHub OAuth sign-in app credentials |
+| `GITHUB_OAUTH_CLIENT_SECRET` | Dedicated GitHub OAuth sign-in app credentials |
 | `GITHUB_PRIVATE_KEY` | GitHub App private key (pushed to tenant machines for installation token generation) |
 | `FLY_API_TOKEN` | Fly Machines API (provisioning, destroy, update) |
 | `ANTHROPIC_API_KEY` | Anthropic API key (pushed to tenant machines) |

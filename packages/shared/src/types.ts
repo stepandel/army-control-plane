@@ -39,6 +39,10 @@ export interface ControlPlaneEnv {
   WEBSITE_URL: string;
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  DISCORD_CLIENT_ID: string;
+  DISCORD_CLIENT_SECRET: string;
 
   LINEAR_CLIENT_ID: string;
   LINEAR_CLIENT_SECRET: string;
@@ -46,6 +50,8 @@ export interface ControlPlaneEnv {
   GITHUB_APP_ID: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  GITHUB_OAUTH_CLIENT_ID: string;
+  GITHUB_OAUTH_CLIENT_SECRET: string;
   GITHUB_PRIVATE_KEY: string;
   FLY_API_TOKEN_VERA: string;
   FLY_APP: string;

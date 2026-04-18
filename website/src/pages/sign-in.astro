@@ -6,7 +6,6 @@ import OnboardingLayout from "../layouts/OnboardingLayout.astro";
 const env = Astro.locals.runtime.env;
 const apiBase = env.API_BASE_URL;
 
-// If user already has a valid session, send them to /account
 const cookie = Astro.request.headers.get("cookie");
 if (cookie?.includes("__Host-session=")) {
   const { verifyJwt } = await import("../lib/jwt");
@@ -18,38 +17,46 @@ if (cookie?.includes("__Host-session=")) {
 }
 
 const error = new URL(Astro.request.url).searchParams.get("error");
-const authorizeUrl = `${apiBase}/auth/slack/authorize`;
+const providers = [
+  { name: "Google", href: `${apiBase}/auth/google/authorize`, className: "btn-google" },
+  { name: "GitHub", href: `${apiBase}/auth/github/authorize`, className: "btn-github" },
+  { name: "Discord", href: `${apiBase}/auth/discord/authorize`, className: "btn-discord" },
+];
+const slackAuthorizeUrl = `${apiBase}/auth/slack/authorize`;
 ---
 
 <OnboardingLayout title="Vera — Sign In">
   <div class="sign-in">
     <h1>Sign in to Vera</h1>
-    <p class="subtitle">Use your Slack account to access your team's dashboard.</p>
+    <p class="subtitle">Use Google, GitHub, or Discord for your account. Existing workspace users can still sign in with Slack.</p>
 
     {error === "team_not_found" && (
       <div class="error-banner">
-        ⚠️ Your Slack team hasn't installed Vera yet. <a href="/onboarding">Install Vera →</a>
+        Your Slack workspace has not installed Vera yet. <a href="/onboarding">Create an account instead.</a>
       </div>
     )}
 
-    {error === "oidc_failed" && (
+    {error === "oauth_failed" && (
       <div class="error-banner">
-        ⚠️ Sign-in failed. Please try again.
+        Sign-in failed. Please try again.
       </div>
     )}
 
-    <a href={authorizeUrl} class="btn-slack">
-      <svg width="18" height="18" viewBox="0 0 123 123" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zm6.5 0c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="#E01E5A"/>
-        <path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zm0 6.5c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="#36C5F0"/>
-        <path d="M97.2 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97.2V45.2zm-6.5 0c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.9 5.8 70.7 0 77.8 0s12.9 5.8 12.9 12.9v32.3z" fill="#2EB67D"/>
-        <path d="M77.8 97.2c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97.2h12.9zm0-6.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.8z" fill="#ECB22E"/>
-      </svg>
-      Sign in with Slack
-    </a>
+    <div class="provider-grid">
+      {providers.map((provider) => (
+        <a href={provider.href} class={`provider-btn ${provider.className}`}>
+          Continue with {provider.name}
+        </a>
+      ))}
+    </div>
 
-    <p class="install-link">
-      Don't have Vera installed yet? <a href="/onboarding">Install Vera →</a>
+    <div class="slack-card">
+      <p class="slack-label">Existing Slack-backed workspace?</p>
+      <a href={slackAuthorizeUrl} class="provider-btn btn-slack">Sign in with Slack</a>
+    </div>
+
+    <p class="footer-link">
+      Need an account first? <a href="/onboarding">Create one here.</a>
     </p>
   </div>
 </OnboardingLayout>
@@ -70,8 +77,9 @@ const authorizeUrl = `${apiBase}/auth/slack/authorize`;
   .subtitle {
     color: var(--color-text-muted);
     font-size: 0.95rem;
+    line-height: 1.5;
     margin-bottom: 2rem;
-    opacity: 0.7;
+    opacity: 0.75;
   }
 
   .error-banner {
@@ -85,38 +93,76 @@ const authorizeUrl = `${apiBase}/auth/slack/authorize`;
   }
 
   .error-banner a {
-    color: #991b1b;
+    color: inherit;
     text-decoration: underline;
     font-weight: 600;
   }
 
-  .btn-slack {
+  .provider-grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .provider-btn {
     display: inline-flex;
+    justify-content: center;
     align-items: center;
-    gap: 0.625rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--color-text);
-    color: var(--color-bg) !important;
-    border-radius: 8px;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
     font-size: 0.9rem;
     font-weight: 600;
-    transition: opacity 0.15s, transform 0.15s;
-    cursor: pointer;
+    border: 1px solid rgba(13, 40, 24, 0.15);
+    transition: transform 0.15s, opacity 0.15s, border-color 0.15s;
   }
 
-  .btn-slack:hover {
-    opacity: 0.85;
-    color: var(--color-bg) !important;
+  .provider-btn:hover {
     transform: translateY(-1px);
+    opacity: 0.9;
   }
 
-  .install-link {
-    margin-top: 2rem;
+  .btn-google {
+    background: #ffffff;
+    color: #1f2937;
+  }
+
+  .btn-github {
+    background: #111827;
+    color: #f9fafb;
+  }
+
+  .btn-discord {
+    background: #5865f2;
+    color: #ffffff;
+    border-color: #5865f2;
+  }
+
+  .btn-slack {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .slack-card {
+    border-top: 1px solid rgba(13, 40, 24, 0.12);
+    padding-top: 1.5rem;
+  }
+
+  .slack-label {
     font-size: 0.8rem;
-    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    margin-bottom: 0.75rem;
   }
 
-  .install-link a {
+  .footer-link {
+    margin-top: 1.75rem;
+    font-size: 0.85rem;
+    opacity: 0.65;
+  }
+
+  .footer-link a {
     text-decoration: underline;
   }
 </style>
